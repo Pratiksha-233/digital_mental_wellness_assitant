@@ -1,27 +1,66 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../utils/constants.dart';
 
 class ApiService {
-  // Default base URL for local backend. Update when deploying.
-  // Note: backend context-path is /api (configured in application.properties)
-  static String baseUrl = const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080/api');
+  /// Predict the emotion of user's journal or chat input
+  Future<Map<String, dynamic>> predictEmotion(String text, int userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/predict'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'text': text, 'user_id': userId}),
+      );
 
-  /// Fetch wellness tips from backend
-  /// Returns the parsed JSON list on success or throws an exception.
-  static Future<List<dynamic>> fetchWellnessTips() async {
-    final uri = Uri.parse('\$baseUrl/wellness-tips');
-    final resp = await http.get(uri, headers: {
-      'Accept': 'application/json',
-    });
-
-    if (resp.statusCode == 200) {
-      final data = json.decode(resp.body);
-      if (data is List) return data;
-      // If backend wraps the list in an object, try to extract
-      if (data is Map && data['data'] is List) return data['data'];
-      return [data];
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          'status': 'error',
+          'message': 'Server error: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
+      return {'status': 'error', 'message': 'Connection error: $e'};
     }
+  }
 
-    throw Exception('Failed to fetch wellness tips: \\${resp.statusCode}');
+  /// Get recommendations based on detected emotion
+  Future<List<dynamic>> getRecommendations(String emotion) async {
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/recommendations/$emotion'));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load recommendations');
+      }
+    } catch (e) {
+      print('Error fetching recommendations: $e');
+      return [];
+    }
+  }
+
+  /// Fetch all mood logs of a user (optional)
+  Future<List<dynamic>> getMoodLogs(int userId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/mood_logs/$userId'));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to fetch mood logs');
+      }
+    } catch (e) {
+      print('Error fetching mood logs: $e');
+      return [];
+    }
+  }
+
+  /// Log out endpoint (optional placeholder)
+  Future<bool> logout() async {
+    // If you’re using token-based auth, clear token locally here
+    return true;
   }
 }
