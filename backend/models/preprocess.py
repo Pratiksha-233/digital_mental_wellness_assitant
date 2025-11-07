@@ -1,14 +1,12 @@
 import pickle
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-import os
 
-# Load saved tokenizer
 with open("models/tokenizer.pkl", "rb") as f:
     tokenizer = pickle.load(f)
 
-MAX_LEN = 50
-
 def preprocess_text(text):
+    # Basic clean-up (must match training)
+    text = text.lower()
     seq = tokenizer.texts_to_sequences([text])
-    padded = pad_sequences(seq, maxlen=MAX_LEN, padding='post')
+    padded = pad_sequences(seq, maxlen=50, padding='post')
     return padded[0]

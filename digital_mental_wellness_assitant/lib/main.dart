@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/recommendation_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MentalWellnessApp());
 }
 
@@ -23,8 +29,8 @@ class MentalWellnessApp extends StatelessWidget {
       routes: {
         '/': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const Placeholder(), // will be replaced by HomeScreen
-        '/journal': (context) => const Placeholder(), // replace when HomeScreen connects
+        '/home': (context) => const Placeholder(), // replace later
+        '/journal': (context) => const Placeholder(),
         '/recommendations': (context) => const RecommendationScreen(),
       },
     );

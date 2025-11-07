@@ -7,7 +7,7 @@ class ApiService {
   Future<Map<String, dynamic>> predictEmotion(String text, int userId) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/predict'),
+        Uri.parse('$baseUrl/mood/predict'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'text': text, 'user_id': userId}),
       );
@@ -26,19 +26,14 @@ class ApiService {
   }
 
   /// Get recommendations based on detected emotion
-  Future<List<dynamic>> getRecommendations(String emotion) async {
-    try {
-      final response =
-          await http.get(Uri.parse('$baseUrl/recommendations/$emotion'));
+   Future<List<dynamic>> getRecommendations(String emotion) async {
+    final response = await http.get(Uri.parse('$baseUrl/recommend/$emotion'));
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to load recommendations');
-      }
-    } catch (e) {
-      print('Error fetching recommendations: $e');
-      return [];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['recommendations']; // ✅ Extract the list only
+    } else {
+      throw Exception('Failed to load recommendations');
     }
   }
 

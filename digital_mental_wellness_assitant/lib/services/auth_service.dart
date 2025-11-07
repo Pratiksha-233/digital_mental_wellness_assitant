@@ -8,7 +8,7 @@ class AuthService {
       String name, String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse('$baseUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': name,
@@ -34,7 +34,7 @@ class AuthService {
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse('$baseUrl/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );

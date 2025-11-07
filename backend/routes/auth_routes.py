@@ -19,25 +19,37 @@ def register():
     if not conn:
         return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
 
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
-    # Check if user exists
+    # Check if user already exists
     cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
     if cursor.fetchone():
+        cursor.close()
+        conn.close()
         return jsonify({'status': 'error', 'message': 'User already exists'}), 400
 
     # Hash password
     hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
+    # Insert new user
     cursor.execute(
         "INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)",
         (name, email, hashed_pw)
     )
     conn.commit()
+
+    # ✅ Fetch the newly inserted user's ID
+    cursor.execute("SELECT user_id, name, email FROM users WHERE email = %s", (email,))
+    new_user = cursor.fetchone()
+
     cursor.close()
     conn.close()
 
-    return jsonify({'status': 'success', 'message': 'User registered successfully'}), 201
+    return jsonify({
+        'status': 'success',
+        'message': 'User registered successfully',
+        'user_id': user['user_id']  # includes 'id', 'name', 'email'
+    }), 201
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -54,7 +66,7 @@ def login():
         return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
 
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    cursor.execute("SELECT user_id, name, email, password_hash FROM users WHERE email = %s", (email,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -62,8 +74,13 @@ def login():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
 
-    # Check password
+    # Validate password
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
         return jsonify({'status': 'error', 'message': 'Invalid password'}), 401
 
-    return jsonify({'status': 'success', 'message': 'Login successful'}), 200
+    # ✅ Return user details (including id)
+    return jsonify({
+        'status': 'success',
+        'message': 'Login successful',
+        'user_id': user['user_id']
+    }), 200

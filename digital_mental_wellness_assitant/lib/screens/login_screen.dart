@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +18,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
   bool _isLoading = false;
 
+  /// ---------------------------
+  /// Email/Password Login
+  /// ---------------------------
   void _login() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,6 +55,39 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// ---------------------------
+  /// Google Sign-In Function
+  /// ---------------------------
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return; // User canceled
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google Sign-In successful!')),
+      );
+
+      Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google Sign-In failed: $e')),
+      );
+    }
+  }
+
+  /// ---------------------------
+  /// UI
+  /// ---------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,6 +134,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 25),
+
+            /// Login button
             _isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton.icon(
@@ -111,7 +151,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+
             const SizedBox(height: 20),
+
+            /// Google Sign-In Button
+            ElevatedButton.icon(
+              onPressed: _signInWithGoogle,
+              icon: Image.asset('assets/google_logo.png', height: 24),
+              label: const Text('Continue with Google'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Colors.grey),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// Register link
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
