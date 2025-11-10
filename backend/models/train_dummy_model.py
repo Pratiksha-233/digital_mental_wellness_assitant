@@ -1,5 +1,3 @@
-#!pip install datasets tensorflow scikit-learn
-
 import tensorflow as tf
 import numpy as np
 import pickle
@@ -12,7 +10,7 @@ import os
 # Create models folder
 os.makedirs("models", exist_ok=True)
 
-# Load dataset (train + test)
+print("📥 Loading dataset...")
 dataset = load_dataset("emotion")
 
 # Combine data
@@ -35,20 +33,34 @@ with open("models/tokenizer.pkl", "wb") as f:
 with open("models/label_encoder.pkl", "wb") as f:
     pickle.dump(label_encoder, f)
 
+print("✅ Tokenizer & encoder saved")
+
 # Build and train model
 model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(input_dim=10000, output_dim=64, input_length=50),
+    tf.keras.layers.Embedding(input_dim=10000, output_dim=128, input_length=50),
     tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
-    tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dropout(0.3),
+    tf.keras.layers.GlobalMaxPooling1D(),
     tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
     tf.keras.layers.Dense(len(set(y)), activation='softmax')
 ])
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(padded, np.array(y), epochs=10, batch_size=64, validation_split=0.2)
+
+print("🚀 Training model...")
+history = model.fit(
+    padded, np.array(y),
+    epochs=10,  # ⬅️ Increased epochs
+    batch_size=64,
+    validation_split=0.2,
+    verbose=2
+)
 
 # Save model
 model.save("models/sentiment_model.h5")
+print("✅ Model trained and saved successfully!")
 
-print("✅ Real sentiment_model.h5 trained and saved successfully!")
+# Evaluate
+val_loss, val_acc = model.evaluate(padded[:2000], np.array(y[:2000]))
+print(f"🎯 Final Validation Accuracy: {val_acc:.3f}")
+print("Classes:", label_encoder.classes_)

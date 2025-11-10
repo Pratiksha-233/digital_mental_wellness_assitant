@@ -20,4 +20,7 @@ def predict():
     insert_mood_log(user_id, text, emotion)
 # fetch recommendation
     recs = get_recommendation_for(emotion)
-    return jsonify({'emotion': emotion, 'recommendations': recs}), 200
+    return jsonify({
+    'emotion': str(emotion),      # Convert to string
+    'recommendations': recs
+    }), 200
