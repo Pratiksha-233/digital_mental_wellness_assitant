@@ -26,8 +26,10 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
     try {
       final data = await _api.getRecommendations(_emotionController.text);
+      if (!mounted) return;
       setState(() => _recommendations = data);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching recommendations: $e')),
       );

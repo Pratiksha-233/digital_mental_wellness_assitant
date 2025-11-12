@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
 
 class ApiService {
@@ -48,7 +49,8 @@ class ApiService {
         throw Exception('Failed to fetch mood logs');
       }
     } catch (e) {
-      print('Error fetching mood logs: $e');
+      // Use debugPrint instead of print for production-friendly logging
+      debugPrint('Error fetching mood logs: $e');
       return [];
     }
   }
