@@ -29,7 +29,7 @@ texts = [
     "I feel really sad and lonely.",
     "I am angry and frustrated.",
     "I am scared of what might happen.",
-    "Wow, this is amazing!"
+    "Wow, today is very nice day!"
 ]
 
 for text in texts:
