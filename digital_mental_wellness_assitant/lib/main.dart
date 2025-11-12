@@ -5,7 +5,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/register_screen.dart';
 import 'screens/recommendation_screen.dart';
+import 'screens/stress_analyzer_screen.dart';
 import 'screens/welcome_clean.dart';
+import 'screens/landing_page.dart';
+import 'screens/login_screen.dart';
+import 'screens/mood_tracker_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/self_care_tips_screen.dart';
 
 class _GlobalEnterIntent extends Intent {
   const _GlobalEnterIntent();
@@ -47,11 +53,18 @@ class MentalWellnessApp extends StatelessWidget {
           ),
           initialRoute: '/',
           routes: {
-            '/': (context) => const WelcomeClean(),
+            // Use the new LandingPage as the front page
+            '/': (context) => const LandingPage(),
+            '/welcome': (context) => const WelcomeClean(),
+            '/login': (context) => const LoginScreen(),
             '/register': (context) => const RegisterScreen(),
             '/home': (context) => const Placeholder(), // replace later
             '/journal': (context) => const Placeholder(),
+            '/mood': (context) => const MoodTrackerScreen(),
+            '/chat': (context) => const ChatScreen(),
+            '/selfcare': (context) => const SelfCareTipsScreen(),
             '/recommendations': (context) => const RecommendationScreen(),
+            '/stress': (context) => const StressAnalyzerScreen(),
           },
         ),
       ),

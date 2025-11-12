@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../widgets/stress_analyzer_section.dart';
 
 class RecommendationScreen extends StatefulWidget {
   const RecommendationScreen({super.key});
@@ -9,113 +9,30 @@ class RecommendationScreen extends StatefulWidget {
 }
 
 class _RecommendationScreenState extends State<RecommendationScreen> {
-  final ApiService _api = ApiService();
-  List<dynamic> _recommendations = [];
-  final _emotionController = TextEditingController();
-  bool _isLoading = false;
-
-  void _getRecommendations() async {
-    if (_emotionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an emotion')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      final data = await _api.getRecommendations(_emotionController.text);
-      if (!mounted) return;
-      setState(() => _recommendations = data);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching recommendations: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+  // Recommendation functionality removed per request; screen repurposed as dedicated Stress Analyzer.
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recommendations'),
+        title: const Text('Stress Analyzer'),
         backgroundColor: Colors.teal,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: ListView(
           children: [
-            TextField(
-              controller: _emotionController,
-              decoration: InputDecoration(
-                labelText: 'Enter emotion (e.g. sad, happy, anxious)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: const Icon(Icons.emoji_emotions_outlined),
-              ),
+            Text('Understand & Track Your Stress', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.teal.shade800)),
+            const SizedBox(height: 8),
+            Text(
+              'Answer quick reflective prompts, see a dynamic gauge of your current stress, and build a personal trend—kept locally on your device.',
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _getRecommendations,
-              icon: const Icon(Icons.search),
-              label: const Text('Get Recommendations'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 48),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _recommendations.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No recommendations yet. Enter an emotion above.',
-                            style: TextStyle(fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: _recommendations.length,
-                          itemBuilder: (context, index) {
-                            final rec = _recommendations[index];
-                            return Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 3,
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              child: ListTile(
-                                leading: const Icon(Icons.lightbulb_outline,
-                                    color: Colors.teal),
-                                title: Text(
-                                  rec['suggestion_text'] ?? 'No suggestion text',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: rec['resource_link'] != null &&
-                                        rec['resource_link'].toString().isNotEmpty
-                                    ? Text(
-                                        rec['resource_link'],
-                                        style: const TextStyle(
-                                          color: Colors.blueAccent,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                      )
-                                    : const Text('No resource link available'),
-                              ),
-                            );
-                          },
-                        ),
-            ),
+            const SizedBox(height: 18),
+            const StressAnalyzerSection(),
+            const SizedBox(height: 12),
+            Text('Your responses are private. Use this tool daily to notice patterns early and take gentle action.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+            const SizedBox(height: 24),
           ],
         ),
       ),
