@@ -157,138 +157,314 @@ class _WelcomeCleanState extends State<WelcomeClean> with TickerProviderStateMix
               final width = constraints.maxWidth;
               final animationSize = (width * 0.5).clamp(120.0, 320.0);
 
+              // Responsive layout: stacked on small screens, two-column on wide screens
               return Center(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(vertical: 24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SlideTransition(
-                        position: _floatAnim,
-                        child: ScaleTransition(
-                          scale: _scaleAnim,
-                          child: Container(
-                            width: animationSize,
-                            height: animationSize,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(color: Colors.teal.shade50, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.teal.shade100.withAlpha((0.6 * 255).round()), blurRadius: 12, offset: const Offset(0, 6))]),
-                            child: ClipOval(
-                              child: Center(
-                                child: LayoutBuilder(builder: (c, bc) {
-                                  return GestureDetector(
-                                    onTap: () => _mainController.forward(from: 0),
-                                    child: Lottie.network(
-                                      'https://assets7.lottiefiles.com/packages/lf20_jbrw3hcz.json',
-                                      fit: BoxFit.contain,
-                                      width: bc.maxWidth * 0.85,
-                                      height: bc.maxHeight * 0.85,
-                                      repeat: true,
-                                      frameBuilder: (context, child, composition) {
-                                        if (composition == null) return const Center(child: CircularProgressIndicator());
-                                        return child;
-                                      },
-                                    ),
-                                  );
-                                }),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: width.clamp(300.0, 1400.0)),
+                    child: width >= 900
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Left: original hero, title/subtitle and CTAs (keeps your original content)
+                              Expanded(
+                                flex: 6,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Hero animation (uses same size calculation as mobile)
+                                      SlideTransition(
+                                        position: _floatAnim,
+                                        child: ScaleTransition(
+                                          scale: _scaleAnim,
+                                          child: Container(
+                                            width: (width * 0.35).clamp(120.0, 320.0),
+                                            height: (width * 0.35).clamp(120.0, 320.0),
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(color: Colors.teal.shade50, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.teal.shade100.withAlpha((0.6 * 255).round()), blurRadius: 12, offset: const Offset(0, 6))]),
+                                            child: ClipOval(
+                                              child: Center(
+                                                child: LayoutBuilder(builder: (c, bc) {
+                                                  return GestureDetector(
+                                                    onTap: () => _mainController.forward(from: 0),
+                                                    child: Lottie.network(
+                                                      'https://assets7.lottiefiles.com/packages/lf20_jbrw3hcz.json',
+                                                      fit: BoxFit.contain,
+                                                      width: bc.maxWidth * 0.85,
+                                                      height: bc.maxHeight * 0.85,
+                                                      repeat: true,
+                                                      frameBuilder: (context, child, composition) {
+                                                        if (composition == null) return const Center(child: CircularProgressIndicator());
+                                                        return child;
+                                                      },
+                                                    ),
+                                                  );
+                                                }),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 18),
+
+                                      // Title and subtitle (same text as before)
+                                      FadeTransition(
+                                        opacity: _fadeAnim,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Digital Mental Wellness Assistant', textAlign: TextAlign.left, style: TextStyle(fontSize: (width * 0.04).clamp(20.0, 28.0), fontWeight: FontWeight.bold, color: Colors.teal.shade700)),
+                                            const SizedBox(height: 8),
+                                            Text('Helping you reflect, recover and grow', style: TextStyle(fontSize: (width * 0.02).clamp(12.0, 14.0), color: Colors.black54)),
+                                          ],
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 20),
+
+                                      // Buttons (same labels and behaviors)
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 24.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            SlideTransition(
+                                              position: _btn1Offset,
+                                              child: FadeTransition(
+                                                opacity: _btn1Fade,
+                                                child: MouseRegion(
+                                                  onEnter: (_) => setState(() => _hovered = _Hovered.btn1),
+                                                  onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn1 ? _Hovered.none : _hovered),
+                                                  child: AnimatedScale(
+                                                    scale: _hovered == _Hovered.btn1 ? 1.03 : 1.0,
+                                                    duration: const Duration(milliseconds: 160),
+                                                    child: ElevatedButton(
+                                                      onPressed: () => _handleLogin(context),
+                                                      style: ElevatedButton.styleFrom(minimumSize: const Size(220, 48), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                                                      child: const Text('Login'),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            SlideTransition(
+                                              position: _btn2Offset,
+                                              child: FadeTransition(
+                                                opacity: _btn2Fade,
+                                                child: MouseRegion(
+                                                  onEnter: (_) => setState(() => _hovered = _Hovered.btn2),
+                                                  onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn2 ? _Hovered.none : _hovered),
+                                                  child: AnimatedScale(
+                                                    scale: _hovered == _Hovered.btn2 ? 1.03 : 1.0,
+                                                    duration: const Duration(milliseconds: 160),
+                                                    child: OutlinedButton(
+                                                      onPressed: () => _handleRegister(context),
+                                                      style: OutlinedButton.styleFrom(minimumSize: const Size(220, 48), side: const BorderSide(color: Colors.teal), foregroundColor: Colors.teal),
+                                                      child: const Text('Register'),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            SlideTransition(
+                                              position: _btn3Offset,
+                                              child: FadeTransition(
+                                                opacity: _btn3Fade,
+                                                child: MouseRegion(
+                                                  onEnter: (_) => setState(() => _hovered = _Hovered.btn3),
+                                                  onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn3 ? _Hovered.none : _hovered),
+                                                  child: AnimatedScale(
+                                                    scale: _hovered == _Hovered.btn3 ? 1.02 : 1.0,
+                                                    duration: const Duration(milliseconds: 160),
+                                                    child: TextButton(
+                                                      onPressed: () => _handleExplore(context),
+                                                      style: TextButton.styleFrom(minimumSize: const Size(220, 48), foregroundColor: Colors.teal.shade700),
+                                                      child: const Text('Explore Recommendations'),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
 
-                      const SizedBox(height: 18),
-
-                      FadeTransition(
-                        opacity: _fadeAnim,
-                        child: Column(
-                          children: [
-                            Text('Digital Mental Wellness Assistant', textAlign: TextAlign.center, style: TextStyle(fontSize: (width * 0.05).clamp(18.0, 22.0), fontWeight: FontWeight.bold, color: Colors.teal.shade700)),
-                            const SizedBox(height: 8),
-                            Text('Helping you reflect, recover and grow', style: TextStyle(fontSize: (width * 0.03).clamp(12.0, 14.0), color: Colors.black54)),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 36.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            SlideTransition(
-                              position: _btn1Offset,
-                              child: FadeTransition(
-                                opacity: _btn1Fade,
-                                    child: MouseRegion(
-                                      onEnter: (_) => setState(() => _hovered = _Hovered.btn1),
-                                      onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn1 ? _Hovered.none : _hovered),
-                                      child: AnimatedScale(
-                                        scale: _hovered == _Hovered.btn1 ? 1.03 : 1.0,
-                                        duration: const Duration(milliseconds: 160),
-                                        child: ElevatedButton(
-                                          onPressed: () => _handleLogin(context),
-                                          style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48), backgroundColor: Colors.teal, foregroundColor: Colors.white),
-                                          child: const Text('Login'),
+                              // Right: illustrated card
+                              Expanded(
+                                flex: 5,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(40.0),
+                                  child: Card(
+                                    elevation: 8,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(28.0),
+                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Colors.green.shade50),
+                                      child: Center(
+                                        child: AspectRatio(
+                                          aspectRatio: 1.0,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12.0),
+                                            child: Container(
+                                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.white),
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.self_improvement_rounded,
+                                                  size: (width * 0.18).clamp(120.0, 300.0),
+                                                  color: Colors.teal.shade600,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            SlideTransition(
-                              position: _btn2Offset,
-                              child: FadeTransition(
-                                opacity: _btn2Fade,
-                                child: MouseRegion(
-                                  onEnter: (_) => setState(() => _hovered = _Hovered.btn2),
-                                  onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn2 ? _Hovered.none : _hovered),
-                                  child: MouseRegion(
-                                    onEnter: (_) => setState(() => _hovered = _Hovered.btn2),
-                                    onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn2 ? _Hovered.none : _hovered),
-                                    child: AnimatedScale(
-                                      scale: _hovered == _Hovered.btn2 ? 1.03 : 1.0,
-                                      duration: const Duration(milliseconds: 160),
-                                      child: OutlinedButton(
-                                        onPressed: () => _handleRegister(context),
-                                        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), side: const BorderSide(color: Colors.teal), foregroundColor: Colors.teal),
-                                        child: const Text('Register'),
+                            ],
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SlideTransition(
+                                position: _floatAnim,
+                                child: ScaleTransition(
+                                  scale: _scaleAnim,
+                                  child: Container(
+                                    width: animationSize,
+                                    height: animationSize,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: Colors.teal.shade50, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.teal.shade100.withAlpha((0.6 * 255).round()), blurRadius: 12, offset: const Offset(0, 6))]),
+                                    child: ClipOval(
+                                      child: Center(
+                                        child: LayoutBuilder(builder: (c, bc) {
+                                          return GestureDetector(
+                                            onTap: () => _mainController.forward(from: 0),
+                                            child: Lottie.network(
+                                              'https://assets7.lottiefiles.com/packages/lf20_jbrw3hcz.json',
+                                              fit: BoxFit.contain,
+                                              width: bc.maxWidth * 0.85,
+                                              height: bc.maxHeight * 0.85,
+                                              repeat: true,
+                                              frameBuilder: (context, child, composition) {
+                                                if (composition == null) return const Center(child: CircularProgressIndicator());
+                                                return child;
+                                              },
+                                            ),
+                                          );
+                                        }),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            SlideTransition(
-                              position: _btn3Offset,
-                              child: FadeTransition(
-                                opacity: _btn3Fade,
-                                child: MouseRegion(
-                                  onEnter: (_) => setState(() => _hovered = _Hovered.btn3),
-                                  onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn3 ? _Hovered.none : _hovered),
-                                  child: MouseRegion(
-                                    onEnter: (_) => setState(() => _hovered = _Hovered.btn3),
-                                    onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn3 ? _Hovered.none : _hovered),
-                                    child: AnimatedScale(
-                                      scale: _hovered == _Hovered.btn3 ? 1.02 : 1.0,
-                                      duration: const Duration(milliseconds: 160),
-                                      child: TextButton(
-                                        onPressed: () => _handleExplore(context),
-                                        style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48), foregroundColor: Colors.teal.shade700),
-                                        child: const Text('Explore Recommendations'),
-                                      ),
-                                    ),
-                                  ),
+
+                              const SizedBox(height: 18),
+
+                              FadeTransition(
+                                opacity: _fadeAnim,
+                                child: Column(
+                                  children: [
+                                    Text('Digital Mental Wellness Assistant', textAlign: TextAlign.center, style: TextStyle(fontSize: (width * 0.05).clamp(18.0, 22.0), fontWeight: FontWeight.bold, color: Colors.teal.shade700)),
+                                    const SizedBox(height: 8),
+                                    Text('Helping you reflect, recover and grow', style: TextStyle(fontSize: (width * 0.03).clamp(12.0, 14.0), color: Colors.black54)),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+
+                              const SizedBox(height: 24),
+
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 36.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    SlideTransition(
+                                      position: _btn1Offset,
+                                      child: FadeTransition(
+                                        opacity: _btn1Fade,
+                                            child: MouseRegion(
+                                              onEnter: (_) => setState(() => _hovered = _Hovered.btn1),
+                                              onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn1 ? _Hovered.none : _hovered),
+                                              child: AnimatedScale(
+                                                scale: _hovered == _Hovered.btn1 ? 1.03 : 1.0,
+                                                duration: const Duration(milliseconds: 160),
+                                                child: ElevatedButton(
+                                                  onPressed: () => _handleLogin(context),
+                                                  style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                                                  child: const Text('Login'),
+                                                ),
+                                              ),
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SlideTransition(
+                                      position: _btn2Offset,
+                                      child: FadeTransition(
+                                        opacity: _btn2Fade,
+                                        child: MouseRegion(
+                                          onEnter: (_) => setState(() => _hovered = _Hovered.btn2),
+                                          onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn2 ? _Hovered.none : _hovered),
+                                          child: MouseRegion(
+                                            onEnter: (_) => setState(() => _hovered = _Hovered.btn2),
+                                            onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn2 ? _Hovered.none : _hovered),
+                                            child: AnimatedScale(
+                                              scale: _hovered == _Hovered.btn2 ? 1.03 : 1.0,
+                                              duration: const Duration(milliseconds: 160),
+                                              child: OutlinedButton(
+                                                onPressed: () => _handleRegister(context),
+                                                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), side: const BorderSide(color: Colors.teal), foregroundColor: Colors.teal),
+                                                child: const Text('Register'),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SlideTransition(
+                                      position: _btn3Offset,
+                                      child: FadeTransition(
+                                        opacity: _btn3Fade,
+                                        child: MouseRegion(
+                                          onEnter: (_) => setState(() => _hovered = _Hovered.btn3),
+                                          onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn3 ? _Hovered.none : _hovered),
+                                          child: MouseRegion(
+                                            onEnter: (_) => setState(() => _hovered = _Hovered.btn3),
+                                            onExit: (_) => setState(() => _hovered = _hovered == _Hovered.btn3 ? _Hovered.none : _hovered),
+                                            child: AnimatedScale(
+                                              scale: _hovered == _Hovered.btn3 ? 1.02 : 1.0,
+                                              duration: const Duration(milliseconds: 160),
+                                              child: TextButton(
+                                                onPressed: () => _handleExplore(context),
+                                                style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48), foregroundColor: Colors.teal.shade700),
+                                                child: const Text('Explore Recommendations'),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
                   ),
                 ),
               );

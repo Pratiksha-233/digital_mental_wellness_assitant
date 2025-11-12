@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'journal_screen.dart';
+import 'mood_tracker_screen.dart';
+import 'meditate_screen.dart';
 // recommendation_screen.dart is reachable via routes; not required here
 
 class HomeScreen extends StatelessWidget {
@@ -73,9 +75,9 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ListTile(leading: const Icon(Icons.home), title: const Text('Home')),
-              ListTile(leading: const Icon(Icons.heart_broken), title: const Text('Mood Tracker')),
+              ListTile(leading: const Icon(Icons.heart_broken), title: const Text('Mood Tracker'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MoodTrackerScreen()))),
               ListTile(leading: const Icon(Icons.book), title: const Text('Journal'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => JournalScreen(userId: userId)))),
-              ListTile(leading: const Icon(Icons.self_improvement), title: const Text('Meditate')),
+              ListTile(leading: const Icon(Icons.self_improvement), title: const Text('Meditate'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeditateScreen()))),
               ListTile(leading: const Icon(Icons.bar_chart), title: const Text('Resources')),
               const Spacer(),
               Padding(
@@ -157,8 +159,7 @@ class HomeScreen extends StatelessWidget {
                   alignment: Alignment.center,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: navigate to mood logging
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Log Today's Mood (not implemented yet)")));
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MoodTrackerScreen()));
                     },
                     icon: const Icon(Icons.emoji_emotions_outlined),
                     label: const Text("Log Today's Mood"),
