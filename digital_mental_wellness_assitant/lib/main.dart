@@ -12,6 +12,7 @@ import 'screens/login_screen.dart';
 import 'screens/mood_tracker_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/self_care_tips_screen.dart';
+import 'screens/profile_screen.dart';
 
 class _GlobalEnterIntent extends Intent {
   const _GlobalEnterIntent();
@@ -65,6 +66,7 @@ class MentalWellnessApp extends StatelessWidget {
             '/selfcare': (context) => const SelfCareTipsScreen(),
             '/recommendations': (context) => const RecommendationScreen(),
             '/stress': (context) => const StressAnalyzerScreen(),
+            '/profile': (context) => const ProfileScreen(),
           },
         ),
       ),

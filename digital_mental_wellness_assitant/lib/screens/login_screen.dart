@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(userId: res['user_id']),
+          builder: (context) => HomeScreen(userId: res['user_id'], userName: (res['name'] ?? '').toString()),
         ),
       );
     } else {

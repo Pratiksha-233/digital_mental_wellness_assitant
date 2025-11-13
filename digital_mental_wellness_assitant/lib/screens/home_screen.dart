@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/profile_service.dart';
 import 'journal_screen.dart';
 import 'mood_tracker_screen.dart';
 import 'meditate_screen.dart';
@@ -56,6 +58,31 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Resolve display name from provided prop, Firebase user, or fallback
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final resolvedName = (userName != 'User' && userName.trim().isNotEmpty)
+        ? userName
+        : (currentUser?.displayName ?? (currentUser?.email?.split('@').first ?? 'User'));
+
+    String _timeGreeting() {
+      final hour = DateTime.now().hour;
+      if (hour >= 5 && hour < 12) return 'Good morning';
+      if (hour >= 12 && hour < 17) return 'Good afternoon';
+      if (hour >= 17 && hour < 21) return 'Good evening';
+      return 'Good night';
+    }
+
+    String _greetingEmoji() {
+      final hour = DateTime.now().hour;
+      if (hour >= 5 && hour < 12) return '☀️';
+      if (hour >= 12 && hour < 17) return '🌤️';
+      if (hour >= 17 && hour < 21) return '🌇';
+      return '🌙';
+    }
+
+    // status chip helper moved to ProfileScreen
+
+    // profile details moved to ProfileScreen; button provided below
     return Scaffold(
       drawer: Drawer(
         child: SafeArea(
@@ -97,9 +124,40 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         child: ListView(
           children: [
-            Text('Good morning, $userName', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.purple)),
+            Row(
+              children: [
+                Expanded(
+                  child: FutureBuilder<String?>(
+                    future: ProfileService.getDisplayName(),
+                    builder: (context, snapshot) {
+                      final display = (snapshot.data != null && snapshot.data!.trim().isNotEmpty) ? snapshot.data!.trim() : resolvedName;
+                      return Text('${_greetingEmoji()} ${_timeGreeting()}, $display',
+                          style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.purple));
+                    },
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(context, '/profile'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: ShapeDecoration(
+                      gradient: LinearGradient(colors: [Colors.purple.shade400, Colors.teal.shade400]),
+                      shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Colors.white24)),
+                      shadows: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))],
+                    ),
+                    child: Row(children: const [
+                      Icon(Icons.person_outline, color: Colors.white, size: 18),
+                      SizedBox(width: 6),
+                      Text('Status', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
             const Text('How are you feeling today?', style: TextStyle(color: Colors.black54)),
+            const SizedBox(height: 12),
+            // moved to top-right header button above
             const SizedBox(height: 18),
 
             // three feature cards
