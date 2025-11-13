@@ -225,7 +225,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                       position: _floatAnim,
                                       child: Container(
                                         decoration: BoxDecoration(color: const Color(0xFFE6FFFB), borderRadius: BorderRadius.circular(20), boxShadow: [
-                                          BoxShadow(color: const Color(0xFF99F6E4).withOpacity(0.6), blurRadius: 16, offset: const Offset(0, 8)),
+                                          BoxShadow(color: const Color(0xFF99F6E4).withValues(alpha: 0.6), blurRadius: 16, offset: const Offset(0, 8)),
                                         ]),
                                         child: Padding(
                                           padding: const EdgeInsets.all(12.0),
@@ -284,7 +284,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                   child: Container(
                                     height: 220,
                                     decoration: BoxDecoration(color: const Color(0xFFE6FFFB), borderRadius: BorderRadius.circular(20), boxShadow: [
-                                      BoxShadow(color: const Color(0xFF99F6E4).withOpacity(0.6), blurRadius: 16, offset: const Offset(0, 8)),
+                                      BoxShadow(color: const Color(0xFF99F6E4).withValues(alpha: 0.6), blurRadius: 16, offset: const Offset(0, 8)),
                                     ]),
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -451,7 +451,7 @@ class _ServiceCardState extends State<ServiceCard> {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(color: const Color(0xFFE6FFFB), borderRadius: BorderRadius.circular(16), boxShadow: _hover ? [
-                        BoxShadow(color: const Color(0xFF99F6E4).withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 6))
+                        BoxShadow(color: const Color(0xFF99F6E4).withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 6))
                       ] : null),
                       child: Icon(widget.icon, color: const Color(0xFF0F766E), size: 34),
                     ),
@@ -492,9 +492,9 @@ class _BubblesPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
     // define a few bubbles with deterministic positions
     final bubbles = [
-      _BubbleSpec(0.15, Colors.white.withOpacity(0.10), Offset(size.width * 0.2 + 40 * math.sin(t * math.pi * 2), size.height * 0.25)),
-      _BubbleSpec(0.10, Colors.white.withOpacity(0.08), Offset(size.width * 0.75 + 60 * math.cos(t * math.pi), size.height * 0.18 + 30 * math.sin(t * math.pi))),
-      _BubbleSpec(0.20, Colors.white.withOpacity(0.06), Offset(size.width * 0.6 + 50 * math.sin(t * math.pi * 1.5), size.height * 0.7)),
+      _BubbleSpec(0.15, Colors.white.withValues(alpha: 0.10), Offset(size.width * 0.2 + 40 * math.sin(t * math.pi * 2), size.height * 0.25)),
+      _BubbleSpec(0.10, Colors.white.withValues(alpha: 0.08), Offset(size.width * 0.75 + 60 * math.cos(t * math.pi), size.height * 0.18 + 30 * math.sin(t * math.pi))),
+      _BubbleSpec(0.20, Colors.white.withValues(alpha: 0.06), Offset(size.width * 0.6 + 50 * math.sin(t * math.pi * 1.5), size.height * 0.7)),
     ];
     for (final b in bubbles) {
       paint.color = b.color;
@@ -539,7 +539,7 @@ class _AboutCardState extends State<AboutCard> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12.withOpacity(0.08),
+            color: Colors.black12.withValues(alpha: 0.08),
             blurRadius: _expanded ? 18 : 8,
             offset: const Offset(0, 6),
           ),
@@ -727,7 +727,7 @@ class _ChatbotEmbedState extends State<ChatbotEmbed> {
                         decoration: BoxDecoration(
                           color: m.isUser ? const Color(0xFF0F766E) : Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          boxShadow: [BoxShadow(color: Colors.black12.withOpacity(0.07), blurRadius: 6, offset: const Offset(0, 3))],
+                          boxShadow: [BoxShadow(color: Colors.black12.withValues(alpha: 0.07), blurRadius: 6, offset: const Offset(0, 3))],
                           border: m.isUser ? null : Border.all(color: Colors.grey.shade200),
                         ),
                         child: Text(m.text, style: TextStyle(color: m.isUser ? Colors.white : Colors.black87)),

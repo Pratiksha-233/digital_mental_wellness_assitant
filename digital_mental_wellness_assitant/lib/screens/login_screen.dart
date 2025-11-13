@@ -131,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         const SnackBar(content: Text('Google Sign-In successful!')),
       );
 
+      // Use named route which now maps to HomeScreen
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

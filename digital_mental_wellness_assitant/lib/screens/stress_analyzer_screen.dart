@@ -126,9 +126,9 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen> with Ticker
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(18),
-                      boxShadow: [BoxShadow(color: Colors.black12.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: Colors.black12.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
                     ),
                     child: Row(children: [
                       const Icon(Icons.psychology_alt, color: Colors.teal, size: 40),
@@ -243,7 +243,7 @@ class _QuestionTile extends StatelessWidget {
   final String question;
   final int value; // 0..4
   final ValueChanged<int> onChanged;
-  const _QuestionTile({Key? key, required this.question, required this.value, required this.onChanged}) : super(key: key);
+  const _QuestionTile({required this.question, required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +269,7 @@ class _QuestionTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Center(
-                    child: Text('${i}', style: TextStyle(color: i <= value ? Colors.white : Colors.black54, fontSize: 12)),
+                    child: Text('$i', style: TextStyle(color: i <= value ? Colors.white : Colors.black54, fontSize: 12)),
                   ),
                 ),
               ),
@@ -300,7 +300,7 @@ class _StressGraphPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     final paintFill = Paint()
-      ..shader = LinearGradient(colors: [Colors.teal.withOpacity(0.25), Colors.teal.withOpacity(0.05)], begin: Alignment.topCenter, end: Alignment.bottomCenter).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      ..shader = LinearGradient(colors: [Colors.teal.withValues(alpha: 0.25), Colors.teal.withValues(alpha: 0.05)], begin: Alignment.topCenter, end: Alignment.bottomCenter).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
     final pathFill = Path();

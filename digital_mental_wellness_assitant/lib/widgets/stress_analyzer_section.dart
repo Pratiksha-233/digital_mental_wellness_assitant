@@ -135,7 +135,7 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection> with Tick
                   Switch(
                     value: _remindersOn,
                     onChanged: (v) => setState(() => _remindersOn = v),
-                    activeColor: Colors.white,
+                    activeThumbColor: Colors.white,
                     activeTrackColor: Colors.white24,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -258,7 +258,7 @@ class _SAQuestionTile extends StatelessWidget {
   final String question;
   final int value; // 0..4
   final ValueChanged<int> onChanged;
-  const _SAQuestionTile({Key? key, required this.question, required this.value, required this.onChanged}) : super(key: key);
+  const _SAQuestionTile({required this.question, required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +315,7 @@ class _SAStressGraphPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     final paintFill = Paint()
-      ..shader = LinearGradient(colors: [Colors.teal.withOpacity(0.25), Colors.teal.withOpacity(0.05)], begin: Alignment.topCenter, end: Alignment.bottomCenter).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      ..shader = LinearGradient(colors: [Colors.teal.withValues(alpha: 0.25), Colors.teal.withValues(alpha: 0.05)], begin: Alignment.topCenter, end: Alignment.bottomCenter).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
     final pathFill = Path();

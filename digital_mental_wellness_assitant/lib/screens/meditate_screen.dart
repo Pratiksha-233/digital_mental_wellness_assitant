@@ -49,17 +49,31 @@ class MeditateScreen extends StatelessWidget {
           const Text('Find your calm through guided breathing exercises', style: TextStyle(color: Colors.black54)),
           const SizedBox(height: 18),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _exerciseCard(context, color: Colors.blue, title: 'Box Breathing', desc: 'A calming technique to reduce stress and anxiety', duration: '16s per cycle')),
-                const SizedBox(width: 12),
-                Expanded(child: _exerciseCard(context, color: Colors.purple, title: '4-7-8 Breathing', desc: 'Perfect for falling asleep and deep relaxation', duration: '19s per cycle')),
-                const SizedBox(width: 12),
-                Expanded(child: _exerciseCard(context, color: Colors.green, title: 'Calm Breathing', desc: 'Simple and effective for everyday stress relief', duration: '10s per cycle')),
-              ],
-            ),
+            constraints: const BoxConstraints(maxWidth: 1080),
+            child: LayoutBuilder(builder: (context, box) {
+              // Decide card width based on available width: 3 columns above ~1000, 2 above ~680, else 1.
+              final double w = box.maxWidth;
+              int columns;
+              if (w >= 1000) {
+                columns = 3;
+              } else if (w >= 680) {
+                columns = 2;
+              } else {
+                columns = 1;
+              }
+              final double cardWidth = (w - (columns - 1) * 24) / columns;
+              final cards = [
+                _exerciseCard(context, color: Colors.blue, title: 'Box Breathing', desc: 'A calming technique to reduce stress and anxiety', duration: '16s per cycle'),
+                _exerciseCard(context, color: Colors.purple, title: '4-7-8 Breathing', desc: 'Perfect for falling asleep and deep relaxation', duration: '19s per cycle'),
+                _exerciseCard(context, color: Colors.green, title: 'Calm Breathing', desc: 'Simple and effective for everyday stress relief', duration: '10s per cycle'),
+              ];
+              return Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 24,
+                runSpacing: 24,
+                children: cards.map((c) => SizedBox(width: cardWidth.clamp(260, 360), child: c)).toList(),
+              );
+            }),
           ),
         ]),
       ),
