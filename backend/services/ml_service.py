@@ -8,19 +8,13 @@ class MLService:
         model_path = "models/sentiment_model.h5"
         tokenizer_path = "models/tokenizer.pkl"
         encoder_path = "models/label_encoder.pkl"
-
         print("🔄 Loading model and preprocessing files...")
         self.model = load_model(model_path)
-
         with open(tokenizer_path, "rb") as f:
             self.tokenizer = pickle.load(f)
         with open(encoder_path, "rb") as f:
             self.label_encoder = pickle.load(f)
-
-        # ✅ Add this line here
-        self.max_len = 100   # Use the same number you used in training
-
-        # (Optional) Label map
+        self.max_len = 100  
         self.label_map = {
             0: "Sadness",
             1: "Joy",
@@ -29,7 +23,6 @@ class MLService:
             4: "Fear",
             5: "Surprise"
         }
-
         print("✅ Model, tokenizer, and encoder loaded successfully!")
 
     def predict_emotion(self, text):

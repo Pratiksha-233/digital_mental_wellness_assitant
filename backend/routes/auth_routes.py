@@ -43,13 +43,15 @@ def register():
     new_user = cursor.fetchone()
 
     cursor.close()
+    user_id = cursor.lastrowid  # get the ID of the inserted user
     conn.close()
 
     return jsonify({
-        'status': 'success',
-        'message': 'User registered successfully',
-        'user_id': user['user_id']  # includes 'id', 'name', 'email'
-    }), 201
+         'status': 'success',
+         'message': 'User registered successfully',
+         'user_id': user_id
+        }), 201
+
 
 
 @auth_bp.route('/login', methods=['POST'])

@@ -27,8 +27,10 @@ class _JournalScreenState extends State<JournalScreen> {
 
     try {
       final result = await _api.predictEmotion(_controller.text, widget.userId);
+      if (!mounted) return;
       setState(() => _emotion = result['emotion']);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error analyzing emotion: $e')),
       );
