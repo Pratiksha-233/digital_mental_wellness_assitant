@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:lottie/lottie.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -21,6 +23,9 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   late final Animation<double> _fadeIn;
   late final Animation<Offset> _titleOffset;
   late final Animation<double> _titleFade;
+  
+  String? _lastMood;
+  String? _lastMoodTime;
 
   @override
   void initState() {
@@ -35,6 +40,24 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     _titleOffset = Tween<Offset>(begin: const Offset(0, 0.10), end: Offset.zero)
         .animate(CurvedAnimation(parent: _titleCtrl, curve: Curves.easeOut));
     _titleFade = CurvedAnimation(parent: _titleCtrl, curve: Curves.easeIn);
+    
+    _loadSavedMood();
+  }
+  
+  Future<void> _loadSavedMood() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final mood = prefs.getString('lastMood');
+      final time = prefs.getString('lastMoodTime');
+      if (mounted) {
+        setState(() {
+          _lastMood = mood;
+          _lastMoodTime = time;
+        });
+      }
+    } catch (e) {
+      // Silently fail if preference loading fails
+    }
   }
 
   @override
@@ -49,6 +72,30 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
     final ctx = key.currentContext;
     if (ctx == null) return;
     Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  }
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        // The _RootRouter will handle the auth state change and show LandingPage
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Widget _navButton(String label, VoidCallback onTap) {
@@ -188,7 +235,7 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                                 _ctaButton(text: 'Login', onPressed: () => Navigator.pushNamed(context, '/login'), primary: true),
                                 _ctaButton(text: 'Register', onPressed: () => Navigator.pushNamed(context, '/register'), primary: false),
                                 TextButton(
-                                  onPressed: () => Navigator.pushNamed(context, '/mood'),
+                                  onPressed: null,
                                   child: const Text('How are you feeling today?'),
                                 ),
                               ]),
@@ -374,10 +421,10 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
                     const Text('Our Services', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Color(0xFF0F766E))),
                     const SizedBox(height: 16),
                     Wrap(spacing: 16, runSpacing: 16, children: [
-                      ServiceCard(icon: Icons.chat_bubble, title: 'Therapy', subtitle: 'Chatbot', onTap: () => Navigator.pushNamed(context, '/chat')),
-                      ServiceCard(icon: Icons.monitor_heart, title: 'Stress', subtitle: 'Analyzer', onTap: () => Navigator.pushNamed(context, '/recommendations')),
-                      ServiceCard(icon: Icons.emoji_emotions, title: 'Mood', subtitle: 'Tracker', onTap: () => Navigator.pushNamed(context, '/mood')),
-                      ServiceCard(icon: Icons.spa_rounded, title: 'Self-care', subtitle: 'Tips', onTap: () => Navigator.pushNamed(context, '/selfcare')),
+                      const ServiceCard(icon: Icons.chat_bubble, title: 'Therapy', subtitle: 'Chatbot'),
+                      const ServiceCard(icon: Icons.monitor_heart, title: 'Stress', subtitle: 'Analyzer'),
+                      const ServiceCard(icon: Icons.emoji_emotions, title: 'Mood', subtitle: 'Tracker'),
+                      const ServiceCard(icon: Icons.spa_rounded, title: 'Self-care', subtitle: 'Tips'),
                     ]),
                     const SizedBox(height: 24),
                     Align(
@@ -410,59 +457,36 @@ class _LandingPageState extends State<LandingPage> with TickerProviderStateMixin
   }
 }
 
-class ServiceCard extends StatefulWidget {
+class ServiceCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
-  const ServiceCard({super.key, required this.icon, required this.title, required this.subtitle, required this.onTap});
-
-  @override
-  State<ServiceCard> createState() => _ServiceCardState();
-}
-
-class _ServiceCardState extends State<ServiceCard> {
-  bool _hover = false;
+  const ServiceCard({super.key, required this.icon, required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: AnimatedScale(
-        scale: _hover ? 1.03 : 1.0,
-        duration: const Duration(milliseconds: 160),
-        child: SizedBox(
-          width: 250,
-          child: Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            elevation: _hover ? 8 : 2,
-            child: InkWell(
-              onTap: widget.onTap,
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(color: const Color(0xFFE6FFFB), borderRadius: BorderRadius.circular(16), boxShadow: _hover ? [
-                        BoxShadow(color: const Color(0xFF99F6E4).withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 6))
-                      ] : null),
-                      child: Icon(widget.icon, color: const Color(0xFF0F766E), size: 34),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(widget.subtitle, style: const TextStyle(color: Colors.black54)),
-                  ],
-                ),
+    return SizedBox(
+      width: 250,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(color: const Color(0xFFE6FFFB), borderRadius: BorderRadius.circular(16)),
+                child: Icon(icon, color: const Color(0xFF0F766E), size: 34),
               ),
-            ),
+              const SizedBox(height: 12),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(subtitle, style: const TextStyle(color: Colors.black54)),
+            ],
           ),
         ),
       ),

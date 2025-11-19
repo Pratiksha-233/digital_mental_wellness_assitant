@@ -121,7 +121,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   /// ---------------------------
   Future<void> _signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn(
+        scopes: ['email', 'profile'],
+      ).signIn();
       if (googleUser == null) return; // User canceled
 
       final GoogleSignInAuthentication googleAuth =
@@ -140,8 +142,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         const SnackBar(content: Text('Google Sign-In successful!')),
       );
 
-      // Use named route which now maps to HomeScreen
-      Navigator.pushReplacementNamed(context, '/home');
       // After Firebase sign-in, exchange email for local user_id
       try {
         final user = FirebaseAuth.instance.currentUser;
@@ -161,7 +161,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         debugPrint('User lookup error: $e');
       }
 
-      // Use named route which now maps to HomeScreen
+      if (!mounted) return;
+
+      // Navigate to HomeScreen after successful sign-in
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

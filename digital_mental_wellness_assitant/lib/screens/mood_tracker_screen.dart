@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../services/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MoodTrackerScreen extends StatefulWidget {
   const MoodTrackerScreen({super.key});
@@ -170,6 +171,14 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     };
 
     try {
+      // Save to local storage first (shared_preferences)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('lastMood', moodLabel);
+      await prefs.setString('lastMoodTime', DateTime.now().toString());
+      await prefs.setInt('lastEnergyLevel', _energyLevel);
+      await prefs.setStringList('lastActivities', _selectedActivities.toList());
+      await prefs.setString('lastNote', _noteController.text);
+
       // Ensure we have a numeric `user_id` available — read from prefs or attempt automatic lookup via Firebase.
       int? storedId = await ProfileService.getUserId();
       if (storedId == null) {

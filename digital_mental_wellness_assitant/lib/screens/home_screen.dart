@@ -33,31 +33,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Widget _featureCard(BuildContext context,
-      {required IconData icon, required String title, required String subtitle, required VoidCallback onTap, Color? color}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: color ?? Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))]),
-        child: Row(children: [
-          Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, size: 28, color: Colors.teal)),
-          const SizedBox(width: 16),
-          Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(subtitle, style: const TextStyle(color: Colors.black54)),
-          ]))
-        ]),
-      ),
-    );
+  DateTime nowIST() => DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
+  DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  String _moodLabelToEmoji(String? label) {
+    if (label == null) return '😐';
+    switch (label.toLowerCase()) {
+      case 'amazing':
+        return '🤩';
+      case 'good':
+        return '🙂';
+      case 'okay':
+        return '😐';
+      case 'struggling':
+        return '😔';
+      case 'difficult':
+        return '😣';
+      default:
+        return '😐';
+    }
   }
 
   Widget _progressRow(String label, String value, Color color) => Row(children: [
@@ -99,27 +93,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return items[idx];
   }
 
-  DateTime nowIST() => DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
-  DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
-
-  String _moodLabelToEmoji(String? label) {
-    if (label == null) return '😐';
-    switch (label.toLowerCase()) {
-      case 'amazing':
-        return '🤩';
-      case 'good':
-        return '🙂';
-      case 'okay':
-        return '😐';
-      case 'struggling':
-        return '😔';
-      case 'difficult':
-        return '😣';
-      default:
-        return '😐';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -155,6 +128,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               leading: const Icon(Icons.library_books),
               title: const Text('Resources'),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResourcesScreen()))),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Edit Profile'),
+              onTap: () => Navigator.pushNamed(context, '/profile')),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                }
+              }),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -184,7 +170,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: ListView(children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return ListView(children: [
             Row(children: [
               Expanded(
                 child: FutureBuilder<String?>(
@@ -196,28 +184,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   },
                 ),
               ),
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/profile'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: ShapeDecoration(
-                      gradient: LinearGradient(colors: [Colors.purple.shade400, Colors.teal.shade400]),
-                      shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Colors.white24)),
-                      shadows: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 3))]),
-                  child: Row(children: const [Icon(Icons.person_outline, color: Colors.white, size: 18), SizedBox(width: 6), Text('Status', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))]),
-                ),
-              )
             ]),
             const SizedBox(height: 6),
             const Text('How are you feeling today?', style: TextStyle(color: Colors.black54)),
             const SizedBox(height: 18),
-            Row(children: [
-              Expanded(child: _featureCard(context, icon: Icons.monitor_heart, title: 'Check In', subtitle: 'Track your mood', onTap: () => Navigator.pushNamed(context, '/mood'), color: Colors.white)),
-              const SizedBox(width: 12),
-              Expanded(child: _featureCard(context, icon: Icons.menu_book, title: 'Journal', subtitle: 'Write your thoughts', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => JournalScreen(userId: widget.userId))), color: Colors.white)),
-              const SizedBox(width: 12),
-              Expanded(child: _featureCard(context, icon: Icons.self_improvement, title: 'Meditate', subtitle: 'Find your calm', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeditateScreen())), color: Colors.white)),
-            ]),
             const SizedBox(height: 20),
             Container(
               width: double.infinity,
@@ -257,37 +227,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         final emoji = byDate.containsKey(key) ? byDate[key] : (isPast ? '😐' : null);
 
                         return Expanded(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => Navigator.pushNamed(context, '/mood'),
-                            child: Column(children: [
-                              Text(dayLabel, style: const TextStyle(color: Colors.black54)),
-                              const SizedBox(height: 8),
-                              Expanded(
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: isToday ? Border.all(color: Colors.purple, width: 2) : null,
-                                  ),
-                                  child: Center(
-                                    child: isToday
-                                        ? Column(mainAxisSize: MainAxisSize.min, children: [
-                                            Text(emoji ?? '😐', style: const TextStyle(fontSize: 28)),
-                                            const SizedBox(height: 6),
-                                            const Text('Today', style: TextStyle(fontSize: 12, color: Colors.purple)),
-                                          ])
-                                        : (emoji != null
-                                            ? Text(emoji, style: const TextStyle(fontSize: 22))
-                                            : (isPast ? const Text('😐', style: TextStyle(fontSize: 12, color: Colors.black38)) : const Text('—', style: TextStyle(fontSize: 12, color: Colors.black26)))),
-                                  ),
+                          child: Column(children: [
+                            Text(dayLabel, style: const TextStyle(color: Colors.black54)),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: isToday ? Border.all(color: Colors.purple, width: 2) : null,
+                                ),
+                                child: Center(
+                                  child: isToday
+                                      ? Column(mainAxisSize: MainAxisSize.min, children: [
+                                          Text(emoji ?? '😐', style: const TextStyle(fontSize: 28)),
+                                          const SizedBox(height: 6),
+                                          const Text('Today', style: TextStyle(fontSize: 12, color: Colors.purple)),
+                                        ])
+                                      : (emoji != null
+                                          ? Text(emoji, style: const TextStyle(fontSize: 22))
+                                          : (isPast ? const Text('😐', style: TextStyle(fontSize: 12, color: Colors.black38)) : const Text('—', style: TextStyle(fontSize: 12, color: Colors.black26)))),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Text(dateNum.toString(), style: const TextStyle(color: Colors.black45))
-                            ]),
-                          ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(dateNum.toString(), style: const TextStyle(color: Colors.black45))
+                          ]),
                         );
                       }));
                     },
@@ -361,7 +327,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               }),
             ),
             const SizedBox(height: 24)
-          ]),
+          ]);
+            },
+          ),
         )
       ]),
     );
