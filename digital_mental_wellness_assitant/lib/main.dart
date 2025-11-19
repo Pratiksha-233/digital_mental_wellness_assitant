@@ -5,17 +5,46 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/register_screen.dart';
 import 'screens/recommendation_screen.dart';
-import 'screens/welcome_clean.dart';
+import 'screens/stress_analyzer_screen.dart';
+import 'screens/landing_page.dart';
+import 'screens/login_screen.dart';
+import 'screens/mood_tracker_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/self_care_tips_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/week_view_screen.dart';
+import 'screens/resources_screen.dart';
+import 'screens/meditation_breathing.dart';
+import 'services/profile_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class _GlobalEnterIntent extends Intent {
   const _GlobalEnterIntent();
 }
+
+String? _initialStoredDisplayName; // loaded before runApp
+int? _initialStoredUserId;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  // Ensure auth persistence on web so refresh keeps the session
+  try {
+    if (kIsWeb) {
+      await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    }
+  } catch (_) {}
+  // Preload stored profile name so first frame can use it (especially for web refresh where async delay is noticeable)
+  try {
+    _initialStoredDisplayName = await ProfileService.getDisplayName();
+  } catch (_) {}
+  try {
+    _initialStoredUserId = await ProfileService.getUserId();
+  } catch (_) {}
   runApp(const MentalWellnessApp());
 }
 
@@ -45,16 +74,66 @@ class MentalWellnessApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
             useMaterial3: true,
           ),
-          initialRoute: '/',
+          home: const _RootRouter(),
+          // Restore named routes so Navigator.pushNamed works from landing page & other screens
           routes: {
-            '/': (context) => const WelcomeClean(),
-            '/register': (context) => const RegisterScreen(),
-            '/home': (context) => const Placeholder(), // replace later
-            '/journal': (context) => const Placeholder(),
-            '/recommendations': (context) => const RecommendationScreen(),
+            '/login': (c) => const LoginScreen(),
+            '/register': (c) => const RegisterScreen(),
+            '/mood': (c) => const MoodTrackerScreen(),
+            '/chat': (c) => const ChatScreen(),
+            '/selfcare': (c) => const SelfCareTipsScreen(),
+            '/recommendations': (c) => const RecommendationScreen(),
+            '/stress': (c) => const StressAnalyzerScreen(),
+            '/profile': (c) => const ProfileScreen(),
+            '/week': (c) => const WeekViewScreen(),
+            '/resources': (c) => const ResourcesScreen(),
+            '/meditation': (c) => const MeditationBreathingPage(),
+            '/home': (c) {
+              final user = FirebaseAuth.instance.currentUser;
+              return HomeScreen(
+                userId: _initialStoredUserId ?? 0,
+                userName: _initialStoredDisplayName ?? user?.displayName ?? (user?.email?.split('@').first ?? 'User'),
+              );
+            }
           },
         ),
       ),
+    );
+  }
+}
+
+// Root router decides which initial screen to show based on auth state.
+class _RootRouter extends StatelessWidget {
+  const _RootRouter();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        // If Firebase user is present, treat as signed-in.
+        if (user != null) {
+          return HomeScreen(
+            userId: _initialStoredUserId ?? 0,
+            userName: _initialStoredDisplayName ?? user.displayName ?? (user.email?.split('@').first ?? 'User'),
+          );
+        }
+
+        // No Firebase user; but if a local `user_id` exists from prior backend login, treat as signed-in.
+        if (_initialStoredUserId != null) {
+          return HomeScreen(
+            userId: _initialStoredUserId!,
+            userName: _initialStoredDisplayName ?? 'User',
+          );
+        }
+
+        // Otherwise show landing/login.
+        return const LandingPage();
+      },
     );
   }
 }

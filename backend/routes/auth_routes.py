@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from services.db_service import get_connection
 import bcrypt
+from services.db_service import get_or_create_user_by_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -54,6 +55,15 @@ def register():
 
 
 
+
+
+
+
+
+
+
+
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -86,3 +96,87 @@ def login():
         'message': 'Login successful',
         'user_id': user['user_id']
     }), 200
+
+
+
+
+@auth_bp.route('/user/lookup_or_create', methods=['POST'])
+def lookup_or_create_user():
+    """Lookup a user by email, create if missing. Expects JSON: { email, name (optional) }"""
+    data = request.get_json() or {}
+    email = data.get('email')
+    name = data.get('name')
+    if not email:
+        return jsonify({'status': 'error', 'message': 'email is required'}), 400
+
+    user_id = get_or_create_user_by_email(email, name=name)
+    if not user_id:
+        return jsonify({'status': 'error', 'message': 'Could not create or find user'}), 500
+    return jsonify({'status': 'success', 'user_id': user_id}), 200
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

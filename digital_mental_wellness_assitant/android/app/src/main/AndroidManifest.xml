@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Camera permission for capturing profile photo -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="digital_mental_wellness_assitant"
         android:name="${applicationName}"

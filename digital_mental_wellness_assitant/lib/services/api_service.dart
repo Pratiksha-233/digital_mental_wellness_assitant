@@ -38,20 +38,48 @@ class ApiService {
     }
   }
 
-  /// Fetch all mood logs of a user (optional)
-  Future<List<dynamic>> getMoodLogs(int userId) async {
+  /// Fetch all mood logs of a user by firebase UID or local user id
+  Future<List<dynamic>> getMoodLogs({String? firebaseUid, int? userId}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/mood_logs/$userId'));
+      Uri uri;
+      if (firebaseUid != null) {
+        uri = Uri.parse('$baseUrl/mood/logs?firebase_uid=$firebaseUid');
+      } else if (userId != null) {
+        uri = Uri.parse('$baseUrl/mood/logs?user_id=$userId');
+      } else {
+        throw Exception('firebaseUid or userId required');
+      }
+
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return jsonDecode(response.body) as List<dynamic>;
       } else {
-        throw Exception('Failed to fetch mood logs');
+        throw Exception('Failed to fetch mood logs: ${response.statusCode}');
       }
     } catch (e) {
-      // Use debugPrint instead of print for production-friendly logging
       debugPrint('Error fetching mood logs: $e');
       return [];
+    }
+  }
+
+  /// Lookup (or create) a local numeric `user_id` by providing an email and optional name.
+  /// Returns the numeric user_id on success, or null on failure.
+  Future<int?> lookupOrCreateUserByEmail({required String email, String? name}) async {
+    try {
+      final uri = Uri.parse('$baseUrl/auth/user/lookup_or_create');
+      final body = jsonEncode({'email': email, if (name != null) 'name': name});
+      final resp = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        if (data.containsKey('user_id')) {
+          return int.tryParse(data['user_id'].toString()) ?? (data['user_id'] is int ? data['user_id'] as int : null);
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('lookupOrCreateUserByEmail error: $e');
+      return null;
     }
   }
 

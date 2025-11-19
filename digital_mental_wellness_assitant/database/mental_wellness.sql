@@ -6,8 +6,9 @@ USE mental_wellness;
 CREATE TABLE IF NOT EXISTS users (
 user_id INT AUTO_INCREMENT PRIMARY KEY,
 name VARCHAR(100) NOT NULL,
-email VARCHAR(100) UNIQUE NOT NULL,
-password_hash VARCHAR(255) NOT NULL,
+email VARCHAR(100) UNIQUE NULL,
+firebase_uid VARCHAR(255),
+password_hash VARCHAR(255) NULL,
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,6 +18,10 @@ log_id INT AUTO_INCREMENT PRIMARY KEY,
 user_id INT,
 text_entry TEXT,
 predicted_emotion VARCHAR(50),
+mood_label VARCHAR(50),
+energy_level INT,
+activities TEXT,
+note TEXT,
 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );

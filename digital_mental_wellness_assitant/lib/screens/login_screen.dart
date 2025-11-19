@@ -7,6 +7,10 @@ import 'home_screen.dart';
 import 'register_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/profile_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../utils/constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -81,10 +85,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login successful!')),
       );
+      // store user_id locally for app flows
+      try {
+        final id = res['user_id'];
+        if (id != null) await ProfileService.setUserId(int.parse(id.toString()));
+      } catch (_) {}
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(userId: res['user_id']),
+          builder: (context) => HomeScreen(userId: res['user_id'], userName: (res['name'] ?? '').toString()),
         ),
       );
     } else {
@@ -131,6 +140,28 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         const SnackBar(content: Text('Google Sign-In successful!')),
       );
 
+      // Use named route which now maps to HomeScreen
+      Navigator.pushReplacementNamed(context, '/home');
+      // After Firebase sign-in, exchange email for local user_id
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        final email = user?.email;
+        final name = user?.displayName;
+        if (email != null) {
+          final uri = Uri.parse('$baseUrl/auth/user/lookup_or_create');
+          final resp = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode({'email': email, 'name': name ?? ''})).timeout(const Duration(seconds: 6));
+          if (resp.statusCode == 200) {
+            final data = jsonDecode(resp.body);
+            final id = data['user_id'];
+            if (id != null) await ProfileService.setUserId(int.parse(id.toString()));
+          }
+        }
+      } catch (e) {
+        // ignore — if lookup fails, user must set id manually
+        debugPrint('User lookup error: $e');
+      }
+
+      // Use named route which now maps to HomeScreen
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
