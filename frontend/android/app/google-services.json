@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "979760746165",
+    "project_id": "digital-mental-wellness-assist",
+    "storage_bucket": "digital-mental-wellness-assist.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979760746165:android:af588d8384a387d9a478fc",
+        "android_client_info": {
+          "package_name": "com.example.digital_mental_wellness_assitant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDK3PpkrtjvLhc51AMCDcU_ySS09gB1BlI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
