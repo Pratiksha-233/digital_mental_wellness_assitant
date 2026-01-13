@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class MeditationBreathingPage extends StatefulWidget {
-  const MeditationBreathingPage({Key? key}) : super(key: key);
+  const MeditationBreathingPage({super.key});
 
   @override
   State<MeditationBreathingPage> createState() => _MeditationBreathingPageState();
@@ -256,7 +256,7 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
 
 class BasicExerciseDemo extends StatefulWidget {
   final String title;
-  const BasicExerciseDemo({Key? key, required this.title}) : super(key: key);
+  const BasicExerciseDemo({super.key, required this.title});
 
   @override
   State<BasicExerciseDemo> createState() => _BasicExerciseDemoState();
@@ -293,7 +293,7 @@ class _BasicExerciseDemoState extends State<BasicExerciseDemo> with SingleTicker
 
 class BoxBreathingExercise extends StatefulWidget {
   final int initialCount;
-  const BoxBreathingExercise({Key? key, required this.initialCount}) : super(key: key);
+  const BoxBreathingExercise({super.key, required this.initialCount});
 
   @override
   State<BoxBreathingExercise> createState() => _BoxBreathingExerciseState();
@@ -521,7 +521,7 @@ Widget _glassButton({required IconData icon, required String label, required Voi
 
 // 4-7-8 Breathing Exercise (Inhale 4s, Hold 7s, Exhale 8s)
 class FourSevenEightBreathingExercise extends StatefulWidget {
-  const FourSevenEightBreathingExercise({Key? key}) : super(key: key);
+  const FourSevenEightBreathingExercise({super.key});
 
   @override
   State<FourSevenEightBreathingExercise> createState() => _FourSevenEightBreathingExerciseState();
@@ -529,7 +529,7 @@ class FourSevenEightBreathingExercise extends StatefulWidget {
 
 // Calm Breathing Exercise (simple 5s in, 5s out)
 class CalmBreathingExercise extends StatefulWidget {
-  const CalmBreathingExercise({Key? key}) : super(key: key);
+  const CalmBreathingExercise({super.key});
 
   @override
   State<CalmBreathingExercise> createState() => _CalmBreathingExerciseState();

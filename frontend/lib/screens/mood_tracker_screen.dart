@@ -274,7 +274,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             final activities = (row['activities'] ?? '').toString();
             return ListTile(
               title: Text(row['mood_label'] ?? 'Unknown'),
-              subtitle: Text('Energy: ${row['energy_level'] ?? '-'} • ${activities}'),
+              subtitle: Text('Energy: ${row['energy_level'] ?? '-'} • $activities'),
               trailing: Text((row['timestamp'] ?? '').toString().split('.').first),
             );
           },
