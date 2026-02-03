@@ -1,0 +1,10 @@
+flask
+flask-cors
+mysql-connector-python
+python-dotenv
+tensorflow
+scikit-learn
+gunicorn
+nltk
+opencv-python
+pillow
