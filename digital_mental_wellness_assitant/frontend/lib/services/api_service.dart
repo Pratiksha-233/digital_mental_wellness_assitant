@@ -8,7 +8,7 @@ class ApiService {
   Future<Map<String, dynamic>> predictEmotion(String text, int userId) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/mood/predict'),
+        Uri.parse('$apiBaseUrl/mood/predict'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'text': text, 'user_id': userId}),
       );
@@ -28,7 +28,7 @@ class ApiService {
 
   /// Get recommendations based on detected emotion
    Future<List<dynamic>> getRecommendations(String emotion) async {
-    final response = await http.get(Uri.parse('$baseUrl/recommend/$emotion'));
+    final response = await http.get(Uri.parse('$apiBaseUrl/recommend/$emotion'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -43,9 +43,9 @@ class ApiService {
     try {
       Uri uri;
       if (firebaseUid != null) {
-        uri = Uri.parse('$baseUrl/mood/logs?firebase_uid=$firebaseUid');
+        uri = Uri.parse('$apiBaseUrl/mood/logs?firebase_uid=$firebaseUid');
       } else if (userId != null) {
-        uri = Uri.parse('$baseUrl/mood/logs?user_id=$userId');
+        uri = Uri.parse('$apiBaseUrl/mood/logs?user_id=$userId');
       } else {
         throw Exception('firebaseUid or userId required');
       }
@@ -67,7 +67,7 @@ class ApiService {
   /// Returns the numeric user_id on success, or null on failure.
   Future<int?> lookupOrCreateUserByEmail({required String email, String? name}) async {
     try {
-      final uri = Uri.parse('$baseUrl/auth/user/lookup_or_create');
+      final uri = Uri.parse('$apiBaseUrl/auth/user/lookup_or_create');
       final body = jsonEncode({'email': email, if (name != null) 'name': name});
       final resp = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
       if (resp.statusCode == 200) {
@@ -92,7 +92,7 @@ class ApiService {
   /// Fetch progress counts for a user (mood_checkins, journal_entries, days_active)
   Future<Map<String, dynamic>> getProgress({required int userId}) async {
     try {
-      final uri = Uri.parse('$baseUrl/recommend/progress?user_id=$userId');
+      final uri = Uri.parse('$apiBaseUrl/recommend/progress?user_id=$userId');
       final resp = await http.get(uri);
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;

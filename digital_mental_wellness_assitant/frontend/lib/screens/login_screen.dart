@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         final email = user?.email;
         final name = user?.displayName;
         if (email != null) {
-          final uri = Uri.parse('$baseUrl/auth/user/lookup_or_create');
+          final uri = Uri.parse('$apiBaseUrl/auth/user/lookup_or_create');
           final resp = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode({'email': email, 'name': name ?? ''})).timeout(const Duration(seconds: 6));
           if (resp.statusCode == 200) {
             final data = jsonDecode(resp.body);
@@ -170,12 +170,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: Container(
-            width: 400,
-            padding: const EdgeInsets.only(top: 24, bottom: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 24, bottom: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 // Google Logo
                 Image.asset('assets/google_logo.png', height: 28),
                 const SizedBox(height: 16),
@@ -264,7 +266,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     style: TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -279,27 +282,35 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   Widget build(BuildContext context) {
       return Scaffold(
         backgroundColor: const Color(0xFFE0F2F1), // Light teal background
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Container(
-              width: 450, // Fixed width for card look
-              padding: const EdgeInsets.all(40.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 520;
+              final cardPadding = isCompact ? 24.0 : 40.0;
+
+              return Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: isCompact ? 20.0 : 24.0, vertical: 24.0),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(cardPadding),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                    // Illustration
                    SizedBox(
                       height: 150,
@@ -475,9 +486,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         ),
                       ],
                    ),
-                ],
-              ),
-            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       );

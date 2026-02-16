@@ -4,6 +4,7 @@ from . import config
 
 
 
+
 from .routes.auth_routes import auth_bp
 from .routes.mood_routes import mood_bp
 from .routes.recommend_routes import rec_bp
@@ -12,6 +13,7 @@ from .routes.realtimedetection_routes import detection_bp
 
 
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = config.SECRET_KEY
 CORS(app)
 

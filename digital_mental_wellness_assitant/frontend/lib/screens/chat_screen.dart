@@ -72,6 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
 	@override
 	Widget build(BuildContext context) {
+		final bubbleMaxWidth = (MediaQuery.of(context).size.width * 0.86).clamp(280.0, 720.0);
 		return Scaffold(
 			appBar: AppBar(title: const Text('Therapy Chatbot')),
 			body: Column(
@@ -90,7 +91,7 @@ class _ChatScreenState extends State<ChatScreen> {
 										child: Container(
 											margin: const EdgeInsets.symmetric(vertical: 6),
 											padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-											constraints: const BoxConstraints(maxWidth: 720),
+											constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
 											decoration: BoxDecoration(
 												color: m.isUser ? const Color(0xFF0F766E) : Colors.white,
 												borderRadius: BorderRadius.circular(14),

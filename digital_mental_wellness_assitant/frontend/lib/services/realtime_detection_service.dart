@@ -1,8 +1,9 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../utils/constants.dart';
 
 class RealtimeDetectionService {
-  static const String _baseUrl = 'http://127.0.0.1:5000/api/detection';
+  static String get _baseUrl => detectionBaseUrl;
 
   /// Predict emotion from text
   static Future<Map<String, dynamic>> predictEmotion(String text) async {

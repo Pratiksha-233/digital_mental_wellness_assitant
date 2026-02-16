@@ -5,6 +5,7 @@ import '../services/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/constants.dart';
 
 class MoodTrackerScreen extends StatefulWidget {
   const MoodTrackerScreen({super.key});
@@ -161,8 +162,6 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       return;
     }
 
-    final backendBase = const String.fromEnvironment('BACKEND_BASE', defaultValue: 'http://localhost:5000');
-
     final payload = {
       'mood_label': moodLabel,
       'energy_level': _energyLevel,
@@ -204,7 +203,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
 
       payload['user_id'] = storedId;
 
-      final uri = Uri.parse('$backendBase/api/mood/log');
+      final uri = Uri.parse('$apiBaseUrl/mood/log');
       final resp = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode(payload)).timeout(const Duration(seconds: 8));
       if (resp.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mood saved successfully')));

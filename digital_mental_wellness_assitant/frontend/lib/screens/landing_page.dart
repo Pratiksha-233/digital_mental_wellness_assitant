@@ -221,6 +221,12 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
     );
   }
 
+  double _boundedWidth(BuildContext context, double maxWidth) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final available = screenWidth - 48;
+    return math.min(maxWidth, available > 0 ? available : screenWidth);
+  }
+
   // --- Sections ---
 
   // ignore: unused_element
@@ -349,7 +355,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: SizedBox(
-          width: 800,
+          width: _boundedWidth(context, 800),
           child: AspectRatio(
             aspectRatio: 16 / 9,
             child: Container(
@@ -485,7 +491,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
   }) {
     return HoverableCard(
       child: Container(
-        width: 280,
+        width: _boundedWidth(context, 280),
         height: 320,
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
@@ -718,7 +724,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
   }) {
     return HoverableCard(
       child: Container(
-        width: 350,
+        width: _boundedWidth(context, 350),
         height: 380,
         padding: const EdgeInsets.all(36),
         decoration: BoxDecoration(
@@ -876,7 +882,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
   }) {
     return HoverableCard(
       child: Container(
-        width: 320,
+        width: _boundedWidth(context, 320),
         padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -947,7 +953,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
             crossAxisAlignment: WrapCrossAlignment.start,
             children: [
               SizedBox(
-                width: 320,
+                width: _boundedWidth(context, 320),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
