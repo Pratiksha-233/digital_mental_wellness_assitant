@@ -1,5 +1,11 @@
 from flask import Blueprint, request, jsonify
-from ..services.ml_service import ml_service
+import sys
+from pathlib import Path
+
+# Ensure project root (backend) is on sys.path so services can be imported
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from services.ml_service import ml_service
 import base64
 import numpy as np
 from io import BytesIO

@@ -1,7 +1,11 @@
 from flask import Blueprint, request, jsonify
-from ..services.ml_service import ml_service
-from ..services.db_service import insert_journal_entry, get_recommendation_for
-from ..services.db_service import insert_mood_log, get_mood_logs_by_user, get_journal_entries_by_user
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from services.ml_service import ml_service
+from services.db_service import insert_journal_entry, get_recommendation_for, insert_mood_log, get_mood_logs_by_user, get_journal_entries_by_user
 
 
 mood_bp = Blueprint('mood', __name__)

@@ -1,5 +1,11 @@
 from flask import Blueprint, jsonify, request
-from ..services.db_service import get_recommendation_for, get_user_progress
+import sys
+from pathlib import Path
+
+# Ensure project root (backend) is on sys.path so services can be imported
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from services.db_service import get_recommendation_for, get_user_progress
 
 
 rec_bp = Blueprint('recommend', __name__)

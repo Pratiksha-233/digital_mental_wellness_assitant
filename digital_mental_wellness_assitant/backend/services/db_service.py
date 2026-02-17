@@ -1,19 +1,38 @@
+import sys
+from pathlib import Path
 import mysql.connector
 from mysql.connector import Error
-from .. import config
+
+# Import `config` robustly: prefer absolute import when running as a script,
+# otherwise fall back to package-relative import when running as a package.
+try:
+    import config
+except Exception:
+    try:
+        from .. import config
+    except Exception:
+        # As a last resort, ensure backend package root is on sys.path then import
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+        import config
 
 
 
 def get_connection():
+    """Create and return a configured MySQL connection.
+
+    Returns a mysql.connector connection or None on failure.
+    """
     try:
         conn = mysql.connector.connect(
-            host=config.DB_CONFIG['host'],
-            user=config.DB_CONFIG['user'],
-            password=config.DB_CONFIG['password'],
-            database=config.DB_CONFIG['database']
+            host=config.DB_CONFIG.get('host', 'localhost'),
+            user=config.DB_CONFIG.get('user', 'root'),
+            password=config.DB_CONFIG.get('password', 'nayan@337'),
+            database=config.DB_CONFIG.get('database', 'mental_wellness'),
+            port=config.DB_CONFIG.get('port', 3306),
+            charset=config.DB_CONFIG.get('charset', 'utf8mb4')
         )
         if conn.is_connected():
-            print("✅ Database connected successfully.")
+            conn.autocommit = config.DB_CONFIG.get('autocommit', False)
             return conn
         else:
             print("❌ Database connection failed.")

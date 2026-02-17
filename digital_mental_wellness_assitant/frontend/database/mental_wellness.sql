@@ -59,3 +59,21 @@ activity_type VARCHAR(50),
 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+
+CREATE TABLE IF NOT EXISTS stress_logs (
+	stress_id INT AUTO_INCREMENT PRIMARY KEY,
+	user_id INT NOT NULL,
+	stress_level FLOAT CHECK (stress_level >= 0 AND stress_level <= 100),
+	stress_category VARCHAR(50),
+	primary_emotion VARCHAR(50),
+	energy_level INT,
+	mood_pattern TEXT,
+	activity_frequency INT,
+	timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	
+	FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+	INDEX idx_user_id (user_id),
+	INDEX idx_timestamp (timestamp),
+	INDEX idx_stress_level (stress_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

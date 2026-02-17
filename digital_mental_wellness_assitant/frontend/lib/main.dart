@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'screens/register_screen.dart';
 import 'screens/recommendation_screen.dart';
 import 'screens/stress_analyzer_screen.dart';
+import 'screens/stress_analyzer_screen_new.dart';
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
 import 'screens/mood_tracker_screen.dart';
@@ -84,7 +85,9 @@ class MentalWellnessApp extends StatelessWidget {
             '/chat': (c) => const ChatScreen(),
             '/selfcare': (c) => const SelfCareTipsScreen(),
             '/recommendations': (c) => const RecommendationScreen(),
-            '/stress': (c) => const StressAnalyzerScreen(),
+            // Default to user_id=1 for local testing when no stored user id is available
+            '/stress': (c) => StressAnalyzerScreenNew(userId: _initialStoredUserId ?? 1),
+            '/stress-old': (c) => const StressAnalyzerScreen(),
             '/profile': (c) => const ProfileScreen(),
             '/week': (c) => const WeekViewScreen(),
             '/resources': (c) => const ResourcesScreen(),

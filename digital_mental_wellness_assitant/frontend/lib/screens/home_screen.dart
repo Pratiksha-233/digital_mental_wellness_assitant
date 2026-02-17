@@ -184,6 +184,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 title: const Text('Meditate'),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeditateScreen()))),
             ListTile(
+              leading: const Icon(Icons.show_chart),
+              title: const Text('Stress Analyzer'),
+              onTap: () => Navigator.pushNamed(context, '/stress')),
+            ListTile(
               leading: const Icon(Icons.psychology),
               title: const Text('Realtime Face Detection'),
               onTap: () => Navigator.pushNamed(context, '/detection')),

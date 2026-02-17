@@ -1,6 +1,12 @@
 from flask import Blueprint, request, jsonify
-from ..services.ml_service import ml_service
-from ..services.db_service import insert_journal_entry
+import sys
+from pathlib import Path
+
+# Ensure project root (backend) is on sys.path so services can be imported
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from services.ml_service import ml_service
+from services.db_service import insert_journal_entry
 
 chat_bp = Blueprint('chat', __name__)
 

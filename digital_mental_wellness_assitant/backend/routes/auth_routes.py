@@ -1,7 +1,11 @@
 from flask import Blueprint, request, jsonify
-from ..services.db_service import get_connection
 import bcrypt
-from ..services.db_service import get_or_create_user_by_email
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from services.db_service import get_connection, get_or_create_user_by_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -43,8 +47,9 @@ def register():
     cursor.execute("SELECT user_id, name, email FROM users WHERE email = %s", (email,))
     new_user = cursor.fetchone()
 
+    # retrieve the id of inserted user
+    user_id = cursor.lastrowid
     cursor.close()
-    user_id = cursor.lastrowid  # get the ID of the inserted user
     conn.close()
 
     return jsonify({
