@@ -55,7 +55,8 @@ def register():
     return jsonify({
          'status': 'success',
          'message': 'User registered successfully',
-         'user_id': user_id
+         'user_id': user_id,
+         'name': name
         }), 201
 
 
@@ -86,11 +87,12 @@ def login():
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
         return jsonify({'status': 'error', 'message': 'Invalid password'}), 401
 
-    # ✅ Return user details (including id)
+    # ✅ Return user details (including id and name)
     return jsonify({
         'status': 'success',
         'message': 'Login successful',
-        'user_id': user['user_id']
+        'user_id': user['user_id'],
+        'name': user.get('name')  # send back stored display name
     }), 200
 
 

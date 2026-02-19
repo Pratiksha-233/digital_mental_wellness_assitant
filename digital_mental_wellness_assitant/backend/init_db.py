@@ -95,7 +95,7 @@ def main():
         conn = mysql.connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'nayan@337'),
+            password=config.DB_CONFIG.get('password', 'Pra@#ti825'),
             database=os.getenv('DB_NAME', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')

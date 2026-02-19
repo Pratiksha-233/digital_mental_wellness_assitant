@@ -11,15 +11,7 @@ try:
 except ImportError:
     import config
 
-<<<<<<< HEAD
-
-
-from .routes.auth_routes import auth_bp
-from .routes.mood_routes import mood_bp
-from .routes.recommend_routes import rec_bp
-from .routes.chat_routes import chat_bp
-from .routes.realtimedetection_routes import detection_bp
-=======
+# import blueprints, accounting for module path differences
 try:
     from .routes.auth_routes import auth_bp
     from .routes.mood_routes import mood_bp
@@ -28,13 +20,13 @@ try:
     from .routes.realtimedetection_routes import detection_bp
     from .routes.stress_routes import stress_bp
 except ImportError:
+    # fallback when running as script without package context
     from routes.auth_routes import auth_bp
     from routes.mood_routes import mood_bp
     from routes.recommend_routes import rec_bp
     from routes.chat_routes import chat_bp
     from routes.realtimedetection_routes import detection_bp
     from routes.stress_routes import stress_bp
->>>>>>> 7e55bbb5 (stress level)
 
 
 app = Flask(__name__)

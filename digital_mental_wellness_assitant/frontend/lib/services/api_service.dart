@@ -108,7 +108,8 @@ class ApiService {
   /// Generic GET request method for any endpoint
   Future<Map<String, dynamic>?> get(String endpoint) async {
     try {
-      final url = Uri.parse('$baseUrl$endpoint');
+      // use the globally defined apiBaseUrl constant
+      final url = Uri.parse('$apiBaseUrl$endpoint');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;

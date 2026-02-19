@@ -42,6 +42,45 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
     );
   }
 
+  /// show a dialog with more information about the application/team
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('About MindWell'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: const [
+                Text('MindWell was born from a simple mission: to make mental wellness accessible to everyone. We believe that taking care of your mind should be as routine as brushing your teeth.'),
+                SizedBox(height: 12),
+                Text('Our team of psychologists and developers work together to bring you scientifically-backed tools in a friendly, easy-to-use package.'),
+                SizedBox(height: 12),
+                Text('Features include:'),
+                SizedBox(height: 8),
+                Text('• Mood tracking with weekly overview'),
+                Text('• Daily affirmations and progress summaries'),
+                Text('• Personal journaling space'),
+                Text('• Guided meditation sessions'),
+                Text('• Realtime emotion & stress detection using your camera'),
+                Text('• Customizable profile and local user ID storage'),
+                Text('• Data-backed recommendations and support resources'),
+                SizedBox(height: 12),
+                Text('These tools are designed to help you notice patterns, reflect on feelings, and build healthy habits for long-term emotional well-being.'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
@@ -598,7 +637,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                         ),
                         const SizedBox(height: 32),
                         TextButton.icon(
-                          onPressed: () {}, 
+                          onPressed: () => _showAboutDialog(context), 
                           icon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF009688)), 
                           label: const Text('Learn more about us', style: TextStyle(color: Color(0xFF009688), fontSize: 16, fontWeight: FontWeight.bold))
                         )
