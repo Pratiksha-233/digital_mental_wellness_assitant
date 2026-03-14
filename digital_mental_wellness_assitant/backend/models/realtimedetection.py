@@ -1,6 +1,14 @@
 import cv2
-from keras.models import model_from_json
-import numpy as np
+try:
+    from keras.models import model_from_json
+    KERAS_AVAILABLE = True
+except ImportError:
+    KERAS_AVAILABLE = False
+    model_from_json = None
+try:
+    import numpy as np
+except ImportError:
+    np = None
 import os
 from pathlib import Path
 
@@ -10,16 +18,20 @@ model_json_path = project_root / "emotiondetecter1.json"
 model_weights_path = project_root / "emotiondetecter1.h5"
 
 # Load emotion detection model
-try:
-    print(f"Loading model from: {model_json_path}")
-    with open(model_json_path, "r") as json_file:
-        model_json = json_file.read()
-    model = model_from_json(model_json)
-    model.load_weights(str(model_weights_path))
-    print("Emotion detection model loaded successfully")
-except Exception as e:
-    print(f"Error loading model: {e}")
+if KERAS_AVAILABLE:
+    try:
+        print(f"Loading model from: {model_json_path}")
+        with open(model_json_path, "r") as json_file:
+            model_json = json_file.read()
+        model = model_from_json(model_json)
+        model.load_weights(str(model_weights_path))
+        print("Emotion detection model loaded successfully")
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        model = None
+else:
     model = None
+    print("Keras not available, ML features disabled")
 
 # Load Haar Cascade for face detection
 haar_file = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
@@ -30,12 +42,16 @@ if face_cascade.empty():
 
 def extract_features(image):
     """Extract and preprocess features from face image"""
+    if np is None:
+        return None
     feature = np.array(image)
     feature = feature.reshape(1, 48, 48, 1)
     return feature / 255.0
 
 def predict_emotion_from_face(face_image):
     """Predict emotion from a face image"""
+    if np is None:
+        return "NumPy not available", 0.0
     if model is None:
         return "Model not loaded", 0.0
     

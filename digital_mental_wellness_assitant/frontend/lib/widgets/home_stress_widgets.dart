@@ -22,12 +22,10 @@ class QuickStressIndicator extends StatefulWidget {
 class _QuickStressIndicatorState extends State<QuickStressIndicator> {
   StressData? _stressData;
   bool _isLoading = true;
-  late DateTime _lastRefresh;
 
   @override
   void initState() {
     super.initState();
-    _lastRefresh = DateTime.now();
     _fetchStressData();
   }
 
@@ -36,10 +34,9 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
       // Import and use your ApiService
       // final api = StressApiService();
       // _stressData = await api.getStressLevel(userId: widget.userId);
-      
+
       setState(() {
         _isLoading = false;
-        _lastRefresh = DateTime.now();
       });
     } catch (e) {
       setState(() {
@@ -66,25 +63,23 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _getStressColor(_stressData?.stressLevel ?? 50).withOpacity(0.3),
+            color: _getStressColor(
+              _stressData?.stressLevel ?? 50,
+            ).withOpacity(0.3),
             width: 1.5,
           ),
         ),
         child: _isLoading
             ? const SizedBox(
                 height: 100,
-                child: Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               )
             : _stressData == null
-                ? const SizedBox(
-                    height: 100,
-                    child: Center(
-                      child: Text('Unable to load stress data'),
-                    ),
-                  )
-                : _buildStressContent(),
+            ? const SizedBox(
+                height: 100,
+                child: Center(child: Text('Unable to load stress data')),
+              )
+            : _buildStressContent(),
       ),
     );
   }
@@ -92,6 +87,117 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
   Widget _buildStressContent() {
     return Column(
       children: [
+        // Enhanced responsive decorative image at the top
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final imageHeight = constraints.maxWidth > 400 ? 120.0 : 100.0;
+            final borderRadius = constraints.maxWidth > 400 ? 16.0 : 12.0;
+
+            return Container(
+              height: imageHeight,
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadius),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: _getStressColor(
+                      _stressData?.stressLevel ?? 50,
+                    ).withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+                gradient: LinearGradient(
+                  colors: [
+                    _getStressColor(
+                      _stressData?.stressLevel ?? 50,
+                    ).withOpacity(0.1),
+                    Colors.white.withOpacity(0.8),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(borderRadius),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Subtle overlay for better text readability
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: imageHeight * 0.4,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.3),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Wellness badge overlay
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getStressColor(
+                              _stressData?.stressLevel ?? 50,
+                            ).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.self_improvement,
+                              color: _getStressColor(
+                                _stressData?.stressLevel ?? 50,
+                              ),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Wellness',
+                              style: TextStyle(
+                                color: _getStressColor(
+                                  _stressData?.stressLevel ?? 50,
+                                ),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +217,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                 Row(
                   children: [
                     Text(
-                      '${_stressData!.stressLevel.toStringAsFixed(1)}',
+                      _stressData!.stressLevel.toStringAsFixed(1),
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -121,10 +227,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                     const SizedBox(width: 4),
                     Text(
                       '/100',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                     ),
                   ],
                 ),
@@ -143,9 +246,14 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getStressColor(_stressData!.stressLevel).withOpacity(0.2),
+                    color: _getStressColor(
+                      _stressData!.stressLevel,
+                    ).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -193,7 +301,11 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildQuickInfoItem(
-                _stressData!.moodPattern == 'improving' ? '📈' : _stressData!.moodPattern == 'declining' ? '📉' : '➡️',
+                _stressData!.moodPattern == 'improving'
+                    ? '📈'
+                    : _stressData!.moodPattern == 'declining'
+                    ? '📉'
+                    : '➡️',
                 _stressData!.moodPattern,
                 'Trend',
               ),
@@ -216,10 +328,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-        ),
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
       ],
     );
   }
@@ -277,10 +386,7 @@ class StressAlertBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: _getCategoryColor().withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _getCategoryColor(),
-          width: 1.5,
-        ),
+        border: Border.all(color: _getCategoryColor(), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: _getCategoryColor().withOpacity(0.1),
@@ -294,10 +400,7 @@ class StressAlertBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                _getCategoryEmoji(),
-                style: const TextStyle(fontSize: 24),
-              ),
+              Text(_getCategoryEmoji(), style: const TextStyle(fontSize: 24)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -314,10 +417,7 @@ class StressAlertBanner extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       message,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.black87,
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.black87),
                     ),
                   ],
                 ),
@@ -367,12 +467,26 @@ class StressRecommendationChip extends StatelessWidget {
   });
 
   String _getIcon() {
-    if (recommendation.toLowerCase().contains('meditat')) return '🧘';
-    if (recommendation.toLowerCase().contains('exercise') || recommendation.toLowerCase().contains('physical')) return '🏃';
-    if (recommendation.toLowerCase().contains('sleep')) return '😴';
-    if (recommendation.toLowerCase().contains('breath')) return '🌬️';
-    if (recommendation.toLowerCase().contains('water')) return '💧';
-    if (recommendation.toLowerCase().contains('talk') || recommendation.toLowerCase().contains('friend')) return '👥';
+    if (recommendation.toLowerCase().contains('meditat')) {
+      return '🧘';
+    }
+    if (recommendation.toLowerCase().contains('exercise') ||
+        recommendation.toLowerCase().contains('physical')) {
+      return '🏃';
+    }
+    if (recommendation.toLowerCase().contains('sleep')) {
+      return '😴';
+    }
+    if (recommendation.toLowerCase().contains('breath')) {
+      return '🌬️';
+    }
+    if (recommendation.toLowerCase().contains('water')) {
+      return '💧';
+    }
+    if (recommendation.toLowerCase().contains('talk') ||
+        recommendation.toLowerCase().contains('friend')) {
+      return '👥';
+    }
     return '💡';
   }
 

@@ -8,7 +8,12 @@ This service computes customer stress levels based on:
 5. Historical data analysis
 """
 
-import numpy as np
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+    np = None
 from datetime import datetime, timedelta
 from mysql.connector import Error
 from . import db_service
@@ -175,7 +180,10 @@ class StressCalculationService:
                     weight = self.EMOTION_STRESS_WEIGHTS.get(emotion, 50)
                     stress_scores.append(weight)
             
-            avg_emotion_stress = np.mean(stress_scores) if stress_scores else 50.0
+            if NUMPY_AVAILABLE:
+                avg_emotion_stress = np.mean(stress_scores) if stress_scores else 50.0
+            else:
+                avg_emotion_stress = sum(stress_scores) / len(stress_scores) if stress_scores else 50.0
             return float(avg_emotion_stress)
             
         except Error as e:
@@ -213,7 +221,10 @@ class StressCalculationService:
                 weight = self.MOOD_STRESS_WEIGHTS.get(mood, 50)
                 mood_stress_scores.append(weight)
             
-            avg_mood_stress = np.mean(mood_stress_scores) if mood_stress_scores else 50.0
+            if NUMPY_AVAILABLE:
+                avg_mood_stress = np.mean(mood_stress_scores) if mood_stress_scores else 50.0
+            else:
+                avg_mood_stress = sum(mood_stress_scores) / len(mood_stress_scores) if mood_stress_scores else 50.0
             return float(avg_mood_stress)
             
         except Error as e:

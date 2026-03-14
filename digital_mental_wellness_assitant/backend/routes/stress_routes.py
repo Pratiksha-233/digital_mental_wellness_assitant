@@ -9,7 +9,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from services.stress_service import stress_service
+try:
+    from services.stress_service import stress_service
+except ImportError:
+    stress_service = None
 
 stress_bp = Blueprint('stress', __name__)
 
@@ -46,6 +49,9 @@ def calculate_stress():
         user_id = int(user_id)
     except ValueError:
         return jsonify({'error': 'invalid user_id (must be integer)'}), 400
+
+    if stress_service is None:
+        return jsonify({'error': 'Stress service not available'}), 503
     
     try:
         # Calculate stress level
@@ -292,6 +298,9 @@ def get_stress_recommendation():
         user_id = int(user_id)
     except ValueError:
         return jsonify({'error': 'invalid user_id'}), 400
+
+    if stress_service is None:
+        return jsonify({'error': 'Stress service not available'}), 503
     
     try:
         stress_data = stress_service.calculate_stress_level(user_id)

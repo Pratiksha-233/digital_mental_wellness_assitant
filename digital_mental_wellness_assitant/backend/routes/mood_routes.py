@@ -4,7 +4,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from services.ml_service import ml_service
+try:
+    from services.ml_service import ml_service
+    _ML_AVAILABLE = True
+except ImportError:
+    _ML_AVAILABLE = False
+    ml_service = None
 from services.db_service import insert_journal_entry, get_recommendation_for, insert_mood_log, get_mood_logs_by_user, get_journal_entries_by_user
 
 
@@ -19,6 +24,8 @@ def predict():
     if not text:
         return jsonify({'error': 'No text provided'}), 400
 
+    if not _ML_AVAILABLE:
+        return jsonify({'error': 'ML service not available'}), 503
 
     emotion = ml_service.predict_emotion(text)
     # store as a journal entry (text + predicted emotion)

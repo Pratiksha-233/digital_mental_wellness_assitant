@@ -8,7 +8,8 @@ class LandingPage extends StatefulWidget {
   State<LandingPage> createState() => _LandingPageStateFixed();
 }
 
-class _LandingPageStateFixed extends State<LandingPage> with TickerProviderStateMixin {
+class _LandingPageStateFixed extends State<LandingPage>
+    with TickerProviderStateMixin {
   final _homeKey = GlobalKey();
   final _featuresKey = GlobalKey();
   final _aboutKey = GlobalKey();
@@ -16,15 +17,14 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
   final ScrollController _scrollController = ScrollController();
 
   late final AnimationController _bgController;
-  
 
   @override
   void initState() {
     super.initState();
     _bgController = AnimationController(
-			duration: const Duration(seconds: 20),
-			vsync: this,
-		)..repeat(reverse: true);
+      duration: const Duration(seconds: 20),
+      vsync: this,
+    )..repeat(reverse: true);
   }
 
   @override
@@ -52,9 +52,13 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
           content: SingleChildScrollView(
             child: ListBody(
               children: const [
-                Text('MindWell was born from a simple mission: to make mental wellness accessible to everyone. We believe that taking care of your mind should be as routine as brushing your teeth.'),
+                Text(
+                  'MindWell was born from a simple mission: to make mental wellness accessible to everyone. We believe that taking care of your mind should be as routine as brushing your teeth.',
+                ),
                 SizedBox(height: 12),
-                Text('Our team of psychologists and developers work together to bring you scientifically-backed tools in a friendly, easy-to-use package.'),
+                Text(
+                  'Our team of psychologists and developers work together to bring you scientifically-backed tools in a friendly, easy-to-use package.',
+                ),
                 SizedBox(height: 12),
                 Text('Features include:'),
                 SizedBox(height: 8),
@@ -66,7 +70,9 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                 Text('• Customizable profile and local user ID storage'),
                 Text('• Data-backed recommendations and support resources'),
                 SizedBox(height: 12),
-                Text('These tools are designed to help you notice patterns, reflect on feelings, and build healthy habits for long-term emotional well-being.'),
+                Text(
+                  'These tools are designed to help you notice patterns, reflect on feelings, and build healthy habits for long-term emotional well-being.',
+                ),
               ],
             ),
           ),
@@ -90,7 +96,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
       backgroundColor: Colors.white,
       appBar: _buildNavBar(context, isDesktop),
       drawer: !isDesktop ? _buildDrawer(context) : null,
-      extendBodyBehindAppBar: true, 
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           // Animated Background
@@ -104,12 +110,14 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
               },
             ),
           ),
-          
+
           SingleChildScrollView(
             controller: _scrollController,
             child: Column(
               children: [
-                SizedBox(height: isDesktop ? 80 : 60), // Spacing for extendBodyBehindAppBar
+                SizedBox(
+                  height: isDesktop ? 80 : 60,
+                ), // Spacing for extendBodyBehindAppBar
                 _buildHeroSection(context, isDesktop),
                 _buildFeaturesSection(context, isDesktop),
                 _buildAboutSection(context, isDesktop),
@@ -126,7 +134,9 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
 
   PreferredSizeWidget _buildNavBar(BuildContext context, bool isDesktop) {
     return AppBar(
-      backgroundColor: Colors.white.withValues(alpha: 0.9), // Glassmorphism effect
+      backgroundColor: Colors.white.withValues(
+        alpha: 0.9,
+      ), // Glassmorphism effect
       elevation: 0,
       scrolledUnderElevation: 4,
       surfaceTintColor: Colors.transparent,
@@ -142,7 +152,11 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                 color: const Color(0xFFE0F2F1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.spa_rounded, color: Color(0xFF009688), size: 28),
+              child: const Icon(
+                Icons.spa_rounded,
+                color: Color(0xFF009688),
+                size: 28,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -171,9 +185,15 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
               ),
-              child: const Text('Login', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Login',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             const SizedBox(width: 12),
             OutlinedButton(
@@ -184,9 +204,15 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
               ),
-              child: const Text('Sign Up', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Sign Up',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             const SizedBox(width: 20),
           ],
@@ -219,7 +245,11 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.spa_rounded, color: Colors.white, size: 40),
+                  child: const Icon(
+                    Icons.spa_rounded,
+                    color: Colors.white,
+                    size: 40,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -234,13 +264,49 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
               ],
             ),
           ),
-          ListTile(leading: const Icon(Icons.home_outlined), title: const Text('Home'), onTap: () { Navigator.pop(context); _scrollTo(_homeKey); }),
-          ListTile(leading: const Icon(Icons.grid_view_outlined), title: const Text('Features'), onTap: () { Navigator.pop(context); _scrollTo(_featuresKey); }),
-          ListTile(leading: const Icon(Icons.info_outline), title: const Text('About'), onTap: () { Navigator.pop(context); _scrollTo(_aboutKey); }),
-          ListTile(leading: const Icon(Icons.contact_mail_outlined), title: const Text('Contact'), onTap: () { Navigator.pop(context); _scrollTo(_contactKey); }),
+          ListTile(
+            leading: const Icon(Icons.home_outlined),
+            title: const Text('Home'),
+            onTap: () {
+              Navigator.pop(context);
+              _scrollTo(_homeKey);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.grid_view_outlined),
+            title: const Text('Features'),
+            onTap: () {
+              Navigator.pop(context);
+              _scrollTo(_featuresKey);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('About'),
+            onTap: () {
+              Navigator.pop(context);
+              _scrollTo(_aboutKey);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.contact_mail_outlined),
+            title: const Text('Contact'),
+            onTap: () {
+              Navigator.pop(context);
+              _scrollTo(_contactKey);
+            },
+          ),
           const Divider(),
-          ListTile(leading: const Icon(Icons.login), title: const Text('Login'), onTap: () => Navigator.pushNamed(context, '/login')),
-          ListTile(leading: const Icon(Icons.person_add_outlined), title: const Text('Sign Up'), onTap: () => Navigator.pushNamed(context, '/register')),
+          ListTile(
+            leading: const Icon(Icons.login),
+            title: const Text('Login'),
+            onTap: () => Navigator.pushNamed(context, '/login'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_add_outlined),
+            title: const Text('Sign Up'),
+            onTap: () => Navigator.pushNamed(context, '/register'),
+          ),
         ],
       ),
     );
@@ -275,10 +341,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
       child: CircleAvatar(
         radius: 20,
         backgroundColor: Colors.white,
-        child: CircleAvatar(
-          radius: 18,
-          backgroundImage: NetworkImage(url),
-        ),
+        child: CircleAvatar(radius: 18, backgroundImage: NetworkImage(url)),
       ),
     );
   }
@@ -292,92 +355,212 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
       ),
       child: Column(
         children: [
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 60,
-            runSpacing: 60,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Column(
-                  crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0F2F1),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFFB2DFDB)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.star_rounded, color: Color(0xFF009688), size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            '#1 Mental Wellness Companion',
-                            style: TextStyle(
-                              color: Color(0xFF00796B),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              letterSpacing: 0.5,
+              Expanded(
+                flex: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    crossAxisAlignment: isDesktop
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0F2F1),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: const Color(0xFFB2DFDB)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.star_rounded,
+                              color: Color(0xFF009688),
+                              size: 18,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 8),
+                            Text(
+                              '#1 Mental Wellness Companion',
+                              style: TextStyle(
+                                color: Color(0xFF00796B),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    Text(
-                      'Find Peace & Balance\nin Your Daily Life',
-                      textAlign: isDesktop ? TextAlign.start : TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isDesktop ? 64 : 42,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                        color: const Color(0xFF111827),
-                        letterSpacing: -1.5,
+                      const SizedBox(height: 32),
+                      Text(
+                        'Find Peace & Balance\nin Your Daily Life',
+                        textAlign: isDesktop
+                            ? TextAlign.start
+                            : TextAlign.center,
+                        style: TextStyle(
+                          fontSize: isDesktop ? 64 : 42,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                          color: const Color(0xFF111827),
+                          letterSpacing: -1.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Your personal assistant for mood tracking, meditation, and mental wellness resources. Powered by AI to help you feel your best.',
-                      textAlign: isDesktop ? TextAlign.start : TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF4B5563),
-                        height: 1.6,
-                        fontWeight: FontWeight.w400,
+                      const SizedBox(height: 24),
+                      Text(
+                        'Your personal assistant for mood tracking, meditation, and mental wellness resources. Powered by AI to help you feel your best.',
+                        textAlign: isDesktop
+                            ? TextAlign.start
+                            : TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF4B5563),
+                          height: 1.6,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 40),
-                    // Buttons removed
-                    const SizedBox(height: 10),
-                  ],
-                ),
-              ),
-              // Hero Image at Right Side
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 550),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 40,
-                        offset: const Offset(0, 20),
-                      ),
+                      const SizedBox(height: 40),
+                      // Buttons removed
+                      const SizedBox(height: 10),
                     ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1493836512294-502baa1986e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-                      fit: BoxFit.cover,
-                      semanticLabel: 'Mental Wellness & Technology',
-                    ),
-                  ),
+                ),
+              ),
+              const SizedBox(width: 60),
+              // Hero Image at Right Side
+              Expanded(
+                flex: 1,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isSmallScreen = constraints.maxWidth < 600;
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 16 : 24,
+                        vertical: isSmallScreen ? 16 : 32,
+                      ),
+                      child: AspectRatio(
+                        aspectRatio: isSmallScreen ? 4 / 3 : 3 / 2,
+                        child: Card(
+                          elevation: 16,
+                          shadowColor: Colors.teal.withOpacity(0.4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white,
+                                  Colors.teal.shade50.withOpacity(0.3),
+                                ],
+                              ),
+                            ),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Image.network(
+                                    'https://www.mindful.org/content/uploads/Meditation_Goleman.jpg',
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                                ),
+                                // Modern overlay with elegant text content
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isSmallScreen ? 20 : 32,
+                                      vertical: isSmallScreen ? 24 : 32,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.only(
+                                        bottomLeft: Radius.circular(24),
+                                        bottomRight: Radius.circular(24),
+                                      ),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.8),
+                                          Colors.black.withOpacity(0.4),
+                                          Colors.black.withOpacity(0.1),
+                                          Colors.transparent,
+                                        ],
+                                        stops: const [0.0, 0.4, 0.7, 1.0],
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Main heading with modern typography
+                                        Text(
+                                          'Discover Your\nInner Harmony',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: isSmallScreen ? 24 : 32,
+                                            fontWeight: FontWeight.w800,
+                                            height: 1.1,
+                                            letterSpacing: -0.5,
+                                            shadows: [
+                                              Shadow(
+                                                color: Colors.black.withOpacity(
+                                                  0.5,
+                                                ),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                              Shadow(
+                                                color: Colors.black.withOpacity(
+                                                  0.3,
+                                                ),
+                                                blurRadius: 16,
+                                                offset: const Offset(0, 8),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: isSmallScreen ? 12 : 16,
+                                        ),
+                                        // Subtle description
+                                        Text(
+                                          'Embark on a journey of self-discovery with personalized mindfulness practices and mental wellness tools.',
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.85,
+                                            ),
+                                            fontSize: isSmallScreen ? 14 : 16,
+                                            height: 1.4,
+                                            fontWeight: FontWeight.w400,
+                                            letterSpacing: 0.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -405,13 +588,13 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 30,
-                  )
+                  ),
                 ],
               ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                   ClipRRect(
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.network(
                       'https://images.unsplash.com/photo-1544367563-12123d8959bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
@@ -421,7 +604,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                       color: Colors.black.withValues(alpha: 0.4),
                       colorBlendMode: BlendMode.darken,
                     ),
-                   ),
+                  ),
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -432,7 +615,11 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
-                        child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 60),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 60,
+                        ),
                       ),
                       const SizedBox(height: 20),
                       const Text(
@@ -442,7 +629,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
+                      ),
                     ],
                   ),
                   Positioned(
@@ -452,7 +639,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close, color: Colors.white),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -465,7 +652,10 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
   Widget _buildFeaturesSection(BuildContext context, bool isDesktop) {
     return Container(
       key: _featuresKey,
-      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24, vertical: 100),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 80 : 24,
+        vertical: 100,
+      ),
       child: Column(
         children: [
           const Text(
@@ -474,7 +664,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
               color: Color(0xFF009688),
               fontWeight: FontWeight.bold,
               letterSpacing: 1.5,
-              fontSize: 14
+              fontSize: 14,
             ),
           ),
           const SizedBox(height: 16),
@@ -496,21 +686,24 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
               _buildFeatureCard(
                 icon: Icons.mood_rounded,
                 title: 'Mood Tracking',
-                description: 'Log your daily emotions and get personalized insights to improve your mental health.',
+                description:
+                    'Log your daily emotions and get personalized insights to improve your mental health.',
                 color: const Color(0xFFE0F2F1),
                 iconColor: const Color(0xFF009688),
               ),
               _buildFeatureCard(
                 icon: Icons.self_improvement,
                 title: 'Meditation',
-                description: 'Guided sessions tailored to your needs, from quick stress relief to deep sleep.',
+                description:
+                    'Guided sessions tailored to your needs, from quick stress relief to deep sleep.',
                 color: const Color(0xFFF1F8E9),
                 iconColor: const Color(0xFF7CB342),
               ),
               _buildFeatureCard(
                 icon: Icons.library_books_outlined,
                 title: 'Resources',
-                description: 'Curated articles and tips for better sleep, anxiety relief, and self-care.',
+                description:
+                    'Curated articles and tips for better sleep, anxiety relief, and self-care.',
                 color: const Color(0xFFF3E5F5),
                 iconColor: const Color(0xFF8E24AA),
               ),
@@ -589,14 +782,20 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
             animation: _bgController,
             builder: (context, child) {
               return CustomPaint(
-                painter: AtomicBackgroundPainter(_bgController.value, backgroundColor: const Color(0xFFFAFAFA)),
+                painter: AtomicBackgroundPainter(
+                  _bgController.value,
+                  backgroundColor: const Color(0xFFFAFAFA),
+                ),
               );
             },
           ),
         ),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24, vertical: 100),
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 80 : 24,
+            vertical: 100,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1200),
@@ -608,12 +807,21 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF3E0),
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          child: const Text('Our Mission', style: TextStyle(color: Color(0xFFEF6C00), fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Our Mission',
+                            style: TextStyle(
+                              color: Color(0xFFEF6C00),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         const Text(
@@ -628,19 +836,37 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                         const SizedBox(height: 24),
                         const Text(
                           'MindWell was born from a simple mission: to make mental wellness accessible to everyone. We believe that taking care of your mind should be as routine as brushing your teeth.',
-                          style: TextStyle(fontSize: 18, color: Color(0xFF4B5563), height: 1.7),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Color(0xFF4B5563),
+                            height: 1.7,
+                          ),
                         ),
                         const SizedBox(height: 24),
                         const Text(
                           'Our team of psychologists and developers work together to bring you scientifically-backed tools in a friendly, easy-to-use package.',
-                          style: TextStyle(fontSize: 18, color: Color(0xFF4B5563), height: 1.7),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Color(0xFF4B5563),
+                            height: 1.7,
+                          ),
                         ),
                         const SizedBox(height: 32),
                         TextButton.icon(
-                          onPressed: () => _showAboutDialog(context), 
-                          icon: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF009688)), 
-                          label: const Text('Learn more about us', style: TextStyle(color: Color(0xFF009688), fontSize: 16, fontWeight: FontWeight.bold))
-                        )
+                          onPressed: () => _showAboutDialog(context),
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Color(0xFF009688),
+                          ),
+                          label: const Text(
+                            'Learn more about us',
+                            style: TextStyle(
+                              color: Color(0xFF009688),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -651,9 +877,12 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                         children: [
                           Padding(
                             padding: const EdgeInsets.only(top: 20, left: 20),
-                             child: ClipRRect(
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(32),
-                              child: Container(color: const Color(0xFFB2DFDB), height: 400),
+                              child: Container(
+                                color: const Color(0xFFB2DFDB),
+                                height: 400,
+                              ),
                             ),
                           ),
                           ClipRRect(
@@ -685,13 +914,19 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
           child: AnimatedBuilder(
             animation: _bgController,
             builder: (context, child) => CustomPaint(
-              painter: AtomicBackgroundPainter(_bgController.value, backgroundColor: const Color(0xFFF0FDFA)),
+              painter: AtomicBackgroundPainter(
+                _bgController.value,
+                backgroundColor: const Color(0xFFF0FDFA),
+              ),
             ),
           ),
         ),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24, vertical: 100),
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 80 : 24,
+            vertical: 100,
+          ),
           child: Column(
             children: [
               const Text(
@@ -700,7 +935,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                   color: Color(0xFF009688),
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
-                  fontSize: 14
+                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 16),
@@ -721,7 +956,8 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                 alignment: WrapAlignment.center,
                 children: [
                   _buildTestimonialCard(
-                    text: "MindWell has completely transformed how I manage my daily stress. The AI companion is surprisingly empathetic!",
+                    text:
+                        "MindWell has completely transformed how I manage my daily stress. The AI companion is surprisingly empathetic!",
                     author: "Sarah Jenkins",
                     role: "Product Designer",
                     stars: 5,
@@ -729,7 +965,8 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                     avatarText: "S",
                   ),
                   _buildTestimonialCard(
-                    text: "The meditation library is extensive and high quality. I use it every night before sleep.",
+                    text:
+                        "The meditation library is extensive and high quality. I use it every night before sleep.",
                     author: "Michael Chen",
                     role: "Developer",
                     stars: 5,
@@ -737,7 +974,8 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                     avatarText: "M",
                   ),
                   _buildTestimonialCard(
-                    text: "I love the mood tracking features. Seeing my patterns helped me understand my triggers better.",
+                    text:
+                        "I love the mood tracking features. Seeing my patterns helped me understand my triggers better.",
                     author: "Emma Wilson",
                     role: "Student",
                     stars: 5,
@@ -780,7 +1018,11 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.format_quote_rounded, size: 48, color: Color(0xFFE0F2F1)),
+            const Icon(
+              Icons.format_quote_rounded,
+              size: 48,
+              color: Color(0xFFE0F2F1),
+            ),
             const SizedBox(height: 24),
             Text(
               text,
@@ -788,7 +1030,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                 fontSize: 16,
                 color: Color(0xFF374151),
                 height: 1.6,
-                fontWeight: FontWeight.w500
+                fontWeight: FontWeight.w500,
               ),
             ),
             const Spacer(),
@@ -815,14 +1057,14 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF111827),
-                        fontSize: 16
+                        fontSize: 16,
                       ),
                     ),
                     Text(
                       role,
                       style: const TextStyle(
                         color: Color(0xFF9CA3AF),
-                        fontSize: 13
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -832,7 +1074,9 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                   children: List.generate(
                     5,
                     (index) => Icon(
-                      index < stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                      index < stars
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       size: 20,
                       color: const Color(0xFFFFB300),
                     ),
@@ -851,7 +1095,10 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
       key: _contactKey,
       width: double.infinity,
       // No background color specified, so it remains transparent allowing the global animation to show through.
-      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24, vertical: 100),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 80 : 24,
+        vertical: 100,
+      ),
       child: Column(
         children: [
           const SizedBox(height: 24),
@@ -869,10 +1116,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
           const Text(
             "We'd love to hear from you. Our team is always here to chat.",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: Color(0xFF6B7280),
-            ),
+            style: TextStyle(fontSize: 18, color: Color(0xFF6B7280)),
           ),
           const SizedBox(height: 60),
           Wrap(
@@ -939,10 +1183,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               child: Icon(icon, color: accent, size: 32),
             ),
             const SizedBox(height: 24),
@@ -967,10 +1208,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
             Text(
               subContent,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF9CA3AF),
-              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
             ),
           ],
         ),
@@ -982,13 +1220,18 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
     return Container(
       width: double.infinity,
       color: const Color(0xFF111827), // Darker footer
-      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 80 : 24, vertical: 80),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 80 : 24,
+        vertical: 80,
+      ),
       child: Column(
         children: [
           Wrap(
             spacing: 80,
             runSpacing: 40,
-            alignment: isDesktop ? WrapAlignment.spaceBetween : WrapAlignment.start,
+            alignment: isDesktop
+                ? WrapAlignment.spaceBetween
+                : WrapAlignment.start,
             crossAxisAlignment: WrapCrossAlignment.start,
             children: [
               SizedBox(
@@ -998,7 +1241,11 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                   children: [
                     Row(
                       children: const [
-                        Icon(Icons.spa_rounded, color: Color(0xFF2DD4BF), size: 32),
+                        Icon(
+                          Icons.spa_rounded,
+                          color: Color(0xFF2DD4BF),
+                          size: 32,
+                        ),
                         SizedBox(width: 12),
                         Text(
                           'MindWell',
@@ -1006,7 +1253,7 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                             color: Colors.white,
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ],
@@ -1017,19 +1264,32 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
                       style: TextStyle(
                         color: Color(0xFF9CA3AF),
                         height: 1.6,
-                        fontSize: 16
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 32),
-                    Row(
-                      children: _socialIconButtons(),
-                    ),
+                    Row(children: _socialIconButtons()),
                   ],
                 ),
               ),
-              _buildFooterColumn('Product', ['Features', 'Pricing', 'Testimonials', 'FAQ']),
-              _buildFooterColumn('Company', ['About Us', 'Careers', 'Blog', 'Contact']),
-              _buildFooterColumn('Legal', ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'Security']),
+              _buildFooterColumn('Product', [
+                'Features',
+                'Pricing',
+                'Testimonials',
+                'FAQ',
+              ]),
+              _buildFooterColumn('Company', [
+                'About Us',
+                'Careers',
+                'Blog',
+                'Contact',
+              ]),
+              _buildFooterColumn('Legal', [
+                'Privacy Policy',
+                'Terms of Service',
+                'Cookie Policy',
+                'Security',
+              ]),
             ],
           ),
           const SizedBox(height: 80),
@@ -1070,44 +1330,46 @@ class _LandingPageStateFixed extends State<LandingPage> with TickerProviderState
             ),
           ),
           const SizedBox(height: 24),
-          ...links.map((link) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  link,
-                  style: const TextStyle(
-                    color: Color(0xFFD1D5DB),
-                    fontSize: 15,
+          ...links.map(
+            (link) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    link,
+                    style: const TextStyle(
+                      color: Color(0xFFD1D5DB),
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
             ),
-          )),
+          ),
         ],
       ),
     );
   }
 
   List<Widget> _socialIconButtons() {
-    return [
-      Icons.facebook,
-      Icons.code,
-      Icons.email,
-    ].map((icon) => Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: IconButton(
-        onPressed: () {},
-        icon: Icon(icon, color: Colors.white, size: 22),
-        style: IconButton.styleFrom(
-          backgroundColor: Colors.white.withValues(alpha: 0.05),
-          padding: const EdgeInsets.all(12),
-        ),
-      ),
-    )).toList();
+    return [Icons.facebook, Icons.code, Icons.email]
+        .map(
+          (icon) => Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: IconButton(
+              onPressed: () {},
+              icon: Icon(icon, color: Colors.white, size: 22),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                padding: const EdgeInsets.all(12),
+              ),
+            ),
+          ),
+        )
+        .toList();
   }
 }
 
@@ -1129,7 +1391,8 @@ class _HoverableCardState extends State<HoverableCard> {
       onExit: (_) => setState(() => _isHovering = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()..translate(0.0, _isHovering ? -10.0 : 0.0),
+        transform: Matrix4.identity()
+          ..translate(0.0, _isHovering ? -10.0 : 0.0),
         child: widget.child,
       ),
     );
@@ -1140,16 +1403,16 @@ class _HoverableCardState extends State<HoverableCard> {
 class AtomicBackgroundPainter extends CustomPainter {
   final double value;
   final Color? backgroundColor;
-  
+
   AtomicBackgroundPainter(this.value, {this.backgroundColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-    
+
     // Background
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    
+
     if (backgroundColor != null) {
       canvas.drawRect(rect, Paint()..color = backgroundColor!);
     } else {
@@ -1171,22 +1434,22 @@ class AtomicBackgroundPainter extends CustomPainter {
     paint.color = const Color(0xFFB2DFDB).withValues(alpha: 0.15);
     canvas.drawCircle(
       Offset(
-        size.width * 0.8 + 50 * math.cos(value * 2 * math.pi), 
-        size.height * 0.2 + 30 * math.sin(value * 2 * math.pi)
+        size.width * 0.8 + 50 * math.cos(value * 2 * math.pi),
+        size.height * 0.2 + 30 * math.sin(value * 2 * math.pi),
       ),
-      200, 
-      paint
+      200,
+      paint,
     );
-    
+
     // Orb 2
     paint.color = const Color(0xFFE1BEE7).withValues(alpha: 0.1);
     canvas.drawCircle(
       Offset(
-        size.width * 0.2 + 60 * math.sin(value * 2 * math.pi), 
-        size.height * 0.6 + 40 * math.cos(value * 2 * math.pi)
+        size.width * 0.2 + 60 * math.sin(value * 2 * math.pi),
+        size.height * 0.6 + 40 * math.cos(value * 2 * math.pi),
       ),
-      250, 
-      paint
+      250,
+      paint,
     );
   }
 

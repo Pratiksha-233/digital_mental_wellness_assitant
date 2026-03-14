@@ -1,17 +1,28 @@
-import numpy as np
-import pickle
-import os
-from pathlib import Path
 try:
-    from tensorflow.keras.models import load_model, model_from_json
-    from tensorflow.keras.preprocessing.sequence import pad_sequences
-    _TF_AVAILABLE = True
-except Exception:
+    import numpy as np
+    import pickle
+    import os
+    from pathlib import Path
+    try:
+        from tensorflow.keras.models import load_model, model_from_json
+        from tensorflow.keras.preprocessing.sequence import pad_sequences
+        _TF_AVAILABLE = True
+    except Exception:
+        _TF_AVAILABLE = False
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
     _TF_AVAILABLE = False
+    np = None
+    pickle = None
+    os = None
+    Path = None
 
 
 class MLService:
     def __init__(self):
+        if os is None:
+            return
         self.model = None  # Text sentiment model
         self.face_model = None  # Face emotion detection model
         self.tokenizer = None
@@ -39,7 +50,10 @@ class MLService:
             6: 'surprise'
         }
 
-        cwd = Path(os.getcwd())
+        if os is not None:
+            cwd = Path(os.getcwd())
+        else:
+            cwd = None
         svc_dir = Path(__file__).resolve().parent
         project_backend = svc_dir.parent
         project_root = project_backend.parent
@@ -48,8 +62,9 @@ class MLService:
         candidates = [
             project_backend / 'models' / 'sentiment_model.h5',
             project_backend / 'models' / 'models' / 'sentiment_model.h5',
-            cwd / 'models' / 'sentiment_model.h5',
         ]
+        if cwd is not None:
+            candidates.append(cwd / 'models' / 'sentiment_model.h5')
 
         tokenizer_path = project_backend / 'models' / 'tokenizer.pkl'
         encoder_path = project_backend / 'models' / 'label_encoder.pkl'
@@ -141,11 +156,28 @@ class MLService:
                 print("Last error:", last_exc)
             print("Hint: run the training script to (re)create a compatible model, or place a valid Keras .h5 or SavedModel under backend/models/")
 
-    def predict_emotion(self, text):
-        """Predict emotion from text"""
+    def analyze_text(self, text):
+        """Run text through the sentiment model and return
+        a small analysis bundle used by the chatbot.
+
+        Returns a dict with keys:
+          - emotion: fine‑grained emotion label from the model
+          - sentiment: 'positive' | 'negative' | 'neutral'
+          - confidence: float probability of the predicted emotion
+        """
+        if np is None:
+            return {
+                'emotion': 'Unknown',
+                'sentiment': 'neutral',
+                'confidence': 0.0,
+            }
         if not self.model or not self.tokenizer:
-            print("[WARNING] ML model not loaded; returning fallback emotion 'Neutral'")
-            return 'Neutral'
+            print("[WARNING] ML model not loaded; returning fallback neutral analysis")
+            return {
+                'emotion': 'Neutral',
+                'sentiment': 'neutral',
+                'confidence': 0.0,
+            }
 
         try:
             seq = self.tokenizer.texts_to_sequences([text])
@@ -153,13 +185,41 @@ class MLService:
             preds = self.model.predict(padded)
             label_index = int(np.argmax(preds))
             emotion = self.label_map.get(label_index, "Unknown")
-            return emotion
+            confidence = float(np.max(preds))
+
+            # Map fine‑grained emotion to coarse sentiment
+            negative_emotions = {"Sadness", "Anger", "Fear"}
+            positive_emotions = {"Joy", "Love", "Surprise"}
+
+            if emotion in positive_emotions:
+                sentiment = 'positive'
+            elif emotion in negative_emotions:
+                sentiment = 'negative'
+            else:
+                sentiment = 'neutral'
+
+            return {
+                'emotion': emotion,
+                'sentiment': sentiment,
+                'confidence': confidence,
+            }
         except Exception as e:
-            print("[FAILED] Error during emotion prediction:", e)
-            return 'Unknown'
+            print("[FAILED] Error during text analysis:", e)
+            return {
+                'emotion': 'Unknown',
+                'sentiment': 'neutral',
+                'confidence': 0.0,
+            }
+
+    def predict_emotion(self, text):
+        """Backward‑compatible wrapper: return only the emotion label."""
+        info = self.analyze_text(text)
+        return info.get('emotion', 'Unknown')
     
     def predict_face_emotion(self, face_image):
         """Predict emotion from face image"""
+        if np is None:
+            return 'Unknown', 0.0
         if self.face_model is None:
             print("[WARNING] Face emotion model not loaded")
             return 'Unknown', 0.0

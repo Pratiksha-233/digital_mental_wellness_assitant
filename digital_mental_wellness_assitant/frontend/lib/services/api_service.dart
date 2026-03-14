@@ -18,7 +18,7 @@ class ApiService {
       } else {
         return {
           'status': 'error',
-          'message': 'Server error: ${response.statusCode}'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
@@ -26,9 +26,45 @@ class ApiService {
     }
   }
 
+  /// Send a chat message to the backend NLP chatbot.
+  /// Returns a map including:
+  ///   - response: bot reply text
+  ///   - emotion: detected fine-grained emotion
+  ///   - sentiment: 'positive' | 'negative' | 'neutral'
+  ///   - is_crisis: bool flag if crisis keywords were detected
+  ///   - detected_crisis_keywords: list of matched phrases (if any)
+  ///   - intent: simple intent classification label
+  Future<Map<String, dynamic>?> sendChatMessage({
+    required String message,
+    int? userId,
+  }) async {
+    try {
+      final uri = Uri.parse('$apiBaseUrl/chat/message');
+      final body = <String, dynamic>{'message': message};
+      if (userId != null) {
+        body['user_id'] = userId;
+      }
+      final resp = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      if (resp.statusCode == 200) {
+        return jsonDecode(resp.body) as Map<String, dynamic>;
+      }
+      debugPrint('sendChatMessage error: statusCode=${resp.statusCode}');
+      return null;
+    } catch (e) {
+      debugPrint('sendChatMessage exception: $e');
+      return null;
+    }
+  }
+
   /// Get recommendations based on detected emotion
-   Future<List<dynamic>> getRecommendations(String emotion) async {
-    final response = await http.get(Uri.parse('$apiBaseUrl/recommend/$emotion'));
+  Future<List<dynamic>> getRecommendations(String emotion) async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/recommend/$emotion'),
+    );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -65,15 +101,23 @@ class ApiService {
 
   /// Lookup (or create) a local numeric `user_id` by providing an email and optional name.
   /// Returns the numeric user_id on success, or null on failure.
-  Future<int?> lookupOrCreateUserByEmail({required String email, String? name}) async {
+  Future<int?> lookupOrCreateUserByEmail({
+    required String email,
+    String? name,
+  }) async {
     try {
       final uri = Uri.parse('$apiBaseUrl/auth/user/lookup_or_create');
       final body = jsonEncode({'email': email, if (name != null) 'name': name});
-      final resp = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: body);
+      final resp = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         if (data.containsKey('user_id')) {
-          return int.tryParse(data['user_id'].toString()) ?? (data['user_id'] is int ? data['user_id'] as int : null);
+          return int.tryParse(data['user_id'].toString()) ??
+              (data['user_id'] is int ? data['user_id'] as int : null);
         }
       }
       return null;
@@ -88,7 +132,7 @@ class ApiService {
     // If you’re using token-based auth, clear token locally here
     return true;
   }
-  
+
   /// Fetch progress counts for a user (mood_checkins, journal_entries, days_active)
   Future<Map<String, dynamic>> getProgress({required int userId}) async {
     try {
@@ -122,4 +166,45 @@ class ApiService {
     }
   }
 
+  /// --- Analytics helpers ---
+
+  Future<List<dynamic>> getMoodAnalytics(int userId) async {
+    final res = await http.get(
+      Uri.parse('$apiBaseUrl/analytics/mood?user_id=$userId'),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> getStressAnalytics(int userId) async {
+    final res = await http.get(
+      Uri.parse('$apiBaseUrl/analytics/stress?user_id=$userId'),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> getChatSentiment(int userId) async {
+    final res = await http.get(
+      Uri.parse('$apiBaseUrl/analytics/chat-sentiment?user_id=$userId'),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0};
+  }
+
+  Future<List<dynamic>> getActivityAnalytics(int userId) async {
+    final res = await http.get(
+      Uri.parse('$apiBaseUrl/analytics/activity?user_id=$userId'),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return [];
+  }
 }

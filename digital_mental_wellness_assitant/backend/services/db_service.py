@@ -26,7 +26,7 @@ def get_connection():
         conn = mysql.connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'Pra@#ti825'),
+            password=config.DB_CONFIG.get('password', 'mysqlworld@123'),
             database=config.DB_CONFIG.get('database', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')
@@ -61,6 +61,37 @@ def insert_journal_entry(user_id, text_entry, predicted_emotion):
     except Error as e:
         print("❌ Insert journal entry error:", e)
         return False, str(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def insert_chat_message(user_id, user_message, bot_response, emotion_detected):
+    """Insert a chatbot interaction into chat_history.
+
+    Only fields defined in the schema are stored; richer
+    analysis (sentiment, crisis flags, intents) is returned
+    to the client but not persisted.
+    """
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not insert chat message — DB connection failed.")
+        return False, 'db_connection_failed'
+
+    try:
+        cursor = conn.cursor()
+        sql = """
+            INSERT INTO chat_history (user_id, user_message, bot_response, emotion_detected)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(sql, (user_id, user_message, bot_response, emotion_detected))
+        conn.commit()
+        print("💬 Chat message inserted into chat_history.")
+        return True, None
+    except Error as e:
+        err = str(e)
+        print("❌ Insert chat message error:", err)
+        return False, err
     finally:
         cursor.close()
         conn.close()

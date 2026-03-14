@@ -8,6 +8,8 @@ import 'journal_screen.dart';
 import 'meditate_screen.dart';
 import 'mood_tracker_screen.dart';
 import 'resources_screen.dart';
+import 'chat_screen.dart';
+import 'analytics_dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final int userId;
@@ -47,7 +49,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _bgCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat(reverse: true);
+    _bgCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat(reverse: true);
     // fetch progress counts for this user
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchProgress());
   }
@@ -61,9 +66,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final userId = widget.userId > 0 ? widget.userId : 1;
       final data = await api.getProgress(userId: userId);
       setState(() {
-        _moodCheckins = (data['mood_checkins'] is int) ? data['mood_checkins'] as int : int.tryParse('${data['mood_checkins']}') ?? 0;
-        _journalEntries = (data['journal_entries'] is int) ? data['journal_entries'] as int : int.tryParse('${data['journal_entries']}') ?? 0;
-        _daysActive = (data['days_active'] is int) ? data['days_active'] as int : int.tryParse('${data['days_active']}') ?? 0;
+        _moodCheckins = (data['mood_checkins'] is int)
+            ? data['mood_checkins'] as int
+            : int.tryParse('${data['mood_checkins']}') ?? 0;
+        _journalEntries = (data['journal_entries'] is int)
+            ? data['journal_entries'] as int
+            : int.tryParse('${data['journal_entries']}') ?? 0;
+        _daysActive = (data['days_active'] is int)
+            ? data['days_active'] as int
+            : int.tryParse('${data['days_active']}') ?? 0;
       });
     } catch (e) {
       // ignore — leave defaults
@@ -78,7 +89,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  DateTime nowIST() => DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
+  DateTime nowIST() =>
+      DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30));
   DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   String _moodLabelToEmoji(String? label) {
@@ -99,13 +111,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
-  Widget _progressRow(String label, String value, Color color) => Row(children: [
-        Expanded(child: Text(label, style: const TextStyle(color: Colors.black87))),
-        Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: color.withAlpha(30), borderRadius: BorderRadius.circular(8)),
-            child: Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold)))
-      ]);
+  Widget _progressRow(String label, String value, Color color) => Row(
+    children: [
+      Expanded(
+        child: Text(label, style: const TextStyle(color: Colors.black87)),
+      ),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withAlpha(30),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          value,
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        ),
+      ),
+    ],
+  );
 
   String timeGreeting() {
     final h = DateTime.now().hour;
@@ -131,10 +154,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       'I can breathe, soften, and begin again.',
       'Small steps still move me forward.',
       'I deserve rest, care, and kindness.',
-      'I trust myself to handle what comes.'
+      'I trust myself to handle what comes.',
     ];
     final now = DateTime.now();
-    final idx = (now.difference(DateTime(now.year)).inDays + _affirmationOffset) % items.length;
+    final idx =
+        (now.difference(DateTime(now.year)).inDays + _affirmationOffset) %
+        items.length;
     return items[idx];
   }
 
@@ -142,22 +167,37 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentUser = FirebaseAuth.instance.currentUser;
-    final resolvedName = (widget.userName != 'User' && widget.userName.trim().isNotEmpty)
+    final resolvedName =
+        (widget.userName != 'User' && widget.userName.trim().isNotEmpty)
         ? widget.userName
-        : (currentUser?.displayName ?? (currentUser?.email?.split('@').first ?? 'User'));
+        : (currentUser?.displayName ??
+              (currentUser?.email?.split('@').first ?? 'User'));
 
     final istNow = nowIST();
     final istToday = dateOnly(istNow);
-    final startOfWeek = dateOnly(istNow.subtract(Duration(days: istNow.weekday % 7)));
-    final weekDays = List<DateTime>.generate(7, (i) => startOfWeek.add(Duration(days: i)));
+    final startOfWeek = dateOnly(
+      istNow.subtract(Duration(days: istNow.weekday % 7)),
+    );
+    final weekDays = List<DateTime>.generate(
+      7,
+      (i) => startOfWeek.add(Duration(days: i)),
+    );
 
     return Scaffold(
       drawer: AnimatedBuilder(
         animation: _bgCtrl,
         builder: (context, child) {
           final t = _bgCtrl.value;
-          final g1 = Color.lerp(const Color(0xFFF8FBFF), const Color(0xFFF3E8FF), t)!;
-          final g2 = Color.lerp(const Color(0xFFEFFCF9), const Color(0xFFFFF5F0), 1 - t)!;
+          final g1 = Color.lerp(
+            const Color(0xFFF8FBFF),
+            const Color(0xFFF3E8FF),
+            t,
+          )!;
+          final g2 = Color.lerp(
+            const Color(0xFFEFFCF9),
+            const Color(0xFFFFF5F0),
+            1 - t,
+          )!;
           return Drawer(
             child: Container(
               decoration: BoxDecoration(
@@ -168,70 +208,136 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               child: SafeArea(
-                child: Column(children: [
-            ListTile(leading: const Icon(Icons.home), title: const Text('Home')),
-            ListTile(
-                leading: const Icon(Icons.heart_broken),
-                title: const Text('Mood Tracker'),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MoodTrackerScreen()))),
-            ListTile(
-                leading: const Icon(Icons.book),
-                title: const Text('Journal'),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => JournalScreen(userId: widget.userId))),
-            ),
-            ListTile(
-                leading: const Icon(Icons.self_improvement),
-                title: const Text('Meditate'),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeditateScreen()))),
-            ListTile(
-              leading: const Icon(Icons.show_chart),
-              title: const Text('Stress Analyzer'),
-              onTap: () => Navigator.pushNamed(context, '/stress')),
-            ListTile(
-              leading: const Icon(Icons.psychology),
-              title: const Text('Realtime Face Detection'),
-              onTap: () => Navigator.pushNamed(context, '/detection')),
-            ListTile(
-              leading: const Icon(Icons.library_books),
-              title: const Text('Resources'),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResourcesScreen()))),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Edit Profile'),
-              onTap: () => Navigator.pushNamed(context, '/profile')),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                if (context.mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                }
-              }),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: AnimatedBuilder(
-                animation: _bgCtrl,
-                builder: (context, _) {
-                  // subtle pulse for the message container
-                  final pulse = 0.96 + 0.04 * (0.5 - (t - 0.5).abs());
-                  return Transform.scale(
-                    scale: pulse,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: [Colors.purple.shade50, Colors.purple.shade100.withAlpha(100)]),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0,2))],
-                      ),
-                      child: Text(rotatingDrawerMessage(), style: const TextStyle(fontSize: 13)),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.home),
+                      title: const Text('Home'),
                     ),
-                  );
-                },
-              ),
-            )
-          ]),
+                    ListTile(
+                      leading: const Icon(Icons.heart_broken),
+                      title: const Text('Mood Tracker'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MoodTrackerScreen(),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.chat_bubble_outline),
+                      title: const Text('Therapy Chatbot'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ChatScreen()),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.book),
+                      title: const Text('Journal'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => JournalScreen(userId: widget.userId),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.self_improvement),
+                      title: const Text('Meditate'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MeditateScreen(),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.show_chart),
+                      title: const Text('Stress Analyzer'),
+                      onTap: () => Navigator.pushNamed(context, '/stress'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.dashboard_customize),
+                      title: const Text('Dashboard & Analytics'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AnalyticsDashboardScreen(),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.psychology),
+                      title: const Text('Realtime Face Detection'),
+                      onTap: () => Navigator.pushNamed(context, '/detection'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.library_books),
+                      title: const Text('Resources'),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ResourcesScreen(),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.person_outline),
+                      title: const Text('Edit Profile'),
+                      onTap: () => Navigator.pushNamed(context, '/profile'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('Logout'),
+                      onTap: () async {
+                        await FirebaseAuth.instance.signOut();
+                        if (context.mounted) {
+                          Navigator.of(
+                            context,
+                          ).pushNamedAndRemoveUntil('/', (route) => false);
+                        }
+                      },
+                    ),
+                    const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: AnimatedBuilder(
+                        animation: _bgCtrl,
+                        builder: (context, _) {
+                          // subtle pulse for the message container
+                          final pulse = 0.96 + 0.04 * (0.5 - (t - 0.5).abs());
+                          return Transform.scale(
+                            scale: pulse,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.purple.shade50,
+                                    Colors.purple.shade100.withAlpha(100),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                rotatingDrawerMessage(),
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -248,7 +354,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: GestureDetector(
                   onTap: () => Navigator.pushNamed(context, '/detection'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white24,
                       borderRadius: BorderRadius.circular(20),
@@ -268,188 +377,484 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      body: Stack(children: [
-        AnimatedBuilder(
-          animation: _bgCtrl,
-          builder: (context, _) {
-            final t = _bgCtrl.value;
-            final c1 = Color.lerp(const Color(0xFFCCFBF1), const Color(0xFFE0E7FF), t)!;
-            final c2 = Color.lerp(const Color(0xFFEFF6FF), const Color(0xFFFFF7ED), 1 - t)!;
-            return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [c1, c2])));
-          },
-        ),
-        AnimatedBuilder(
-          animation: _bgCtrl,
-          builder: (context, _) => IgnorePointer(child: CustomPaint(size: Size.infinite, painter: _HomeBubblesPainter(t: _bgCtrl.value))),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return ListView(children: [
-            Row(children: [
-              Expanded(
-                child: FutureBuilder<String?>(
-                  future: ProfileService.getDisplayName(),
-                  builder: (context, snapshot) {
-                    final display = (snapshot.data != null && snapshot.data!.trim().isNotEmpty) ? snapshot.data!.trim() : resolvedName;
-                    return Text('${greetingEmoji()} ${timeGreeting()}, $display',
-                        style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.purple));
-                  },
-                ),
-              ),
-            ]),
-            const SizedBox(height: 6),
-            const Text('How are you feeling today?', style: TextStyle(color: Colors.black54)),
-            const SizedBox(height: 18),
-            const SizedBox(height: 20),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 3))]),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Row(children: [const Icon(Icons.calendar_today, color: Colors.purple), const SizedBox(width: 8), const Text('Your Week at a Glance', style: TextStyle(fontWeight: FontWeight.bold))]),
-                  TextButton(onPressed: () => Navigator.pushNamed(context, '/week'), child: const Text('View All'))
-                ]),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 140,
-                  child: FutureBuilder<List<dynamic>>(
-                    future: ApiService().getMoodLogs(userId: widget.userId > 0 ? widget.userId : 1),
-                    builder: (context, snap) {
-                      Map<String, String> byDate = {}; // yyyy-mm-dd -> emoji
-                      if (snap.hasData) {
-                        for (final row in snap.data!) {
-                          try {
-                            final ts = row['timestamp'] ?? row['created_at'] ?? row['time'] ?? '';
-                            if (ts == null) continue;
-                            final dt = DateTime.parse(ts.toString());
-                            final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-                            byDate[key] = _moodLabelToEmoji((row['mood_label'] ?? '').toString());
-                          } catch (_) {}
-                        }
-                      }
-
-                      return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: List.generate(7, (i) {
-                        final d = weekDays[i];
-                        final dayLabel = const ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i];
-                        final isToday = d == istToday;
-                        final isPast = d.isBefore(istToday);
-                        final dateNum = d.day;
-                        final key = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                        final emoji = byDate.containsKey(key) ? byDate[key] : (isPast ? '😐' : null);
-
-                        return Expanded(
-                          child: Column(children: [
-                            Text(dayLabel, style: const TextStyle(color: Colors.black54)),
-                            const SizedBox(height: 8),
-                            Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: isToday ? Border.all(color: Colors.purple, width: 2) : null,
-                                ),
-                                child: Center(
-                                  child: isToday
-                                      ? Column(mainAxisSize: MainAxisSize.min, children: [
-                                          Text(emoji ?? '😐', style: const TextStyle(fontSize: 28)),
-                                          const SizedBox(height: 6),
-                                          const Text('Today', style: TextStyle(fontSize: 12, color: Colors.purple)),
-                                        ])
-                                      : (emoji != null
-                                          ? Text(emoji, style: const TextStyle(fontSize: 22))
-                                          : (isPast ? const Text('😐', style: TextStyle(fontSize: 12, color: Colors.black38)) : const Text('—', style: TextStyle(fontSize: 12, color: Colors.black26)))),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(dateNum.toString(), style: const TextStyle(color: Colors.black45))
-                          ]),
-                        );
-                      }));
-                    },
+      body: Stack(
+        children: [
+          AnimatedBuilder(
+            animation: _bgCtrl,
+            builder: (context, _) {
+              final t = _bgCtrl.value;
+              final c1 = Color.lerp(
+                const Color(0xFFCCFBF1),
+                const Color(0xFFE0E7FF),
+                t,
+              )!;
+              final c2 = Color.lerp(
+                const Color(0xFFEFF6FF),
+                const Color(0xFFFFF7ED),
+                1 - t,
+              )!;
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [c1, c2],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.center,
-                  child: ElevatedButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MoodTrackerScreen())),
-                    icon: const Icon(Icons.emoji_emotions_outlined),
-                    label: const Text("Log Today's Mood"),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                  ),
-                )
-              ]),
-            ),
-            const SizedBox(height: 18),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0.0),
-              child: LayoutBuilder(builder: (context, box) {
-                final isWide = box.maxWidth > 720;
-                final spacing = 14.0;
-                final progressCard = Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.pink.shade50, Colors.pink.shade100.withAlpha(150)]),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))]),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Icon(Icons.show_chart, color: Colors.purple.shade700), const SizedBox(width: 8), Text('Your Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.purple.shade700))]),
-                    const SizedBox(height: 12),
-                    _loadingProgress
-                        ? Center(child: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: CircularProgressIndicator()))
-                        : Column(children: [
-                            _progressRow('Mood check-ins', _moodCheckins.toString(), Colors.purple),
-                            const SizedBox(height: 8),
-                            _progressRow('Journal entries', _journalEntries.toString(), Colors.blue),
-                            const SizedBox(height: 8),
-                            _progressRow('Days active', _daysActive.toString(), Colors.green),
-                          ]),
-                  ]),
-                );
-                final affirmationCard = Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.indigo.shade50, Colors.purple.shade100.withAlpha(130)]),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))]),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Icon(Icons.format_quote, color: Colors.purple.shade700), const SizedBox(width: 8), Text('Daily Affirmation', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.purple.shade700))]),
-                    const SizedBox(height: 12),
-                    Text(dailyAffirmation(), style: const TextStyle(color: Colors.black87, fontSize: 15, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          await Clipboard.setData(ClipboardData(text: dailyAffirmation()));
-                          messenger.showSnackBar(const SnackBar(content: Text('Affirmation copied')));
-                        },
-                        icon: const Icon(Icons.copy),
-                        label: const Text('Copy'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
-                      ),
-                      const SizedBox(width: 12),
-                      TextButton(onPressed: () => setState(() => _affirmationOffset++), child: const Text('New affirmation'))
-                    ])
-                  ]),
-                );
-                if (isWide) {
-                  return Row(children: [Expanded(child: progressCard), SizedBox(width: spacing), Expanded(child: affirmationCard)]);
-                }
-                return Column(children: [progressCard, SizedBox(height: spacing), affirmationCard]);
-              }),
-            ),
-            const SizedBox(height: 24)
-          ]);
+              );
             },
           ),
-        )
-      ]),
+          AnimatedBuilder(
+            animation: _bgCtrl,
+            builder: (context, _) => IgnorePointer(
+              child: CustomPaint(
+                size: Size.infinite,
+                painter: _HomeBubblesPainter(t: _bgCtrl.value),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 16.0,
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return ListView(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FutureBuilder<String?>(
+                            future: ProfileService.getDisplayName(),
+                            builder: (context, snapshot) {
+                              final display =
+                                  (snapshot.data != null &&
+                                      snapshot.data!.trim().isNotEmpty)
+                                  ? snapshot.data!.trim()
+                                  : resolvedName;
+                              return Text(
+                                '${greetingEmoji()} ${timeGreeting()}, $display',
+                                style: theme.textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'How are you feeling today?',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_today,
+                                    color: Colors.purple,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Your Week at a Glance',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pushNamed(context, '/week'),
+                                child: const Text('View All'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 140,
+                            child: FutureBuilder<List<dynamic>>(
+                              future: ApiService().getMoodLogs(
+                                userId: widget.userId > 0 ? widget.userId : 1,
+                              ),
+                              builder: (context, snap) {
+                                Map<String, String> byDate =
+                                    {}; // yyyy-mm-dd -> emoji
+                                if (snap.hasData) {
+                                  for (final row in snap.data!) {
+                                    try {
+                                      final ts =
+                                          row['timestamp'] ??
+                                          row['created_at'] ??
+                                          row['time'] ??
+                                          '';
+                                      if (ts == null) continue;
+                                      final dt = DateTime.parse(ts.toString());
+                                      final key =
+                                          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+                                      byDate[key] = _moodLabelToEmoji(
+                                        (row['mood_label'] ?? '').toString(),
+                                      );
+                                    } catch (_) {}
+                                  }
+                                }
+
+                                return Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: List.generate(7, (i) {
+                                    final d = weekDays[i];
+                                    final dayLabel = const [
+                                      'Sun',
+                                      'Mon',
+                                      'Tue',
+                                      'Wed',
+                                      'Thu',
+                                      'Fri',
+                                      'Sat',
+                                    ][i];
+                                    final isToday = d == istToday;
+                                    final isPast = d.isBefore(istToday);
+                                    final dateNum = d.day;
+                                    final key =
+                                        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                                    final emoji = byDate.containsKey(key)
+                                        ? byDate[key]
+                                        : (isPast ? '😐' : null);
+
+                                    return Expanded(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            dayLabel,
+                                            style: const TextStyle(
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Expanded(
+                                            child: Container(
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                border: isToday
+                                                    ? Border.all(
+                                                        color: Colors.purple,
+                                                        width: 2,
+                                                      )
+                                                    : null,
+                                              ),
+                                              child: Center(
+                                                child: isToday
+                                                    ? Column(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            emoji ?? '😐',
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontSize: 28,
+                                                                ),
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 6,
+                                                          ),
+                                                          const Text(
+                                                            'Today',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  Colors.purple,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      )
+                                                    : (emoji != null
+                                                          ? Text(
+                                                              emoji,
+                                                              style:
+                                                                  const TextStyle(
+                                                                    fontSize:
+                                                                        22,
+                                                                  ),
+                                                            )
+                                                          : (isPast
+                                                                ? const Text(
+                                                                    '😐',
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          12,
+                                                                      color: Colors
+                                                                          .black38,
+                                                                    ),
+                                                                  )
+                                                                : const Text(
+                                                                    '—',
+                                                                    style: TextStyle(
+                                                                      fontSize:
+                                                                          12,
+                                                                      color: Colors
+                                                                          .black26,
+                                                                    ),
+                                                                  ))),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            dateNum.toString(),
+                                            style: const TextStyle(
+                                              color: Colors.black45,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.center,
+                            child: ElevatedButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MoodTrackerScreen(),
+                                ),
+                              ),
+                              icon: const Icon(Icons.emoji_emotions_outlined),
+                              label: const Text("Log Today's Mood"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.purple,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                      child: LayoutBuilder(
+                        builder: (context, box) {
+                          final isWide = box.maxWidth > 720;
+                          final spacing = 14.0;
+                          final progressCard = Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.pink.shade50,
+                                  Colors.pink.shade100.withAlpha(150),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.show_chart,
+                                      color: Colors.purple.shade700,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Your Progress',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.purple.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                _loadingProgress
+                                    ? Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : Column(
+                                        children: [
+                                          _progressRow(
+                                            'Mood check-ins',
+                                            _moodCheckins.toString(),
+                                            Colors.purple,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          _progressRow(
+                                            'Journal entries',
+                                            _journalEntries.toString(),
+                                            Colors.blue,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          _progressRow(
+                                            'Days active',
+                                            _daysActive.toString(),
+                                            Colors.green,
+                                          ),
+                                        ],
+                                      ),
+                              ],
+                            ),
+                          );
+                          final affirmationCard = Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.indigo.shade50,
+                                  Colors.purple.shade100.withAlpha(130),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.format_quote,
+                                      color: Colors.purple.shade700,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Daily Affirmation',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.purple.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  dailyAffirmation(),
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: () async {
+                                        final messenger = ScaffoldMessenger.of(
+                                          context,
+                                        );
+                                        await Clipboard.setData(
+                                          ClipboardData(
+                                            text: dailyAffirmation(),
+                                          ),
+                                        );
+                                        messenger.showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Affirmation copied'),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.copy),
+                                      label: const Text('Copy'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.purple,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    TextButton(
+                                      onPressed: () =>
+                                          setState(() => _affirmationOffset++),
+                                      child: const Text('New affirmation'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                          if (isWide) {
+                            return Row(
+                              children: [
+                                Expanded(child: progressCard),
+                                SizedBox(width: spacing),
+                                Expanded(child: affirmationCard),
+                              ],
+                            );
+                          }
+                          return Column(
+                            children: [
+                              progressCard,
+                              SizedBox(height: spacing),
+                              affirmationCard,
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -463,9 +868,30 @@ class _HomeBubblesPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     final bubbles = [
-      _HBubble(0.10, Colors.white.withValues(alpha: 0.10), Offset(size.width * 0.2 + 30 * math.sin(t * math.pi * 2), size.height * 0.2)),
-      _HBubble(0.08, Colors.white.withValues(alpha: 0.08), Offset(size.width * 0.8 + 40 * math.cos(t * math.pi), size.height * 0.3 + 20 * math.sin(t * math.pi))),
-      _HBubble(0.14, Colors.white.withValues(alpha: 0.06), Offset(size.width * 0.6 + 50 * math.sin(t * math.pi * 1.5), size.height * 0.75)),
+      _HBubble(
+        0.10,
+        Colors.white.withValues(alpha: 0.10),
+        Offset(
+          size.width * 0.2 + 30 * math.sin(t * math.pi * 2),
+          size.height * 0.2,
+        ),
+      ),
+      _HBubble(
+        0.08,
+        Colors.white.withValues(alpha: 0.08),
+        Offset(
+          size.width * 0.8 + 40 * math.cos(t * math.pi),
+          size.height * 0.3 + 20 * math.sin(t * math.pi),
+        ),
+      ),
+      _HBubble(
+        0.14,
+        Colors.white.withValues(alpha: 0.06),
+        Offset(
+          size.width * 0.6 + 50 * math.sin(t * math.pi * 1.5),
+          size.height * 0.75,
+        ),
+      ),
     ];
     for (final b in bubbles) {
       paint.color = b.color;
@@ -474,7 +900,8 @@ class _HomeBubblesPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _HomeBubblesPainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _HomeBubblesPainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 class _HBubble {

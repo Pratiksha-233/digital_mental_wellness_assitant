@@ -34,7 +34,7 @@ def register():
         return jsonify({'status': 'error', 'message': 'User already exists'}), 400
 
     # Hash password
-    hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     # Insert new user
     cursor.execute(

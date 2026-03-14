@@ -299,7 +299,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
             ),
             child: Center(
               child: Text(
-                '${record.stressLevel.toStringAsFixed(0)}',
+                record.stressLevel.toStringAsFixed(0),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: _getStressColor(record.stressLevel),

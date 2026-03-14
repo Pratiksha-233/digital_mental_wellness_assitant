@@ -7,7 +7,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from services.ml_service import ml_service
 import base64
-import numpy as np
 from io import BytesIO
 import sys
 from pathlib import Path
@@ -21,11 +20,25 @@ try:
     import cv2
     from realtimedetection import predict_emotion_from_face, model as face_model, face_cascade
     _CV_AVAILABLE = True
-except Exception as e:
+except BaseException as e:
     print(f"Error importing: {e}")
     _CV_AVAILABLE = False
     face_model = None
     face_cascade = None
+
+try:
+    import numpy as np
+    _NUMPY_AVAILABLE = True
+except ImportError:
+    _NUMPY_AVAILABLE = False
+    np = None
+
+try:
+    from services.ml_service import ml_service
+    _ML_AVAILABLE = True
+except ImportError:
+    _ML_AVAILABLE = False
+    ml_service = None
 
 detection_bp = Blueprint('detection', __name__)
 
@@ -43,6 +56,9 @@ def predict_emotion():
         
         if not text:
             return jsonify({'status': 'error', 'message': 'Text cannot be empty'}), 400
+        
+        if not _ML_AVAILABLE:
+            return jsonify({'status': 'error', 'message': 'ML service not available'}), 503
         
         emotion = ml_service.predict_emotion(text)
         
@@ -89,6 +105,8 @@ def predict_image():
             
             image_bytes = base64.b64decode(image_data)
             img = Image.open(BytesIO(image_bytes)).convert('RGB')
+            if not _NUMPY_AVAILABLE:
+                return jsonify({'status': 'error', 'message': 'NumPy not available'}), 503
             img_array = np.array(img)
         except Exception as e:
             return jsonify({'status': 'error', 'message': f'Invalid image format: {str(e)}'}), 400

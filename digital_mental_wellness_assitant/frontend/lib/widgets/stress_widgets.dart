@@ -124,7 +124,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${_animation.value.toStringAsFixed(1)}',
+                        _animation.value.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
@@ -429,7 +429,7 @@ class ContributingFactorsCard extends StatelessWidget {
                 rank: index + 1,
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -555,7 +555,7 @@ class RecommendationsCard extends StatelessWidget {
                       ],
                     ),
                   ))
-              .toList(),
+              ,
         ],
       ),
     );
