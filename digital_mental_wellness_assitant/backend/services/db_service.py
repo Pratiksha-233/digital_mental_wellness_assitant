@@ -26,7 +26,7 @@ def get_connection():
         conn = mysql.connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'mysqlworld@123'),
+            password=config.DB_CONFIG.get('password', 'Pra@#ti825'),
             database=config.DB_CONFIG.get('database', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')
@@ -260,6 +260,84 @@ def get_user_progress(user_id):
     except Error as e:
         print("❌ get_user_progress error:", e)
         return {'mood_checkins': 0, 'journal_entries': 0, 'days_active': 0}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def insert_face_detection_log(user_id, detected_emotion, confidence_score, faces_detected, detection_method='image'):
+    """Insert a face detection log into face_detection_logs table."""
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not insert face detection log — DB connection failed.")
+        return False, 'db_connection_failed'
+    try:
+        cursor = conn.cursor()
+        sql = """
+            INSERT INTO face_detection_logs (user_id, detected_emotion, confidence_score, faces_detected, detection_method)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(sql, (user_id, detected_emotion, confidence_score, faces_detected, detection_method))
+        conn.commit()
+        print("📸 Face detection log inserted successfully.")
+        return True, None
+    except Error as e:
+        err = str(e)
+        print("❌ Insert face detection log error:", err)
+        return False, err
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_face_detection_summary(user_id, days=30):
+    """Return summary counts and average confidence for face detection logs."""
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not fetch face detection summary — DB connection failed.")
+        return {
+            'total': 0,
+            'by_emotion': {},
+            'avg_confidence': 0.0,
+        }
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(detected_emotion, 'Unknown') AS emotion,
+                COUNT(*) AS count,
+                AVG(confidence_score) AS avg_confidence
+            FROM face_detection_logs
+            WHERE user_id = %s
+              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+            GROUP BY emotion
+            ORDER BY count DESC
+            """,
+            (user_id, days),
+        )
+        rows = cursor.fetchall()
+
+        total = sum(int(r.get('count') or 0) for r in rows)
+        by_emotion = {r.get('emotion') or 'Unknown': int(r.get('count') or 0) for r in rows}
+        weighted_sum = sum(
+            (float(r.get('avg_confidence') or 0.0) * int(r.get('count') or 0)) for r in rows
+        )
+        avg_confidence = float(weighted_sum / total) if total > 0 else 0.0
+
+        return {
+            'total': total,
+            'by_emotion': by_emotion,
+            'avg_confidence': avg_confidence,
+        }
+    except Error as e:
+        print("❌ get_face_detection_summary error:", e)
+        return {
+            'total': 0,
+            'by_emotion': {},
+            'avg_confidence': 0.0,
+        }
     finally:
         cursor.close()
         conn.close()

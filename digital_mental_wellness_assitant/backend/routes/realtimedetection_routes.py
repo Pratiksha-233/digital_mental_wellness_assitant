@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from services.ml_service import ml_service
+from services.db_service import insert_face_detection_log
 import base64
 from io import BytesIO
 import sys
@@ -75,7 +76,7 @@ def predict_emotion():
 def predict_image():
     """
     Predict emotion from base64 encoded image using face recognition
-    Expects: {"image": "base64_encoded_image"}
+    Expects: {"image": "base64_encoded_image", "user_id": 1}  # user_id optional, defaults to 1
     Returns: {"emotion": "emotion_label", "confidence": 0.95}
     """
     if not _CV_AVAILABLE:
@@ -93,6 +94,7 @@ def predict_image():
     try:
         data = request.get_json()
         image_data = data.get('image', '').strip()
+        user_id = data.get('user_id', 1)  # default to user 1 if not provided
         
         if not image_data:
             return jsonify({'status': 'error', 'message': 'Image data cannot be empty'}), 400
@@ -118,6 +120,8 @@ def predict_image():
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
         
         if len(faces) == 0:
+            # Still log if no face detected
+            insert_face_detection_log(user_id, 'No face detected', 0.0, 0, 'image')
             return jsonify({
                 'status': 'success',
                 'emotion': 'No face detected',
@@ -131,6 +135,9 @@ def predict_image():
         
         # Use the face emotion detection model
         emotion, confidence = predict_emotion_from_face(face_roi)
+        
+        # Insert into database
+        insert_face_detection_log(user_id, emotion, confidence, len(faces), 'image')
         
         return jsonify({
             'status': 'success',

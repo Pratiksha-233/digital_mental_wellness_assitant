@@ -207,4 +207,14 @@ class ApiService {
     }
     return [];
   }
+
+  Future<Map<String, dynamic>> getFaceDetectionAnalytics(int userId) async {
+    final res = await http.get(
+      Uri.parse('$apiBaseUrl/analytics/face-detections?user_id=$userId'),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return {'total': 0, 'by_emotion': {}, 'avg_confidence': 0.0};
+  }
 }

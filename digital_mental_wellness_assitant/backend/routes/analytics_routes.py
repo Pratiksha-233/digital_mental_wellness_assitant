@@ -161,6 +161,17 @@ def chat_sentiment_analytics():
         conn.close()
 
 
+@analytics_bp.route('/face-detections', methods=['GET'])
+def face_detections_analytics():
+    """Return a summary of face detection logs for the user."""
+    user_id = _parse_user_id()
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    stats = db_service.get_face_detection_summary(user_id)
+    return jsonify(stats), 200
+
+
 @analytics_bp.route('/activity', methods=['GET'])
 def activity_analytics():
     """Return activity counts over last 30 days.

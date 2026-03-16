@@ -14,12 +14,19 @@ class AnalyticsDashboardScreen extends StatefulWidget {
 class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   final ApiService _api = ApiService();
   bool _loading = true;
+  bool _userIdMissing = false;
+
   List<dynamic> _mood = const [];
   List<dynamic> _stress = const [];
   Map<String, dynamic> _sentiment = const {
     'positive': 0.0,
     'neutral': 0.0,
     'negative': 0.0,
+  };
+  Map<String, dynamic> _faceDetection = const {
+    'total': 0,
+    'by_emotion': {},
+    'avg_confidence': 0.0,
   };
   List<dynamic> _activity = const [];
   List<_MoodEntry> _recentMoodEntries = const [];
@@ -34,12 +41,27 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
-    final userId = await ProfileService.getUserId() ?? 1;
+    setState(() {
+      _loading = true;
+      _userIdMissing = false;
+    });
+
+    final userId = await ProfileService.getUserId();
+    if (userId == null) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _userIdMissing = true;
+        });
+      }
+      return;
+    }
+
     try {
       final mood = await _api.getMoodAnalytics(userId);
       final stress = await _api.getStressAnalytics(userId);
       final sentiment = await _api.getChatSentiment(userId);
+      final faceDetection = await _api.getFaceDetectionAnalytics(userId);
       final activity = await _api.getActivityAnalytics(userId);
       final progress = await _api.getProgress(userId: userId);
       final rawLogs = await _api.getMoodLogs(userId: userId);
@@ -48,6 +70,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         _mood = mood;
         _stress = stress;
         _sentiment = sentiment;
+        _faceDetection = faceDetection;
         _activity = activity;
         _moodCheckins = (progress['mood_checkins'] as int?) ?? 0;
         _journalEntries = (progress['journal_entries'] as int?) ?? 0;
@@ -76,39 +99,67 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 900;
-                  final grid = SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: isWide ? 3 : 1,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: isWide ? 1.3 : 1.1,
-                  );
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSummaryRow(theme, isWide: isWide),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: GridView(
-                          gridDelegate: grid,
-                          children: [
-                            _buildMoodCard(theme),
-                            _buildRecentMoodCard(theme),
-                            _buildStressCard(theme),
-                            _buildSentimentCard(theme),
-                            _buildActivityCard(theme),
-                          ],
+          : (_userIdMissing
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_off, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No user selected',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                         ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Set a numeric user ID in Profile settings or sign in to see your personal analytics.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pushNamed(context, '/profile'),
+                          child: const Text('Open Profile'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth > 900;
+                      final grid = SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: isWide ? 3 : 1,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: isWide ? 1.3 : 1.1,
+                      );
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSummaryRow(theme, isWide: isWide),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: GridView(
+                              gridDelegate: grid,
+                              children: [
+                                _buildMoodCard(theme),
+                                _buildRecentMoodCard(theme),
+                                _buildStressCard(theme),
+                                _buildSentimentCard(theme),
+                                _buildFaceDetectionCard(theme),
+                                _buildActivityCard(theme),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                )),
     );
   }
 
@@ -446,6 +497,36 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           style: const TextStyle(fontSize: 11),
         ),
       ],
+    );
+  }
+
+  Widget _buildFaceDetectionCard(ThemeData theme) {
+    final total = (_faceDetection['total'] as num?)?.toInt() ?? 0;
+    final avgConf = (_faceDetection['avg_confidence'] as num?)?.toDouble() ?? 0.0;
+    final byEmotion = (_faceDetection['by_emotion'] as Map?) ?? {};
+
+    String description;
+    if (total == 0) {
+      description = 'No face detection data yet.';
+    } else {
+      final mostCommon = byEmotion.entries
+          .where((e) => e.value is num)
+          .toList()
+        ..sort((a, b) => (b.value as num).compareTo(a.value as num));
+      final topEmotion = mostCommon.isNotEmpty ? mostCommon.first.key : 'N/A';
+      description = '$topEmotion detected most frequently (avg confidence ${avgConf.toStringAsFixed(0)}%)';
+    }
+
+    return _buildCard(
+      theme,
+      title: 'Face Detection',
+      child: Center(
+        child: Text(
+          description,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium,
+        ),
+      ),
     );
   }
 
