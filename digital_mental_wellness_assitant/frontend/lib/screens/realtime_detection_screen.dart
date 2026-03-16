@@ -5,17 +5,23 @@ import 'package:camera/camera.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../services/realtime_detection_service.dart';
+import '../services/profile_service.dart';
 import '../theme/brand_theme.dart';
 
 class RealtimeDetectionScreen extends StatefulWidget {
   const RealtimeDetectionScreen({super.key});
 
   @override
-  State<RealtimeDetectionScreen> createState() => _RealtimeDetectionScreenState();
+  State<RealtimeDetectionScreen> createState() =>
+      _RealtimeDetectionScreenState();
 }
 
 class _DetectionRecord {
-  const _DetectionRecord({required this.emotion, required this.confidence, required this.at});
+  const _DetectionRecord({
+    required this.emotion,
+    required this.confidence,
+    required this.at,
+  });
 
   final String emotion;
   final double confidence;
@@ -48,7 +54,10 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
     try {
       final cams = await availableCameras();
       final cam = cams.isNotEmpty
-          ? cams.firstWhere((c) => c.lensDirection == CameraLensDirection.front, orElse: () => cams.first)
+          ? cams.firstWhere(
+              (c) => c.lensDirection == CameraLensDirection.front,
+              orElse: () => cams.first,
+            )
           : null;
       if (cam == null) {
         if (!mounted) return;
@@ -58,7 +67,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
         });
         return;
       }
-      final ctrl = CameraController(cam, ResolutionPreset.medium, enableAudio: false);
+      final ctrl = CameraController(
+        cam,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
       await ctrl.initialize();
       if (!mounted) return;
       setState(() {
@@ -81,9 +94,12 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
   }
 
   Future<void> _captureAndDetect({bool fromAuto = false}) async {
-    if (_controller == null || !_controller!.value.isInitialized || _isLoading) return;
+    if (_controller == null || !_controller!.value.isInitialized || _isLoading)
+      return;
     final now = DateTime.now();
-    if (_lastDetectAt != null && now.difference(_lastDetectAt!) < _detectCooldown) return;
+    if (_lastDetectAt != null &&
+        now.difference(_lastDetectAt!) < _detectCooldown)
+      return;
     _lastDetectAt = now;
 
     setState(() {
@@ -100,16 +116,29 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
       setState(() => _capturedImage = bytes);
 
       final base64Image = base64Encode(bytes);
-      final result = await RealtimeDetectionService.predictImageEmotion(base64Image);
+      final userId = await ProfileService.getUserId();
+      final result = await RealtimeDetectionService.predictImageEmotion(
+        base64Image,
+        userId: userId,
+      );
 
       final emotion = (result['emotion'] ?? 'Unknown').toString();
-      final conf = (result['confidence'] is num) ? (result['confidence'] as num).toDouble() : 0.0;
+      final conf = (result['confidence'] is num)
+          ? (result['confidence'] as num).toDouble()
+          : 0.0;
 
       setState(() {
         _detectedEmotion = emotion;
         _confidence = conf;
         _isLoading = false;
-        _detectionHistory.insert(0, _DetectionRecord(emotion: emotion, confidence: conf, at: DateTime.now()));
+        _detectionHistory.insert(
+          0,
+          _DetectionRecord(
+            emotion: emotion,
+            confidence: conf,
+            at: DateTime.now(),
+          ),
+        );
         if (_detectionHistory.length > 10) {
           _detectionHistory.removeLast();
         }
@@ -141,7 +170,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Auto-detect can be flaky on Web. If it fails, switch to Manual.'),
+          content: Text(
+            'Auto-detect can be flaky on Web. If it fails, switch to Manual.',
+          ),
           duration: Duration(seconds: 4),
         ),
       );
@@ -167,7 +198,10 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
             '• Manual mode is best on Web if auto feels unstable',
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
           ],
         );
       },
@@ -182,7 +216,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
         if (_detectionHistory.isEmpty) {
           return const Padding(
             padding: EdgeInsets.all(24),
-            child: Text('No detections yet. Auto-detection will start when the camera is ready.'),
+            child: Text(
+              'No detections yet. Auto-detection will start when the camera is ready.',
+            ),
           );
         }
 
@@ -203,7 +239,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                 rec.emotion,
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: Text('Confidence ${(rec.confidence * 100).toStringAsFixed(1)}% • $time'),
+              subtitle: Text(
+                'Confidence ${(rec.confidence * 100).toStringAsFixed(1)}% • $time',
+              ),
               trailing: Text(
                 _getEmotionEmoji(rec.emotion),
                 style: const TextStyle(fontSize: 20),
@@ -217,12 +255,13 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
 
   Future<void> _copyResult() async {
     if (_detectedEmotion.isEmpty) return;
-    final text = 'Emotion: $_detectedEmotion (${(_confidence * 100).toStringAsFixed(1)}%)';
+    final text =
+        'Emotion: $_detectedEmotion (${(_confidence * 100).toStringAsFixed(1)}%)';
     await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Result copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Result copied to clipboard')));
   }
 
   void _clearResult() {
@@ -360,10 +399,12 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
     final brandGradients = Theme.of(context).extension<BrandGradients>();
 
     final statusText = _initializing
-      ? 'Starting camera…'
-      : (_controller == null || !_controller!.value.isInitialized)
+        ? 'Starting camera…'
+        : (_controller == null || !_controller!.value.isInitialized)
         ? 'Camera unavailable'
-        : (_autoDetectEnabled ? 'Auto detecting every ${_autoInterval.inSeconds}s' : 'Auto detection paused');
+        : (_autoDetectEnabled
+              ? 'Auto detecting every ${_autoInterval.inSeconds}s'
+              : 'Auto detection paused');
 
     return Scaffold(
       appBar: AppBar(
@@ -386,9 +427,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(
-              gradient: brandGradients?.background,
-            ),
+            decoration: BoxDecoration(gradient: brandGradients?.background),
           ),
           // Emotion tint overlay (subtle)
           Positioned.fill(
@@ -399,7 +438,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                     center: const Alignment(0.0, -0.35),
                     radius: 1.2,
                     colors: [
-                      emotionColor.withValues(alpha: _detectedEmotion.isEmpty ? 0.0 : 0.10),
+                      emotionColor.withValues(
+                        alpha: _detectedEmotion.isEmpty ? 0.0 : 0.10,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -415,15 +456,14 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                 Card(
                   elevation: 6,
                   shadowColor: cs.primary.withValues(alpha: 0.15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       gradient: LinearGradient(
-                        colors: [
-                          emotionColor.withAlpha(18),
-                          cs.surface,
-                        ],
+                        colors: [emotionColor.withAlpha(18), cs.surface],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -436,7 +476,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                _detectedEmotion.isEmpty ? 'Ready to detect' : 'Detected',
+                                _detectedEmotion.isEmpty
+                                    ? 'Ready to detect'
+                                    : 'Detected',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: cs.onSurfaceVariant,
@@ -446,12 +488,19 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                             ),
                             IconButton(
                               tooltip: 'Copy result',
-                              onPressed: _detectedEmotion.isEmpty ? null : _copyResult,
+                              onPressed: _detectedEmotion.isEmpty
+                                  ? null
+                                  : _copyResult,
                               icon: const Icon(Icons.copy),
                             ),
                             IconButton(
                               tooltip: 'Clear',
-                              onPressed: (_detectedEmotion.isEmpty && _capturedImage == null && _errorMessage.isEmpty) ? null : _clearResult,
+                              onPressed:
+                                  (_detectedEmotion.isEmpty &&
+                                      _capturedImage == null &&
+                                      _errorMessage.isEmpty)
+                                  ? null
+                                  : _clearResult,
                               icon: const Icon(Icons.refresh),
                             ),
                           ],
@@ -460,7 +509,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                         Center(
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 250),
-                            transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+                            transitionBuilder: (child, anim) =>
+                                ScaleTransition(scale: anim, child: child),
                             child: Text(
                               _getEmotionEmoji(_detectedEmotion),
                               key: ValueKey<String>(_detectedEmotion),
@@ -472,22 +522,33 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                         Center(
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: emotionColor.withValues(alpha: _detectedEmotion.isEmpty ? 0.10 : 0.16),
+                              color: emotionColor.withValues(
+                                alpha: _detectedEmotion.isEmpty ? 0.10 : 0.16,
+                              ),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  _getEmotionIcon(_detectedEmotion.isEmpty ? 'neutral' : _detectedEmotion),
+                                  _getEmotionIcon(
+                                    _detectedEmotion.isEmpty
+                                        ? 'neutral'
+                                        : _detectedEmotion,
+                                  ),
                                   size: 18,
                                   color: emotionColor,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _detectedEmotion.isEmpty ? statusText : 'Wellness signal',
+                                  _detectedEmotion.isEmpty
+                                      ? statusText
+                                      : 'Wellness signal',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     color: cs.onSurface,
@@ -502,12 +563,18 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                           child: AnimatedSwitcher(
                             duration: const Duration(milliseconds: 250),
                             child: Text(
-                              _detectedEmotion.isEmpty ? 'Scanning…' : _detectedEmotion,
-                              key: ValueKey<String>('label:${_detectedEmotion.isEmpty ? 'empty' : _detectedEmotion}'),
+                              _detectedEmotion.isEmpty
+                                  ? 'Scanning…'
+                                  : _detectedEmotion,
+                              key: ValueKey<String>(
+                                'label:${_detectedEmotion.isEmpty ? 'empty' : _detectedEmotion}',
+                              ),
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w800,
-                                color: _detectedEmotion.isEmpty ? cs.onSurface : emotionColor,
+                                color: _detectedEmotion.isEmpty
+                                    ? cs.onSurface
+                                    : emotionColor,
                               ),
                             ),
                           ),
@@ -519,20 +586,36 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                           alignment: WrapAlignment.center,
                           children: [
                             Chip(
-                              avatar: Icon(_autoDetectEnabled ? Icons.auto_awesome_rounded : Icons.pause_circle_outline_rounded, size: 18, color: cs.primary),
-                              label: Text(_autoDetectEnabled ? 'Auto' : 'Paused'),
+                              avatar: Icon(
+                                _autoDetectEnabled
+                                    ? Icons.auto_awesome_rounded
+                                    : Icons.pause_circle_outline_rounded,
+                                size: 18,
+                                color: cs.primary,
+                              ),
+                              label: Text(
+                                _autoDetectEnabled ? 'Auto' : 'Paused',
+                              ),
                             ),
                             if (_detectedEmotion.isNotEmpty)
                               Chip(
-                                avatar: Icon(_getEmotionIcon(_detectedEmotion), size: 18, color: emotionColor),
-                                label: Text('${(100 * _confidence).toStringAsFixed(1)}% confidence'),
+                                avatar: Icon(
+                                  _getEmotionIcon(_detectedEmotion),
+                                  size: 18,
+                                  color: emotionColor,
+                                ),
+                                label: Text(
+                                  '${(100 * _confidence).toStringAsFixed(1)}% confidence',
+                                ),
                               ),
                             if (_isLoading)
                               Chip(
                                 avatar: const SizedBox(
                                   width: 14,
                                   height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                                 label: const Text('Analyzing'),
                               ),
@@ -546,7 +629,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                               value: _confidence,
                               minHeight: 10,
                               backgroundColor: cs.surfaceContainerHighest,
-                              valueColor: AlwaysStoppedAnimation<Color>(emotionColor),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                emotionColor,
+                              ),
                             ),
                           ),
                         ],
@@ -561,7 +646,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                   Card(
                     elevation: 0,
                     color: cs.errorContainer,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
@@ -571,7 +658,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                           Expanded(
                             child: Text(
                               _errorMessage,
-                              style: TextStyle(color: cs.onErrorContainer, fontSize: 13, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: cs.onErrorContainer,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -584,7 +675,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                 // Camera + Controls
                 Card(
                   elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -595,7 +688,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                             Expanded(
                               child: Text(
                                 'Live Camera',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.primary),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: cs.primary,
+                                ),
                               ),
                             ),
                             Text(
@@ -603,7 +700,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w900,
-                                color: _autoDetectEnabled ? cs.primary : cs.onSurfaceVariant,
+                                color: _autoDetectEnabled
+                                    ? cs.primary
+                                    : cs.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -617,14 +716,19 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                               fit: StackFit.expand,
                               children: [
                                 if (_initializing)
-                                  const Center(child: CircularProgressIndicator())
-                                else if (_controller == null || !_controller!.value.isInitialized)
+                                  const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                else if (_controller == null ||
+                                    !_controller!.value.isInitialized)
                                   Container(
                                     color: cs.surfaceContainerHighest,
                                     child: Center(
                                       child: Text(
                                         'Camera unavailable. Check permissions.',
-                                        style: TextStyle(color: cs.onSurfaceVariant),
+                                        style: TextStyle(
+                                          color: cs.onSurfaceVariant,
+                                        ),
                                       ),
                                     ),
                                   )
@@ -652,7 +756,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                                 if (_isLoading)
                                   Positioned.fill(
                                     child: Container(
-                                      color: Colors.black.withValues(alpha: 0.25),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.25,
+                                      ),
                                       child: const Center(
                                         child: CircularProgressIndicator(),
                                       ),
@@ -664,30 +770,52 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                                   right: 12,
                                   bottom: 10,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.45),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.45,
+                                      ),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
+                                        const Icon(
+                                          Icons.auto_awesome,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Text(
                                             _autoDetectEnabled
                                                 ? 'Auto detecting every ${_autoInterval.inSeconds}s'
                                                 : 'Auto detect paused',
-                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
                                         ),
                                         IconButton(
-                                          tooltip: _autoDetectEnabled ? 'Pause' : 'Resume',
-                                          onPressed: (_controller == null || !_controller!.value.isInitialized)
+                                          tooltip: _autoDetectEnabled
+                                              ? 'Pause'
+                                              : 'Resume',
+                                          onPressed:
+                                              (_controller == null ||
+                                                  !_controller!
+                                                      .value
+                                                      .isInitialized)
                                               ? null
-                                              : () => _setAutoDetect(!_autoDetectEnabled),
+                                              : () => _setAutoDetect(
+                                                  !_autoDetectEnabled,
+                                                ),
                                           icon: Icon(
-                                            _autoDetectEnabled ? Icons.pause_circle_filled : Icons.play_circle_fill,
+                                            _autoDetectEnabled
+                                                ? Icons.pause_circle_filled
+                                                : Icons.play_circle_fill,
                                             color: Colors.white,
                                           ),
                                         ),
@@ -703,7 +831,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+                            color: cs.surfaceContainerHighest.withValues(
+                              alpha: 0.55,
+                            ),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Column(
@@ -715,27 +845,48 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                                   Expanded(
                                     child: Text(
                                       'Auto detect runs every ${_autoInterval.inSeconds}s',
-                                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                        color: cs.onSurfaceVariant,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                   IconButton(
-                                    tooltip: _autoDetectEnabled ? 'Pause' : 'Resume',
-                                    onPressed: (_controller == null || !_controller!.value.isInitialized)
+                                    tooltip: _autoDetectEnabled
+                                        ? 'Pause'
+                                        : 'Resume',
+                                    onPressed:
+                                        (_controller == null ||
+                                            !_controller!.value.isInitialized)
                                         ? null
-                                        : () => _setAutoDetect(!_autoDetectEnabled),
-                                    icon: Icon(_autoDetectEnabled ? Icons.pause : Icons.play_arrow),
+                                        : () => _setAutoDetect(
+                                            !_autoDetectEnabled,
+                                          ),
+                                    icon: Icon(
+                                      _autoDetectEnabled
+                                          ? Icons.pause
+                                          : Icons.play_arrow,
+                                    ),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Icon(Icons.lightbulb_outline, size: 18, color: cs.onSurfaceVariant),
+                                  Icon(
+                                    Icons.lightbulb_outline,
+                                    size: 18,
+                                    color: cs.onSurfaceVariant,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       'Tip: Good lighting + centered face = better confidence.',
-                                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                                      style: TextStyle(
+                                        color: cs.onSurfaceVariant,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -773,7 +924,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                 if (_detectedEmotion.isNotEmpty)
                   Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -785,7 +938,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                               const SizedBox(width: 8),
                               Text(
                                 'Wellness Suggestion',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.primary),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: cs.primary,
+                                ),
                               ),
                             ],
                           ),
@@ -799,7 +956,10 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                             children: [
                               Expanded(
                                 child: FilledButton.tonalIcon(
-                                  onPressed: () => Navigator.pushNamed(context, '/meditation'),
+                                  onPressed: () => Navigator.pushNamed(
+                                    context,
+                                    '/meditation',
+                                  ),
                                   icon: const Icon(Icons.air),
                                   label: const Text('Breathing'),
                                 ),
@@ -807,7 +967,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: FilledButton.tonalIcon(
-                                  onPressed: () => Navigator.pushNamed(context, '/mood'),
+                                  onPressed: () =>
+                                      Navigator.pushNamed(context, '/mood'),
                                   icon: const Icon(Icons.mood),
                                   label: const Text('Mood Tracker'),
                                 ),
@@ -819,7 +980,6 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                     ),
                   ),
 
-
                 const SizedBox(height: 32),
 
                 if (_detectionHistory.isNotEmpty) ...[
@@ -828,7 +988,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                       Expanded(
                         child: Text(
                           'Recent',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.primary),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: cs.primary,
+                          ),
                         ),
                       ),
                       TextButton.icon(
@@ -839,21 +1003,37 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ..._detectionHistory.take(3).map(
+                  ..._detectionHistory
+                      .take(3)
+                      .map(
                         (rec) => Card(
                           elevation: 0,
-                          color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          color: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: _getEmotionColor(rec.emotion).withValues(alpha: 0.18),
-                              child: Icon(_getEmotionIcon(rec.emotion), color: _getEmotionColor(rec.emotion)),
+                              backgroundColor: _getEmotionColor(
+                                rec.emotion,
+                              ).withValues(alpha: 0.18),
+                              child: Icon(
+                                _getEmotionIcon(rec.emotion),
+                                color: _getEmotionColor(rec.emotion),
+                              ),
                             ),
                             title: Text(
                               rec.emotion,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                            subtitle: Text('Confidence ${(rec.confidence * 100).toStringAsFixed(1)}%'),
+                            subtitle: Text(
+                              'Confidence ${(rec.confidence * 100).toStringAsFixed(1)}%',
+                            ),
                             trailing: Text(_getEmotionEmoji(rec.emotion)),
                           ),
                         ),

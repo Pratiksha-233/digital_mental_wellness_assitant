@@ -93,6 +93,30 @@ def stress_analytics():
             (user_id,),
         )
         rows = cursor.fetchall()
+
+        # If the user has no historical stress rows yet, compute & persist one
+        # (idempotent per day) so the dashboard isn't permanently empty.
+        if not rows:
+            try:
+                from services.stress_service import stress_service
+
+                stress_data = stress_service.calculate_stress_level(user_id)
+                stress_service.save_stress_log(user_id, stress_data)
+
+                cursor.execute(
+                    """
+                    SELECT DATE(timestamp) AS dt, AVG(stress_level) AS level
+                    FROM stress_logs
+                    WHERE user_id = %s
+                      AND timestamp > DATE_SUB(NOW(), INTERVAL 30 DAY)
+                    GROUP BY dt
+                    ORDER BY dt
+                    """,
+                    (user_id,),
+                )
+                rows = cursor.fetchall()
+            except Exception as e:
+                print('⚠️ stress_analytics auto-calc failed:', e)
         data = [
             {
                 'date': row['dt'].strftime('%Y-%m-%d') if isinstance(row['dt'], datetime) else str(row['dt']),
@@ -200,6 +224,27 @@ def activity_analytics():
             (user_id,),
         )
         rows = cursor.fetchall()
+
+        # Backfill activity_logs from mood_logs.activities when empty.
+        if not rows:
+            try:
+                inserted = db_service.backfill_activity_logs_from_mood_logs(user_id, days=30)
+                if inserted:
+                    cursor.execute(
+                        """
+                        SELECT activity_type, COUNT(*) AS count
+                        FROM activity_logs
+                        WHERE user_id = %s
+                          AND timestamp > DATE_SUB(NOW(), INTERVAL 30 DAY)
+                        GROUP BY activity_type
+                        ORDER BY count DESC
+                        """,
+                        (user_id,),
+                    )
+                    rows = cursor.fetchall()
+            except Exception as e:
+                print('⚠️ activity_analytics backfill failed:', e)
+
         data = [
             {
                 'type': row['activity_type'] or 'Unknown',

@@ -521,28 +521,71 @@ class StressCalculationService:
         return recs
     
     def save_stress_log(self, user_id: int, stress_data: dict) -> bool:
-        """Save stress calculation to database for historical tracking."""
+        """Save stress calculation to database for historical tracking.
+
+        This is idempotent per user per day: if a row already exists for today,
+        we update the latest row instead of inserting a duplicate.
+        """
         conn = db_service.get_connection()
         if not conn:
             print("⚠️ Could not save stress log — DB connection failed.")
             return False
         
         try:
-            cursor = conn.cursor()
-            sql = """
-                INSERT INTO stress_logs 
-                (user_id, stress_level, stress_category, primary_emotion, 
-                 energy_level, mood_pattern)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql, (
-                user_id,
-                stress_data['stress_level'],
-                stress_data['stress_category'],
-                stress_data['primary_emotion'],
-                stress_data['energy_level'],
-                stress_data['mood_pattern']
-            ))
+            cursor = conn.cursor(dictionary=True)
+
+            cursor.execute(
+                """
+                SELECT stress_id
+                FROM stress_logs
+                WHERE user_id = %s AND DATE(timestamp) = CURDATE()
+                ORDER BY timestamp DESC
+                LIMIT 1
+                """,
+                (user_id,),
+            )
+            existing = cursor.fetchone()
+
+            if existing and existing.get('stress_id'):
+                sql = """
+                    UPDATE stress_logs
+                    SET stress_level = %s,
+                        stress_category = %s,
+                        primary_emotion = %s,
+                        energy_level = %s,
+                        mood_pattern = %s
+                    WHERE stress_id = %s
+                """
+                cursor.execute(
+                    sql,
+                    (
+                        stress_data.get('stress_level'),
+                        stress_data.get('stress_category'),
+                        stress_data.get('primary_emotion'),
+                        stress_data.get('energy_level'),
+                        stress_data.get('mood_pattern'),
+                        existing['stress_id'],
+                    ),
+                )
+            else:
+                sql = """
+                    INSERT INTO stress_logs
+                    (user_id, stress_level, stress_category, primary_emotion,
+                     energy_level, mood_pattern)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(
+                    sql,
+                    (
+                        user_id,
+                        stress_data.get('stress_level'),
+                        stress_data.get('stress_category'),
+                        stress_data.get('primary_emotion'),
+                        stress_data.get('energy_level'),
+                        stress_data.get('mood_pattern'),
+                    ),
+                )
+
             conn.commit()
             print("✅ Stress log saved successfully.")
             return True

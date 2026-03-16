@@ -100,70 +100,79 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_userIdMissing
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.person_off, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No user selected',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Set a numeric user ID in Profile settings or sign in to see your personal analytics.',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pushNamed(context, '/profile'),
-                          child: const Text('Open Profile'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth > 900;
-                      final grid = SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: isWide ? 3 : 1,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: isWide ? 1.3 : 1.1,
-                      );
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildSummaryRow(theme, isWide: isWide),
+                          const Icon(
+                            Icons.person_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(height: 16),
-                          Expanded(
-                            child: GridView(
-                              gridDelegate: grid,
-                              children: [
-                                _buildMoodCard(theme),
-                                _buildRecentMoodCard(theme),
-                                _buildStressCard(theme),
-                                _buildSentimentCard(theme),
-                                _buildFaceDetectionCard(theme),
-                                _buildActivityCard(theme),
-                              ],
+                          const Text(
+                            'No user selected',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Set a numeric user ID in Profile settings or sign in to see your personal analytics.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/profile'),
+                            child: const Text('Open Profile'),
+                          ),
                         ],
-                      );
-                    },
-                  ),
-                )),
+                      ),
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isWide = constraints.maxWidth > 900;
+                        final grid = SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isWide ? 3 : 1,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: isWide ? 1.3 : 1.1,
+                        );
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSummaryRow(theme, isWide: isWide),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: GridView(
+                                gridDelegate: grid,
+                                children: [
+                                  _buildMoodCard(theme),
+                                  _buildRecentMoodCard(theme),
+                                  _buildStressCard(theme),
+                                  _buildSentimentCard(theme),
+                                  _buildFaceDetectionCard(theme),
+                                  _buildActivityCard(theme),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  )),
     );
   }
 
   Widget _buildSummaryRow(ThemeData theme, {required bool isWide}) {
+    final cs = theme.colorScheme;
     final pos = (_sentiment['positive'] as num?)?.toDouble() ?? 0.0;
     final neg = (_sentiment['negative'] as num?)?.toDouble() ?? 0.0;
     String sentimentLabel = 'Balanced';
@@ -188,7 +197,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         value: '$_moodCheckins moods',
         subtitle: '$_journalEntries journal entries • $_daysActive active days',
         icon: Icons.insights,
-        color: Colors.indigo,
+        color: cs.primary,
       ),
       _summaryTile(
         theme,
@@ -196,7 +205,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         value: '${pos.toStringAsFixed(0)}% positive',
         subtitle: sentimentLabel,
         icon: Icons.chat_bubble_outline,
-        color: Colors.teal,
+        color: cs.secondary,
       ),
       _summaryTile(
         theme,
@@ -204,7 +213,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         value: activityLabel,
         subtitle: 'Last 30 days',
         icon: Icons.local_fire_department,
-        color: Colors.orange,
+        color: cs.tertiary,
       ),
     ];
 
@@ -240,6 +249,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final cs = theme.colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -271,7 +281,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                 Text(
                   subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.black54,
+                    color: cs.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -319,6 +329,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     }
     // Simple line-like chart using bars and a polyline impression
     final maxScore = 5.0;
+    final cs = theme.colorScheme;
     return _buildCard(
       theme,
       title: 'Mood Trend (Last 30 days)',
@@ -333,8 +344,8 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                   .map<double>((e) => (e['score'] as num?)?.toDouble() ?? 0.0)
                   .toList(),
               maxY: maxScore,
-              lineColor: Colors.indigo,
-              fillColor: Colors.indigo.withOpacity(0.15),
+              lineColor: cs.primary,
+              fillColor: cs.primary.withOpacity(0.15),
             ),
             child: SizedBox(width: width, height: height),
           );
@@ -502,19 +513,19 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 
   Widget _buildFaceDetectionCard(ThemeData theme) {
     final total = (_faceDetection['total'] as num?)?.toInt() ?? 0;
-    final avgConf = (_faceDetection['avg_confidence'] as num?)?.toDouble() ?? 0.0;
+    final avgConf =
+        (_faceDetection['avg_confidence'] as num?)?.toDouble() ?? 0.0;
     final byEmotion = (_faceDetection['by_emotion'] as Map?) ?? {};
 
     String description;
     if (total == 0) {
       description = 'No face detection data yet.';
     } else {
-      final mostCommon = byEmotion.entries
-          .where((e) => e.value is num)
-          .toList()
+      final mostCommon = byEmotion.entries.where((e) => e.value is num).toList()
         ..sort((a, b) => (b.value as num).compareTo(a.value as num));
       final topEmotion = mostCommon.isNotEmpty ? mostCommon.first.key : 'N/A';
-      description = '$topEmotion detected most frequently (avg confidence ${avgConf.toStringAsFixed(0)}%)';
+      description =
+          '$topEmotion detected most frequently (avg confidence ${avgConf.toStringAsFixed(0)}%)';
     }
 
     return _buildCard(
