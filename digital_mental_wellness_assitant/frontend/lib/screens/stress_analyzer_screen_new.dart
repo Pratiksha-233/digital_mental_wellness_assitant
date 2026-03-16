@@ -9,10 +9,12 @@ class StressAnalyzerScreenNew extends StatefulWidget {
   const StressAnalyzerScreenNew({super.key, required this.userId});
 
   @override
-  State<StressAnalyzerScreenNew> createState() => _StressAnalyzerScreenNewState();
+  State<StressAnalyzerScreenNew> createState() =>
+      _StressAnalyzerScreenNewState();
 }
 
-class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with TickerProviderStateMixin {
+class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
+    with TickerProviderStateMixin {
   late final AnimationController _bgCtrl;
   StressData? _currentStress;
   List<StressHistoryRecord>? _stressHistory;
@@ -21,10 +23,33 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
   String? _errorMessage;
   int _selectedTab = 0; // 0: Current, 1: History, 2: Stats
 
+  StressData _stressDataFromHistory(StressHistoryRecord record) {
+    return StressData(
+      stressLevel: record.stressLevel,
+      stressCategory: record.stressCategory,
+      primaryEmotion: record.primaryEmotion,
+      energyLevel: record.energyLevel,
+      moodPattern: record.moodPattern,
+      recommendations: const [],
+      contributingFactors: const [],
+      componentScores: ComponentScores(
+        emotionScore: 0,
+        moodScore: 0,
+        energyScore: 0,
+        activityScore: 0,
+        trendScore: 0,
+      ),
+      timestamp: record.timestamp,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    _bgCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat(reverse: true);
+    _bgCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat(reverse: true);
     _fetchStressData();
   }
 
@@ -42,29 +67,53 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
 
     try {
       final api = ApiService();
-      
-      // Fetch current stress level
-      final stressJson = await api.get('/stress/calculate?user_id=${widget.userId}');
-      if (stressJson == null) throw Exception('Failed to fetch stress data');
-      
-      _currentStress = StressData.fromJson(stressJson['data']);
 
-      // Fetch history
-      final historyJson = await api.get('/stress/history?user_id=${widget.userId}&days=30');
-      if (historyJson != null && historyJson['data'] != null) {
-        _stressHistory = (historyJson['data'] as List)
-            .map((h) => StressHistoryRecord.fromJson(h))
-            .toList();
+      // Fetch history first (DB-backed). This keeps the screen useful even if
+      // stress calculation fails (e.g., missing ML deps, no recent mood data).
+      final historyJson = await api.get(
+        '/stress/history?user_id=${widget.userId}&days=30&limit=100',
+      );
+      final historyRows = (historyJson?['data'] is List)
+          ? (historyJson!['data'] as List)
+          : const <dynamic>[];
+      final history = historyRows
+          .whereType<Map>()
+          .map(
+            (h) => StressHistoryRecord.fromJson(
+              h.map((k, v) => MapEntry(k.toString(), v)),
+            ),
+          )
+          .toList();
+      history.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      _stressHistory = history;
+
+      // Try fetching current stress (also saves DB). If it fails, fall back to
+      // latest historical DB record.
+      final stressJson = await api.get(
+        '/stress/calculate?user_id=${widget.userId}',
+      );
+      if (stressJson != null && stressJson['data'] is Map) {
+        _currentStress = StressData.fromJson(
+          (stressJson['data'] as Map).map((k, v) => MapEntry(k.toString(), v)),
+        );
+      } else if (_stressHistory != null && _stressHistory!.isNotEmpty) {
+        _currentStress = _stressDataFromHistory(_stressHistory!.first);
+      } else {
+        // No DB history and couldn't calculate.
+        _currentStress = null;
       }
 
-      // Fetch stats
+      // Fetch stats (optional; may be 404 if no history)
       final statsJson = await api.get('/stress/stats?user_id=${widget.userId}');
-      if (statsJson != null) {
-        _stressStats = StressStats.fromJson(statsJson);
-      }
+      _stressStats = statsJson == null ? null : StressStats.fromJson(statsJson);
 
       setState(() {
         _isLoading = false;
+        if (_currentStress == null &&
+            (_stressHistory == null || _stressHistory!.isEmpty)) {
+          _errorMessage =
+              'No stress data available yet. Add a stress entry (questionnaire) or try Calculate.';
+        }
       });
     } catch (e) {
       setState(() {
@@ -86,8 +135,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
       body: _isLoading
           ? _buildLoadingState()
           : _errorMessage != null
-              ? _buildErrorState()
-              : _buildMainContent(),
+          ? _buildErrorState()
+          : _buildMainContent(),
     );
   }
 
@@ -131,7 +180,36 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
   }
 
   Widget _buildMainContent() {
-    if (_currentStress == null) return const SizedBox.shrink();
+    if (_currentStress == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.insights, size: 44),
+              const SizedBox(height: 12),
+              const Text(
+                'No stress record yet',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This screen shows stress records saved in the database.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _fetchStressData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       child: Column(
@@ -165,12 +243,14 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
               energyLevel: _currentStress!.energyLevel,
               moodPattern: _currentStress!.moodPattern,
             ),
-            ContributingFactorsCard(
-              factors: _currentStress!.contributingFactors,
-            ),
-            RecommendationsCard(
-              recommendations: _currentStress!.recommendations,
-            ),
+            if (_currentStress!.contributingFactors.isNotEmpty)
+              ContributingFactorsCard(
+                factors: _currentStress!.contributingFactors,
+              ),
+            if (_currentStress!.recommendations.isNotEmpty)
+              RecommendationsCard(
+                recommendations: _currentStress!.recommendations,
+              ),
             const SizedBox(height: 20),
           ],
           if (_selectedTab == 1) ...[
@@ -241,10 +321,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-              ),
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
             ],
           ),
           child: Column(
@@ -255,10 +332,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                height: 150,
-                child: _buildSimpleChart(_stressHistory!),
-              ),
+              SizedBox(height: 150, child: _buildSimpleChart(_stressHistory!)),
             ],
           ),
         ),
@@ -281,7 +355,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
 
   Widget _buildHistoryItem(StressHistoryRecord record) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey[50],
@@ -314,7 +388,10 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
               children: [
                 Text(
                   record.stressCategory,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 Text(
                   'Emotion: ${record.primaryEmotion}',
@@ -353,10 +430,26 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             children: [
-              _buildStatCard('Average', stats.averageStress.toStringAsFixed(1), Colors.blue),
-              _buildStatCard('Current', stats.currentStress.toStringAsFixed(1), _getStressColor(stats.currentStress)),
-              _buildStatCard('Min', stats.minStress.toStringAsFixed(1), Colors.green),
-              _buildStatCard('Max', stats.maxStress.toStringAsFixed(1), Colors.red),
+              _buildStatCard(
+                'Average',
+                stats.averageStress.toStringAsFixed(1),
+                Colors.blue,
+              ),
+              _buildStatCard(
+                'Current',
+                stats.currentStress.toStringAsFixed(1),
+                _getStressColor(stats.currentStress),
+              ),
+              _buildStatCard(
+                'Min',
+                stats.minStress.toStringAsFixed(1),
+                Colors.green,
+              ),
+              _buildStatCard(
+                'Max',
+                stats.maxStress.toStringAsFixed(1),
+                Colors.red,
+              ),
             ],
           ),
         ),
@@ -367,7 +460,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -378,10 +473,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
               ),
               Row(
                 children: [
-                  Text(
-                    stats.trendEmoji,
-                    style: const TextStyle(fontSize: 20),
-                  ),
+                  Text(stats.trendEmoji, style: const TextStyle(fontSize: 20)),
                   const SizedBox(width: 8),
                   Text(
                     stats.trend.replaceAll('_', ' ').toUpperCase(),
@@ -399,7 +491,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,9 +504,17 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
               ),
               const SizedBox(height: 16),
               _buildDistributionBar('LOW', stats.lowCount, Colors.green),
-              _buildDistributionBar('MODERATE', stats.moderateCount, Colors.amber),
+              _buildDistributionBar(
+                'MODERATE',
+                stats.moderateCount,
+                Colors.amber,
+              ),
               _buildDistributionBar('HIGH', stats.highCount, Colors.orange),
-              _buildDistributionBar('CRITICAL', stats.criticalCount, Colors.red),
+              _buildDistributionBar(
+                'CRITICAL',
+                stats.criticalCount,
+                Colors.red,
+              ),
             ],
           ),
         ),
@@ -432,10 +534,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           const SizedBox(height: 6),
           Text(
             value,
@@ -461,8 +560,17 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(category, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-              Text('$count (${percentage.toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12)),
+              Text(
+                category,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '$count (${percentage.toStringAsFixed(1)}%)',
+                style: const TextStyle(fontSize: 12),
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -483,30 +591,58 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew> with 
   Widget _buildSimpleChart(List<StressHistoryRecord> records) {
     if (records.isEmpty) return const SizedBox.shrink();
 
-    // Simple bar chart representation
-    final maxValue = records.map((r) => r.stressLevel).reduce((a, b) => a > b ? a : b);
-    final width = MediaQuery.of(context).size.width - 32;
-    final barWidth = width / records.length;
+    // Simple bar chart representation. Use layout constraints (not screen
+    // width) to avoid RenderFlex overflow inside padded cards.
+    final sorted = List<StressHistoryRecord>.from(records)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final chartRecords = sorted.length > 30
+        ? sorted.sublist(sorted.length - 30)
+        : sorted;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: records.map((record) {
-        final height = (record.stressLevel / maxValue) * 100;
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              width: barWidth - 4,
-              height: height,
-              decoration: BoxDecoration(
-                color: _getStressColor(record.stressLevel),
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
-              ),
-            ),
-          ],
+    final maxValue = chartRecords
+        .map((r) => r.stressLevel)
+        .fold<double>(0.0, (prev, v) => v > prev ? v : prev);
+    final safeMax = maxValue <= 0 ? 100.0 : maxValue;
+    const barSpacing = 3.0;
+    const maxBarHeight = 110.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final bars = chartRecords.length;
+        final totalSpacing = barSpacing * (bars - 1).clamp(0, 999);
+        final barWidth = bars == 0
+            ? 0.0
+            : ((availableWidth - totalSpacing) / bars).clamp(2.0, 40.0);
+
+        return Align(
+          alignment: Alignment.bottomLeft,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: List.generate(bars, (index) {
+              final record = chartRecords[index];
+              final barHeight = ((record.stressLevel / safeMax) * maxBarHeight)
+                  .clamp(2.0, maxBarHeight);
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index == bars - 1 ? 0 : barSpacing,
+                ),
+                child: Container(
+                  width: barWidth,
+                  height: barHeight,
+                  decoration: BoxDecoration(
+                    color: _getStressColor(record.stressLevel),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(4),
+                      topRight: Radius.circular(4),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
         );
-      }).toList(),
+      },
     );
   }
 

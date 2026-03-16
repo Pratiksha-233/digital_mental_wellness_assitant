@@ -22,16 +22,27 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            Text('Understand & Track Your Stress', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.teal.shade800)),
+            Text(
+              'Understand & Track Your Stress',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.teal.shade800,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
-              'Answer quick reflective prompts, see a dynamic gauge of your current stress, and build a personal trend—kept locally on your device.',
+              'Answer quick reflective prompts, see a dynamic gauge of your current stress, and build a personal trend—saved to your profile for this user.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 18),
             const StressAnalyzerSection(),
             const SizedBox(height: 12),
-            Text('Your responses are private. Use this tool daily to notice patterns early and take gentle action.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black54)),
+            Text(
+              'Use this tool daily to notice patterns early and take gentle action.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+            ),
             const SizedBox(height: 24),
           ],
         ),

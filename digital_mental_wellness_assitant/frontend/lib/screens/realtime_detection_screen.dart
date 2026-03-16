@@ -94,12 +94,16 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen> {
   }
 
   Future<void> _captureAndDetect({bool fromAuto = false}) async {
-    if (_controller == null || !_controller!.value.isInitialized || _isLoading)
+    if (_controller == null ||
+        !_controller!.value.isInitialized ||
+        _isLoading) {
       return;
+    }
     final now = DateTime.now();
     if (_lastDetectAt != null &&
-        now.difference(_lastDetectAt!) < _detectCooldown)
+        now.difference(_lastDetectAt!) < _detectCooldown) {
       return;
+    }
     _lastDetectAt = now;
 
     setState(() {

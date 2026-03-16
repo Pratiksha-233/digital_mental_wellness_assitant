@@ -217,4 +217,24 @@ class ApiService {
     }
     return {'total': 0, 'by_emotion': {}, 'avg_confidence': 0.0};
   }
+
+  /// Save a questionnaire-based stress score to the backend (stored in MySQL).
+  Future<bool> saveQuestionnaireStress({
+    required int userId,
+    required double stressLevel,
+  }) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$apiBaseUrl/stress/questionnaire'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'user_id': userId, 'stress_level': stressLevel}),
+          )
+          .timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('saveQuestionnaireStress error: $e');
+      return false;
+    }
+  }
 }
