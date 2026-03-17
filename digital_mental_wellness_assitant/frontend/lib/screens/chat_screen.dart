@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
+import '../widgets/app_section_card.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -21,6 +22,44 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _sending = false;
   final ApiService _api = ApiService();
+
+  String? _buildInsightLine(Map<String, dynamic> result) {
+    final emotion = (result['emotion'] ?? '').toString().trim();
+    final sentiment = (result['sentiment'] ?? '').toString().trim();
+    final intent = (result['intent'] ?? '').toString().trim();
+    final bool isCrisis = result['is_crisis'] == true;
+    final confidenceRaw = result['confidence'];
+    final double confidence = confidenceRaw is num
+        ? confidenceRaw.toDouble()
+        : double.tryParse(confidenceRaw?.toString() ?? '') ?? 0.0;
+
+    if (isCrisis) {
+      return 'If you are in immediate danger or thinking about harming yourself, please contact local emergency services or a trusted person right away.';
+    }
+
+    switch (intent) {
+      case 'sleep_issue':
+        return 'It sounds like you’re dealing with sleep trouble. Want quick tips for falling asleep or staying asleep?';
+      case 'anxiety':
+        return 'It sounds like anxiety is showing up. If you want, we can do a quick grounding exercise together.';
+      case 'stress':
+        return 'It sounds like stress is building up. Want a 60‑second reset technique?';
+      case 'motivation':
+        return 'It sounds like motivation is low today. Want a tiny, doable first step?';
+    }
+
+    if (emotion.isEmpty && sentiment.isEmpty) return null;
+
+    final tone = sentiment.isNotEmpty ? sentiment : 'mixed';
+    // If the model isn't confident, avoid asserting a specific emotion label.
+    if (confidence > 0 && confidence < 0.55) {
+      return 'I’m not fully sure, but I sense a $tone tone in what you shared.';
+    }
+    if (emotion.isNotEmpty) {
+      return 'I picked up a sense of $emotion with a $tone tone.';
+    }
+    return 'I sense a $tone tone in what you shared.';
+  }
 
   @override
   void dispose() {
@@ -71,24 +110,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (result != null && result['response'] is String) {
         reply = result['response'] as String;
 
-        final emotion = (result['emotion'] ?? '').toString();
-        final sentiment = (result['sentiment'] ?? '').toString();
-        final bool isCrisis = result['is_crisis'] == true;
-
-        if (emotion.isNotEmpty || sentiment.isNotEmpty) {
-          final tone = sentiment.isNotEmpty ? sentiment : 'mixed';
-          if (emotion.isNotEmpty) {
-            insightLine = 'I picked up a sense of $emotion with a $tone tone.';
-          } else {
-            insightLine = 'I sense a $tone tone in what you shared.';
-          }
-        }
-
-        if (isCrisis) {
-          // Add a separate gentle safety notice message
-          insightLine =
-              'If you are in immediate danger or thinking about harming yourself, please contact local emergency services or a trusted person right away.';
-        }
+        insightLine = _buildInsightLine(result);
       } else {
         reply =
             'Thank you for sharing. I had trouble reaching the server, so I will just keep listening.';
@@ -128,6 +150,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     final bubbleMaxWidth = (MediaQuery.of(context).size.width * 0.86).clamp(
       280.0,
       720.0,
@@ -135,23 +160,27 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
-          children: const [
+          children: [
             CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0xFF4F46E5),
-              child: Icon(Icons.psychology, size: 18, color: Colors.white),
+              backgroundColor: cs.primary,
+              child: Icon(Icons.psychology, size: 18, color: cs.onPrimary),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Wellness Companion',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 Text(
                   'Chat safely about how you feel',
-                  style: TextStyle(fontSize: 11),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -164,7 +193,10 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.indigo.shade50, Colors.white],
+                  colors: [
+                    cs.surfaceContainerHighest.withValues(alpha: 0.75),
+                    cs.surface,
+                  ],
                 ),
               ),
               child: ListView.builder(
@@ -187,15 +219,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             maxWidth: bubbleMaxWidth - 60,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.indigo.shade50,
+                            color: cs.primaryContainer.withValues(alpha: 0.55),
                             borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: cs.outlineVariant.withValues(alpha: 0.7),
+                            ),
                           ),
                           child: Text(
                             m.text,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: theme.textTheme.bodySmall?.copyWith(
                               fontSize: 12,
-                              color: Colors.black87,
+                              color: cs.onSurface,
                             ),
                           ),
                         ),
@@ -215,21 +250,13 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4F46E5),
+                          color: cs.primary,
                           borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.indigo.shade200.withOpacity(0.35),
-                              blurRadius: 6,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
                         ),
                         child: Text(
                           m.text,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onPrimary,
                           ),
                         ),
                       ),
@@ -240,13 +267,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 16,
-                        backgroundColor: Color(0xFF4F46E5),
+                        backgroundColor: cs.primary,
                         child: Icon(
                           Icons.smart_toy,
                           size: 18,
-                          color: Colors.white,
+                          color: cs.onPrimary,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -259,22 +286,14 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                           constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: cs.surface.withValues(alpha: 0.85),
                             borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12.withOpacity(0.08),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                            border: Border.all(color: Colors.grey.shade200),
+                            border: Border.all(color: cs.outlineVariant),
                           ),
                           child: Text(
                             m.text,
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 14,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: cs.onSurface,
                             ),
                           ),
                         ),
@@ -288,85 +307,110 @@ class _ChatScreenState extends State<ChatScreen> {
           const Divider(height: 1),
           // Quick suggestion chips similar to the preset buttons in the mockup
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                _QuickChip(
-                  label: 'I feel anxious',
-                  onTap: _sending
-                      ? null
-                      : () {
-                          _controller.text = 'I am feeling very anxious today.';
-                          _send();
-                        },
-                ),
-                _QuickChip(
-                  label: 'I can\'t sleep',
-                  onTap: _sending
-                      ? null
-                      : () {
-                          _controller.text =
-                              'I am struggling with sleep and insomnia.';
-                          _send();
-                        },
-                ),
-                _QuickChip(
-                  label: 'I feel sad',
-                  onTap: _sending
-                      ? null
-                      : () {
-                          _controller.text =
-                              'I have been feeling really sad and low.';
-                          _send();
-                        },
-                ),
-                _QuickChip(
-                  label: 'I need motivation',
-                  onTap: _sending
-                      ? null
-                      : () {
-                          _controller.text =
-                              'I need some motivation to get through today.';
-                          _send();
-                        },
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+            child: AppSectionCard(
+              margin: EdgeInsets.zero,
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              gradient: AppSectionCard.gradientFromScheme(
+                cs,
+                a: cs.surfaceContainerHighest,
+                b: cs.surface,
+                aAlpha: 0.85,
+                bAlpha: 0.60,
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _QuickChip(
+                    label: 'I feel anxious',
+                    onTap: _sending
+                        ? null
+                        : () {
+                            _controller.text =
+                                'I am feeling very anxious today.';
+                            _send();
+                          },
+                  ),
+                  _QuickChip(
+                    label: 'I can\'t sleep',
+                    onTap: _sending
+                        ? null
+                        : () {
+                            _controller.text =
+                                'I am struggling with sleep and insomnia.';
+                            _send();
+                          },
+                  ),
+                  _QuickChip(
+                    label: 'I feel sad',
+                    onTap: _sending
+                        ? null
+                        : () {
+                            _controller.text =
+                                'I have been feeling really sad and low.';
+                            _send();
+                          },
+                  ),
+                  _QuickChip(
+                    label: 'I need motivation',
+                    onTap: _sending
+                        ? null
+                        : () {
+                            _controller.text =
+                                'I need some motivation to get through today.';
+                            _send();
+                          },
+                  ),
+                ],
+              ),
             ),
           ),
           SafeArea(
             top: false,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      minLines: 1,
-                      maxLines: 5,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message…',
-                        border: OutlineInputBorder(borderSide: BorderSide.none),
-                        filled: true,
-                        fillColor: Colors.white,
+              child: AppSectionCard(
+                margin: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                gradient: AppSectionCard.gradientFromScheme(
+                  cs,
+                  a: cs.surfaceContainerHighest,
+                  b: cs.surface,
+                  aAlpha: 0.90,
+                  bAlpha: 0.65,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        minLines: 1,
+                        maxLines: 5,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(),
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message…',
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    onPressed: _send,
-                    icon: const Icon(Icons.send),
-                    label: Text(_sending ? 'Sending…' : 'Send'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F766E),
-                      foregroundColor: Colors.white,
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: _sending ? null : _send,
+                      icon: _sending
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send),
+                      label: Text(_sending ? 'Sending…' : 'Send'),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -396,12 +440,14 @@ class _QuickChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return ActionChip(
       label: Text(label),
       onPressed: onTap,
-      backgroundColor: Colors.white,
-      side: const BorderSide(color: Color(0xFF4F46E5)),
-      labelStyle: const TextStyle(color: Color(0xFF4F46E5)),
+      backgroundColor: cs.surface.withValues(alpha: 0.80),
+      side: BorderSide(color: cs.primary.withValues(alpha: 0.55)),
+      labelStyle: theme.textTheme.labelLarge?.copyWith(color: cs.primary),
       elevation: 0,
     );
   }

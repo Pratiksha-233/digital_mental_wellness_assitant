@@ -41,6 +41,14 @@ def _classify_intent(text: str):
     t = text.lower()
     if any(w in t for w in ['hi', 'hello', 'hey']):
         return 'greeting'
+    if any(w in t for w in ['sleep', 'insomnia', "can't sleep", 'cannot sleep', 'nightmare']):
+        return 'sleep_issue'
+    if any(w in t for w in ['anxious', 'anxiety', 'panic', 'overwhelmed', 'worried', 'worry']):
+        return 'anxiety'
+    if any(w in t for w in ['stress', 'stressed', 'burnout', 'pressure']):
+        return 'stress'
+    if any(w in t for w in ['motivation', 'unmotivated', 'lazy', 'procrast']):
+        return 'motivation'
     if any(w in t for w in ['help', 'support']):
         return 'help_request'
     if any(w in t for w in ['tip', 'relax', 'breathe', 'exercise']):
@@ -50,7 +58,7 @@ def _classify_intent(text: str):
     return 'general_reflection'
 
 
-def _build_response(user_message: str, analysis: dict, is_crisis: bool):
+def _build_response(user_message: str, analysis: dict, is_crisis: bool, intent: str):
     emotion = (analysis.get('emotion') or '').lower()
     sentiment = analysis.get('sentiment') or 'neutral'
 
@@ -62,6 +70,24 @@ def _build_response(user_message: str, analysis: dict, is_crisis: bool):
             "If you are in immediate danger or thinking about harming yourself, "
             "please contact your local emergency number or a crisis hotline right away, "
             "or reach out to a trusted person near you."
+        )
+
+    # Intent-specific responses take priority over coarse sentiment.
+    if intent == 'sleep_issue':
+        return (
+            "Sleep struggles can feel exhausting—thanks for telling me. "
+            "A few gentle, practical things you can try tonight: keep lights low 60–90 minutes before bed, "
+            "avoid caffeine late in the day, and do a slow breathing pattern (inhale 4, exhale 6) for 3–5 minutes. "
+            "If your mind is racing, write down worries/to‑dos on paper, then return to the pillow. "
+            "Do you want quick tips for falling asleep or for waking up during the night?"
+        )
+
+    if intent == 'anxiety':
+        return (
+            "That sounds really uncomfortable. Let’s try something that can lower the intensity quickly: "
+            "do 5 slow breaths (in 4, out 6), then the 5‑4‑3‑2‑1 grounding exercise—name 5 things you see, "
+            "4 you feel, 3 you hear, 2 you smell, and 1 you taste. "
+            "If you want, tell me what’s triggering the anxiety right now and we can break it into smaller steps."
         )
 
     # Relaxation & motivational style replies
@@ -122,7 +148,7 @@ def message():
     intent = _classify_intent(user_message)
 
     # Build motivational / relaxation‑oriented response
-    bot_response = _build_response(user_message, analysis, is_crisis)
+    bot_response = _build_response(user_message, analysis, is_crisis, intent)
 
     # Store chat as journal entry and structured chat history (if we know the user)
     if user_id:

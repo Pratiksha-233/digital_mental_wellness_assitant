@@ -202,6 +202,54 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  LinearGradient _homeCardGradient(
+    ColorScheme cs, {
+    Color? a,
+    Color? b,
+    double aAlpha = 0.55,
+    double bAlpha = 0.35,
+  }) {
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        (a ?? cs.primaryContainer).withValues(alpha: aAlpha),
+        (b ?? cs.secondaryContainer).withValues(alpha: bAlpha),
+      ],
+    );
+  }
+
+  Widget _homeSectionCard({
+    required BuildContext context,
+    required Widget child,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+    Gradient? gradient,
+  }) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.7)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient:
+              gradient ??
+              _homeCardGradient(
+                cs,
+                a: cs.surfaceContainerHighest,
+                b: cs.surface,
+                aAlpha: 0.75,
+                bAlpha: 0.55,
+              ),
+        ),
+        child: Padding(padding: padding, child: child),
+      ),
+    );
+  }
+
   Widget _progressRow(
     BuildContext context,
     String label,
@@ -473,486 +521,464 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: ListView(
                 children: [
-                  Card(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              cs.primaryContainer.withValues(alpha: 0.55),
-                              cs.secondaryContainer.withValues(alpha: 0.35),
-                            ],
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  FutureBuilder<List<dynamic>>(
-                                    future: _moodLogsFuture,
-                                    builder: (context, snap) {
-                                      final fallback = greetingEmoji();
-                                      final emoji = (snap.hasData)
-                                          ? _extractMoodEmojiForGreeting(
-                                              logs: snap.data!,
-                                              istToday: istToday,
-                                              fallback: fallback,
-                                            )
-                                          : fallback;
-                                      return Container(
-                                        width: 44,
-                                        height: 44,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: cs.surface.withValues(
-                                            alpha: 0.65,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          border: Border.all(
-                                            color: cs.outlineVariant.withValues(
-                                              alpha: 0.7,
-                                            ),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          emoji,
-                                          style: const TextStyle(fontSize: 22),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: FutureBuilder<String?>(
-                                      future: ProfileService.getDisplayName(),
-                                      builder: (context, snapshot) {
-                                        final display =
-                                            (snapshot.data != null &&
-                                                snapshot.data!
-                                                    .trim()
-                                                    .isNotEmpty)
-                                            ? snapshot.data!.trim()
-                                            : resolvedName;
-                                        return Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${timeGreeting()}, $display',
-                                              style: theme
-                                                  .textTheme
-                                                  .headlineSmall
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.bold,
-                                                    color:
-                                                        cs.onPrimaryContainer,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              'How are you feeling today?',
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                    color:
-                                                        cs.onPrimaryContainer,
-                                                  ),
-                                            ),
-                                          ],
-                                        );
-                                      },
+                  _homeSectionCard(
+                    context: context,
+                    gradient: _homeCardGradient(
+                      cs,
+                      a: cs.primaryContainer,
+                      b: cs.secondaryContainer,
+                      aAlpha: 0.55,
+                      bAlpha: 0.35,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FutureBuilder<List<dynamic>>(
+                              future: _moodLogsFuture,
+                              builder: (context, snap) {
+                                final fallback = greetingEmoji();
+                                final emoji = (snap.hasData)
+                                    ? _extractMoodEmojiForGreeting(
+                                        logs: snap.data!,
+                                        istToday: istToday,
+                                        fallback: fallback,
+                                      )
+                                    : fallback;
+                                return Container(
+                                  width: 44,
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: cs.surface.withValues(alpha: 0.65),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: cs.outlineVariant.withValues(
+                                        alpha: 0.7,
+                                      ),
                                     ),
                                   ),
-                                ],
+                                  child: Text(
+                                    emoji,
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FutureBuilder<String?>(
+                                future: ProfileService.getDisplayName(),
+                                builder: (context, snapshot) {
+                                  final display =
+                                      (snapshot.data != null &&
+                                          snapshot.data!.trim().isNotEmpty)
+                                      ? snapshot.data!.trim()
+                                      : resolvedName;
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${timeGreeting()}, $display',
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: cs.onPrimaryContainer,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'How are you feeling today?',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: cs.onPrimaryContainer,
+                                            ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_month, color: cs.primary),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Your Week at a Glance',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w800),
+                  _homeSectionCard(
+                    context: context,
+                    gradient: _homeCardGradient(
+                      cs,
+                      a: cs.primaryContainer,
+                      b: cs.secondaryContainer,
+                      aAlpha: 0.40,
+                      bAlpha: 0.26,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_month, color: cs.primary),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Your Week at a Glance',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
                                   ),
-                                ],
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pushNamed(context, '/week'),
-                                child: const Text('View all'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 140,
-                            child: FutureBuilder<List<dynamic>>(
-                              future: _moodLogsFuture,
-                              builder: (context, snap) {
-                                final byDateLabel = <String, String>{};
-                                if (snap.hasData) {
-                                  for (final row in snap.data!) {
-                                    try {
-                                      final ts =
-                                          row['timestamp'] ??
-                                          row['created_at'] ??
-                                          row['time'] ??
-                                          '';
-                                      if (ts == null) continue;
-                                      final dt = DateTime.parse(ts.toString());
-                                      final key =
-                                          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-                                      byDateLabel[key] =
-                                          (row['mood_label'] ?? '').toString();
-                                    } catch (_) {}
-                                  }
+                                ),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/week'),
+                              child: const Text('View all'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 140,
+                          child: FutureBuilder<List<dynamic>>(
+                            future: _moodLogsFuture,
+                            builder: (context, snap) {
+                              final byDateLabel = <String, String>{};
+                              if (snap.hasData) {
+                                for (final row in snap.data!) {
+                                  try {
+                                    final ts =
+                                        row['timestamp'] ??
+                                        row['created_at'] ??
+                                        row['time'] ??
+                                        '';
+                                    if (ts == null) continue;
+                                    final dt = DateTime.parse(ts.toString());
+                                    final key =
+                                        '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+                                    byDateLabel[key] = (row['mood_label'] ?? '')
+                                        .toString();
+                                  } catch (_) {}
                                 }
+                              }
 
-                                final labels = List<String?>.generate(7, (i) {
-                                  final d = weekDays[i];
-                                  final key =
-                                      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                                  return byDateLabel.containsKey(key)
-                                      ? byDateLabel[key]
-                                      : null;
-                                });
+                              final labels = List<String?>.generate(7, (i) {
+                                final d = weekDays[i];
+                                final key =
+                                    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                                return byDateLabel.containsKey(key)
+                                    ? byDateLabel[key]
+                                    : null;
+                              });
 
-                                final waveColors = List<Color>.generate(7, (i) {
-                                  final label = labels[i];
-                                  final c = _moodIndicatorColor(context, label);
-                                  return c.withValues(
-                                    alpha: label == null ? 0.18 : 0.55,
-                                  );
-                                });
+                              final waveColors = List<Color>.generate(7, (i) {
+                                final label = labels[i];
+                                final c = _moodIndicatorColor(context, label);
+                                return c.withValues(
+                                  alpha: label == null ? 0.18 : 0.55,
+                                );
+                              });
 
-                                final waveScores = List<double>.generate(7, (
-                                  i,
-                                ) {
-                                  return _moodLabelToScore(labels[i]);
-                                });
+                              final waveScores = List<double>.generate(7, (i) {
+                                return _moodLabelToScore(labels[i]);
+                              });
 
-                                return LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return Stack(
-                                      children: [
-                                        Positioned.fill(
-                                          child: IgnorePointer(
-                                            child: CustomPaint(
-                                              painter: _MoodWavePainter(
-                                                colors: waveColors,
-                                                scores: waveScores,
-                                                colorScheme: cs,
-                                              ),
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return Stack(
+                                    children: [
+                                      Positioned.fill(
+                                        child: IgnorePointer(
+                                          child: CustomPaint(
+                                            painter: _MoodWavePainter(
+                                              colors: waveColors,
+                                              scores: waveScores,
+                                              colorScheme: cs,
                                             ),
                                           ),
                                         ),
-                                        Row(
-                                          children: List.generate(7, (i) {
-                                            final d = weekDays[i];
-                                            final dayLabel = const [
-                                              'Sun',
-                                              'Mon',
-                                              'Tue',
-                                              'Wed',
-                                              'Thu',
-                                              'Fri',
-                                              'Sat',
-                                            ][i];
+                                      ),
+                                      Row(
+                                        children: List.generate(7, (i) {
+                                          final d = weekDays[i];
+                                          final dayLabel = const [
+                                            'Sun',
+                                            'Mon',
+                                            'Tue',
+                                            'Wed',
+                                            'Thu',
+                                            'Fri',
+                                            'Sat',
+                                          ][i];
 
-                                            final isToday = d == istToday;
-                                            final isPast = d.isBefore(istToday);
-                                            final label = labels[i];
-                                            final emoji = (label != null)
-                                                ? _moodLabelToEmoji(label)
-                                                : (isPast ? '😐' : null);
+                                          final isToday = d == istToday;
+                                          final isPast = d.isBefore(istToday);
+                                          final label = labels[i];
+                                          final emoji = (label != null)
+                                              ? _moodLabelToEmoji(label)
+                                              : (isPast ? '😐' : null);
 
-                                            final indicatorColor =
-                                                _moodIndicatorColor(
-                                                  context,
-                                                  label,
-                                                );
-                                            final isHovered =
-                                                _hoveredWeekIndex == i;
+                                          final indicatorColor =
+                                              _moodIndicatorColor(
+                                                context,
+                                                label,
+                                              );
+                                          final isHovered =
+                                              _hoveredWeekIndex == i;
 
-                                            final todayBorder = Border.all(
-                                              color: cs.primary,
-                                              width: 2,
-                                            );
+                                          final todayBorder = Border.all(
+                                            color: cs.primary,
+                                            width: 2,
+                                          );
 
-                                            final borderColor = isToday
-                                                ? cs.primary
-                                                : (isHovered
-                                                      ? cs.onSurface.withValues(
-                                                          alpha: 0.22,
-                                                        )
-                                                      : cs.onSurface.withValues(
-                                                          alpha: 0.14,
-                                                        ));
+                                          final borderColor = isToday
+                                              ? cs.primary
+                                              : (isHovered
+                                                    ? cs.onSurface.withValues(
+                                                        alpha: 0.22,
+                                                      )
+                                                    : cs.onSurface.withValues(
+                                                        alpha: 0.14,
+                                                      ));
 
-                                            final baseFill = cs.surface
-                                                .withValues(alpha: 0.28);
-                                            final tintFill = indicatorColor
-                                                .withValues(
-                                                  alpha: label == null
-                                                      ? 0.0
-                                                      : 0.14,
-                                                );
-                                            final fill = Color.alphaBlend(
-                                              tintFill,
-                                              baseFill,
-                                            );
+                                          final baseFill = cs.surface
+                                              .withValues(alpha: 0.28);
+                                          final tintFill = indicatorColor
+                                              .withValues(
+                                                alpha: label == null
+                                                    ? 0.0
+                                                    : 0.14,
+                                              );
+                                          final fill = Color.alphaBlend(
+                                            tintFill,
+                                            baseFill,
+                                          );
 
-                                            return Expanded(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 4,
-                                                    ),
-                                                child: Column(
-                                                  children: [
-                                                    Text(
-                                                      dayLabel,
-                                                      style: theme
-                                                          .textTheme
-                                                          .labelMedium
-                                                          ?.copyWith(
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                            color: cs
-                                                                .onSurfaceVariant,
+                                          return Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                  ),
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    dayLabel,
+                                                    style: theme
+                                                        .textTheme
+                                                        .labelMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: cs
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Expanded(
+                                                    child: InkWell(
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                JournalScreen(
+                                                                  userId: widget
+                                                                      .userId,
+                                                                  selectedDate:
+                                                                      d,
+                                                                ),
                                                           ),
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Expanded(
-                                                      child: InkWell(
-                                                        onTap: () {
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                              builder: (_) =>
-                                                                  JournalScreen(
-                                                                    userId: widget
-                                                                        .userId,
-                                                                    selectedDate:
-                                                                        d,
-                                                                  ),
+                                                        );
+                                                      },
+                                                      onHover: (hovering) {
+                                                        setState(
+                                                          () =>
+                                                              _hoveredWeekIndex =
+                                                                  hovering
+                                                                  ? i
+                                                                  : null,
+                                                        );
+                                                      },
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                      child: AnimatedScale(
+                                                        duration:
+                                                            const Duration(
+                                                              milliseconds: 120,
                                                             ),
-                                                          );
-                                                        },
-                                                        onHover: (hovering) {
-                                                          setState(
-                                                            () =>
-                                                                _hoveredWeekIndex =
-                                                                    hovering
-                                                                    ? i
-                                                                    : null,
-                                                          );
-                                                        },
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              12,
-                                                            ),
-                                                        child: AnimatedScale(
-                                                          duration:
-                                                              const Duration(
-                                                                milliseconds:
-                                                                    120,
+                                                        scale: isHovered
+                                                            ? 1.03
+                                                            : 1,
+                                                        child: ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
                                                               ),
-                                                          scale: isHovered
-                                                              ? 1.03
-                                                              : 1.0,
-                                                          child: ClipRRect(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12,
+                                                          child: BackdropFilter(
+                                                            filter:
+                                                                ui.ImageFilter.blur(
+                                                                  sigmaX: 10,
+                                                                  sigmaY: 10,
                                                                 ),
-                                                            child: BackdropFilter(
-                                                              filter:
-                                                                  ui.ImageFilter.blur(
-                                                                    sigmaX: 10,
-                                                                    sigmaY: 10,
+                                                            child: AnimatedContainer(
+                                                              duration:
+                                                                  const Duration(
+                                                                    milliseconds:
+                                                                        160,
                                                                   ),
-                                                              child: AnimatedContainer(
-                                                                duration:
-                                                                    const Duration(
-                                                                      milliseconds:
-                                                                          160,
+                                                              decoration: BoxDecoration(
+                                                                color: fill,
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      12,
                                                                     ),
-                                                                decoration: BoxDecoration(
-                                                                  color: fill,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        12,
+                                                                border: isToday
+                                                                    ? todayBorder
+                                                                    : Border.all(
+                                                                        color:
+                                                                            borderColor,
+                                                                        width:
+                                                                            isHovered
+                                                                            ? 1.6
+                                                                            : 1,
                                                                       ),
-                                                                  border:
-                                                                      isToday
-                                                                      ? todayBorder
-                                                                      : Border.all(
-                                                                          color:
-                                                                              borderColor,
-                                                                          width:
-                                                                              isHovered
-                                                                              ? 1.6
-                                                                              : 1,
+                                                              ),
+                                                              child: Stack(
+                                                                children: [
+                                                                  Positioned.fill(
+                                                                    child: DecoratedBox(
+                                                                      decoration: BoxDecoration(
+                                                                        gradient: LinearGradient(
+                                                                          begin:
+                                                                              Alignment.topLeft,
+                                                                          end: Alignment
+                                                                              .bottomRight,
+                                                                          colors: [
+                                                                            cs.onSurface.withValues(
+                                                                              alpha: 0.10,
+                                                                            ),
+                                                                            cs.onSurface.withValues(
+                                                                              alpha: 0.00,
+                                                                            ),
+                                                                          ],
                                                                         ),
-                                                                ),
-                                                                child: Stack(
-                                                                  children: [
-                                                                    Positioned.fill(
-                                                                      child: DecoratedBox(
-                                                                        decoration: BoxDecoration(
-                                                                          gradient: LinearGradient(
-                                                                            begin:
-                                                                                Alignment.topLeft,
-                                                                            end:
-                                                                                Alignment.bottomRight,
-                                                                            colors: [
-                                                                              cs.onSurface.withValues(
-                                                                                alpha: 0.10,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  Positioned(
+                                                                    left: 10,
+                                                                    top: 10,
+                                                                    child: Container(
+                                                                      width: 10,
+                                                                      height:
+                                                                          10,
+                                                                      decoration: BoxDecoration(
+                                                                        color:
+                                                                            indicatorColor,
+                                                                        shape: BoxShape
+                                                                            .circle,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  Center(
+                                                                    child:
+                                                                        isToday
+                                                                        ? Column(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Text(
+                                                                                emoji ??
+                                                                                    '😐',
+                                                                                style: const TextStyle(
+                                                                                  fontSize: 28,
+                                                                                ),
                                                                               ),
-                                                                              cs.onSurface.withValues(
-                                                                                alpha: 0.00,
+                                                                              const SizedBox(
+                                                                                height: 6,
+                                                                              ),
+                                                                              Text(
+                                                                                'Today',
+                                                                                style: theme.textTheme.labelSmall?.copyWith(
+                                                                                  fontWeight: FontWeight.w700,
+                                                                                ),
                                                                               ),
                                                                             ],
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                    Positioned(
-                                                                      left: 10,
-                                                                      top: 10,
-                                                                      child: Container(
-                                                                        width:
-                                                                            10,
-                                                                        height:
-                                                                            10,
-                                                                        decoration: BoxDecoration(
-                                                                          color:
-                                                                              indicatorColor,
-                                                                          shape:
-                                                                              BoxShape.circle,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                    Center(
-                                                                      child:
-                                                                          isToday
-                                                                          ? Column(
-                                                                              mainAxisSize: MainAxisSize.min,
-                                                                              children: [
-                                                                                Text(
-                                                                                  emoji ??
-                                                                                      '😐',
+                                                                          )
+                                                                        : (emoji != null
+                                                                              ? Text(
+                                                                                  emoji,
                                                                                   style: const TextStyle(
-                                                                                    fontSize: 28,
+                                                                                    fontSize: 22,
                                                                                   ),
-                                                                                ),
-                                                                                const SizedBox(
-                                                                                  height: 6,
-                                                                                ),
-                                                                                Text(
-                                                                                  'Today',
-                                                                                  style: theme.textTheme.labelSmall?.copyWith(
-                                                                                    fontWeight: FontWeight.w700,
+                                                                                )
+                                                                              : Text(
+                                                                                  '—',
+                                                                                  style: TextStyle(
+                                                                                    fontSize: 12,
+                                                                                    color: cs.onSurfaceVariant.withValues(
+                                                                                      alpha: isPast
+                                                                                          ? 0.6
+                                                                                          : 0.45,
+                                                                                    ),
                                                                                   ),
-                                                                                ),
-                                                                              ],
-                                                                            )
-                                                                          : (emoji !=
-                                                                                    null
-                                                                                ? Text(
-                                                                                    emoji,
-                                                                                    style: const TextStyle(
-                                                                                      fontSize: 22,
-                                                                                    ),
-                                                                                  )
-                                                                                : Text(
-                                                                                    '—',
-                                                                                    style: TextStyle(
-                                                                                      fontSize: 12,
-                                                                                      color: cs.onSurfaceVariant.withValues(
-                                                                                        alpha: isPast
-                                                                                            ? 0.6
-                                                                                            : 0.45,
-                                                                                      ),
-                                                                                    ),
-                                                                                  )),
-                                                                    ),
-                                                                  ],
-                                                                ),
+                                                                                )),
+                                                                  ),
+                                                                ],
                                                               ),
                                                             ),
                                                           ),
                                                         ),
                                                       ),
                                                     ),
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      d.day.toString(),
-                                                      style: theme
-                                                          .textTheme
-                                                          .labelSmall
-                                                          ?.copyWith(
-                                                            color: cs
-                                                                .onSurfaceVariant,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    d.day.toString(),
+                                                    style: theme
+                                                        .textTheme
+                                                        .labelSmall
+                                                        ?.copyWith(
+                                                          color: cs
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                  ),
+                                                ],
                                               ),
-                                            );
-                                          }),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
+                                            ),
+                                          );
+                                        }),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
                           ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.center,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 320),
-                              child: FilledButton.tonalIcon(
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const MoodTrackerScreen(),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.emoji_emotions_outlined),
-                                label: const Text("Log Today's Mood"),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonalIcon(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MoodTrackerScreen(),
                               ),
                             ),
+                            icon: const Icon(Icons.emoji_emotions_outlined),
+                            label: const Text("Log Today's Mood"),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -961,117 +987,129 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       final isWide = box.maxWidth > 720;
                       const spacing = 14.0;
 
-                      final progressCard = Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                      final progressCard = _homeSectionCard(
+                        context: context,
+                        gradient: _homeCardGradient(
+                          cs,
+                          a: cs.surfaceContainerHighest,
+                          b: cs.surface,
+                          aAlpha: 0.75,
+                          bAlpha: 0.55,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.show_chart, color: cs.primary),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Your Progress',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            if (_loadingProgress)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            else
+                              Column(
                                 children: [
-                                  Icon(Icons.show_chart, color: cs.primary),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Your Progress',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                  _progressRow(
+                                    context,
+                                    'Mood check-ins',
+                                    _moodCheckins.toString(),
+                                    cs.primary,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _progressRow(
+                                    context,
+                                    'Journal entries',
+                                    _journalEntries.toString(),
+                                    cs.secondary,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _progressRow(
+                                    context,
+                                    'Days active',
+                                    _daysActive.toString(),
+                                    cs.tertiary,
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
-                              if (_loadingProgress)
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              else
-                                Column(
-                                  children: [
-                                    _progressRow(
-                                      context,
-                                      'Mood check-ins',
-                                      _moodCheckins.toString(),
-                                      cs.primary,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    _progressRow(
-                                      context,
-                                      'Journal entries',
-                                      _journalEntries.toString(),
-                                      cs.secondary,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    _progressRow(
-                                      context,
-                                      'Days active',
-                                      _daysActive.toString(),
-                                      cs.tertiary,
-                                    ),
-                                  ],
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
                       );
 
                       final affirmationText = dailyAffirmation();
-                      final affirmationCard = Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.format_quote, color: cs.primary),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Daily Affirmation',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w800),
+                      final affirmationCard = _homeSectionCard(
+                        context: context,
+                        gradient: _homeCardGradient(
+                          cs,
+                          a: cs.secondaryContainer,
+                          b: cs.tertiaryContainer,
+                          aAlpha: 0.34,
+                          bAlpha: 0.22,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.format_quote, color: cs.primary),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Daily Affirmation',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w800,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                affirmationText,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              affirmationText,
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 8,
-                                children: [
-                                  FilledButton.tonalIcon(
-                                    onPressed: () async {
-                                      final messenger = ScaffoldMessenger.of(
-                                        context,
-                                      );
-                                      await Clipboard.setData(
-                                        ClipboardData(text: affirmationText),
-                                      );
-                                      messenger.showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Affirmation copied'),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.copy),
-                                    label: const Text('Copy'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        setState(() => _affirmationOffset++),
-                                    child: const Text('New affirmation'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 8,
+                              children: [
+                                FilledButton.tonalIcon(
+                                  onPressed: () async {
+                                    final messenger = ScaffoldMessenger.of(
+                                      context,
+                                    );
+                                    await Clipboard.setData(
+                                      ClipboardData(text: affirmationText),
+                                    );
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Affirmation copied'),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.copy),
+                                  label: const Text('Copy'),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      setState(() => _affirmationOffset++),
+                                  child: const Text('New affirmation'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       );
 

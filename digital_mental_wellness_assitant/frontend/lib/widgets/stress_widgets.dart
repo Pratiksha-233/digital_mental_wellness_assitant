@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/stress_model.dart';
+import 'app_section_card.dart';
 
 /// Main Stress Level Display Widget - Big circular gauge
 class StressLevelGauge extends StatefulWidget {
@@ -18,17 +19,22 @@ class StressLevelGauge extends StatefulWidget {
   State<StressLevelGauge> createState() => _StressLevelGaugeState();
 }
 
-class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerProviderStateMixin {
+class _StressLevelGaugeState extends State<StressLevelGauge>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.animationDuration);
-    _animation = Tween<double>(begin: 0, end: widget.stressLevel).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.animationDuration,
     );
+    _animation = Tween<double>(
+      begin: 0,
+      end: widget.stressLevel,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _controller.forward();
   }
 
@@ -37,8 +43,10 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
     super.didUpdateWidget(oldWidget);
     if (oldWidget.stressLevel != widget.stressLevel) {
       _controller.reset();
-      _animation = Tween<double>(begin: oldWidget.stressLevel, end: widget.stressLevel)
-          .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+      _animation = Tween<double>(
+        begin: oldWidget.stressLevel,
+        end: widget.stressLevel,
+      ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
       _controller.forward();
     }
   }
@@ -73,6 +81,8 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -97,13 +107,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _getColor(_animation.value).withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
+                      border: Border.all(color: cs.outlineVariant),
                     ),
                   ),
                   // Animated progress ring
@@ -112,6 +116,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
                     painter: StressGaugePainter(
                       progress: _animation.value / 100,
                       color: _getColor(_animation.value),
+                      trackColor: cs.outlineVariant,
                     ),
                   ),
                   // Center content
@@ -125,17 +130,16 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
                       const SizedBox(height: 8),
                       Text(
                         _animation.value.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
                         ),
                       ),
                       Text(
                         'Stress Level',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -151,16 +155,12 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
             decoration: BoxDecoration(
               color: _getColor(_animation.value).withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: _getColor(_animation.value),
-                width: 2,
-              ),
+              border: Border.all(color: _getColor(_animation.value), width: 2),
             ),
             child: Text(
               widget.stressCategory,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w900,
                 color: _getColor(_animation.value),
               ),
             ),
@@ -175,8 +175,13 @@ class _StressLevelGaugeState extends State<StressLevelGauge> with SingleTickerPr
 class StressGaugePainter extends CustomPainter {
   final double progress;
   final Color color;
+  final Color trackColor;
 
-  StressGaugePainter({required this.progress, required this.color});
+  StressGaugePainter({
+    required this.progress,
+    required this.color,
+    required this.trackColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -185,7 +190,7 @@ class StressGaugePainter extends CustomPainter {
 
     // Background arc
     final bgPaint = Paint()
-      ..color = Colors.grey[300]!
+      ..color = trackColor
       ..strokeWidth = 12
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -258,6 +263,8 @@ class StressCategoryBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(16),
@@ -281,9 +288,8 @@ class StressCategoryBanner extends StatelessWidget {
             children: [
               Text(
                 category,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
                   color: _getCategoryColor(),
                 ),
               ),
@@ -303,14 +309,16 @@ class StressCategoryBanner extends StatelessWidget {
                   children: [
                     Text(
                       'Primary Emotion',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     Text(
                       emotion,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
                       ),
                     ),
                   ],
@@ -322,14 +330,16 @@ class StressCategoryBanner extends StatelessWidget {
                   children: [
                     Text(
                       'Energy Level',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     Text(
                       '$energyLevel / 10',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
                       ),
                     ),
                   ],
@@ -342,20 +352,19 @@ class StressCategoryBanner extends StatelessWidget {
             children: [
               Text(
                 'Mood Trend:',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(width: 8),
-              Text(
-                _getMoodEmoji(),
-                style: const TextStyle(fontSize: 16),
-              ),
+              Text(_getMoodEmoji(), style: const TextStyle(fontSize: 16)),
               const SizedBox(width: 4),
               Text(
                 moodPattern.capitalizeFirst(),
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
                 ),
               ),
             ],
@@ -385,36 +394,29 @@ class StressCategoryBanner extends StatelessWidget {
 class ContributingFactorsCard extends StatelessWidget {
   final List<ContributingFactor> factors;
 
-  const ContributingFactorsCard({
-    super.key,
-    required this.factors,
-  });
+  const ContributingFactorsCard({super.key, required this.factors});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return AppSectionCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+      gradient: AppSectionCard.gradientFromScheme(
+        cs,
+        a: cs.surfaceContainerHighest,
+        b: cs.surface,
+        aAlpha: 0.82,
+        bAlpha: 0.62,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '📊 Contributing Factors',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 16),
@@ -422,7 +424,9 @@ class ContributingFactorsCard extends StatelessWidget {
             final index = entry.key;
             final factor = entry.value;
             return Padding(
-              padding: EdgeInsets.only(bottom: index < factors.length - 1 ? 12 : 0),
+              padding: EdgeInsets.only(
+                bottom: index < factors.length - 1 ? 12 : 0,
+              ),
               child: _FactorBar(
                 factor: factor.factor,
                 contribution: factor.contribution,
@@ -449,6 +453,8 @@ class _FactorBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -457,18 +463,16 @@ class _FactorBar extends StatelessWidget {
           children: [
             Text(
               '$rank. $factor',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: cs.onSurface,
               ),
             ),
             Text(
               '${contribution.toStringAsFixed(1)}%',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: cs.primary,
               ),
             ),
           ],
@@ -479,10 +483,8 @@ class _FactorBar extends StatelessWidget {
           child: LinearProgressIndicator(
             value: contribution / 100,
             minHeight: 6,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.blue.withOpacity(0.7),
-            ),
+            backgroundColor: cs.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
           ),
         ),
       ],
@@ -494,68 +496,60 @@ class _FactorBar extends StatelessWidget {
 class RecommendationsCard extends StatelessWidget {
   final List<String> recommendations;
 
-  const RecommendationsCard({
-    super.key,
-    required this.recommendations,
-  });
+  const RecommendationsCard({super.key, required this.recommendations});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return AppSectionCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.withOpacity(0.1), Colors.indigo.withOpacity(0.05)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+      gradient: AppSectionCard.gradientFromScheme(
+        cs,
+        a: cs.primaryContainer,
+        b: cs.secondaryContainer,
+        aAlpha: 0.30,
+        bAlpha: 0.20,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             '💡 Personalized Recommendations',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: cs.primary,
             ),
           ),
           const SizedBox(height: 12),
-          ...recommendations
-              .asMap()
-              .entries
-              .map((entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${entry.key + 1}.',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            entry.value,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.black87,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
+          ...recommendations.asMap().entries.map(
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${entry.key + 1}.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: cs.primary,
                     ),
-                  ))
-              ,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      entry.value,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

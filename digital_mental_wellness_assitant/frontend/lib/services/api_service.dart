@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
@@ -44,15 +45,20 @@ class ApiService {
       if (userId != null) {
         body['user_id'] = userId;
       }
-      final resp = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      final resp = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
       if (resp.statusCode == 200) {
         return jsonDecode(resp.body) as Map<String, dynamic>;
       }
       debugPrint('sendChatMessage error: statusCode=${resp.statusCode}');
+      return null;
+    } on TimeoutException {
+      debugPrint('sendChatMessage timeout');
       return null;
     } catch (e) {
       debugPrint('sendChatMessage exception: $e');

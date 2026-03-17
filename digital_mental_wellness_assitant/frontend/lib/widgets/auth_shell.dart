@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/brand_theme.dart';
+import 'app_section_card.dart';
 
 class AuthScaffold extends StatefulWidget {
   const AuthScaffold({
@@ -189,13 +190,23 @@ class AuthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 520;
         final padding = isCompact ? paddingCompact : paddingWide;
 
-        return Card(
-          child: Padding(padding: EdgeInsets.all(padding), child: child),
+        return AppSectionCard(
+          padding: EdgeInsets.all(padding),
+          gradient: AppSectionCard.gradientFromScheme(
+            cs,
+            a: cs.surfaceContainerHighest,
+            b: cs.surface,
+            aAlpha: 0.82,
+            bAlpha: 0.62,
+          ),
+          child: child,
         );
       },
     );

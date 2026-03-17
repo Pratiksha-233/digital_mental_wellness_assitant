@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
+import 'app_section_card.dart';
 
 /// Embeddable Stress Analyzer section with:
 /// 1) Questionnaire (10 items)
@@ -241,53 +242,58 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final userMissing = _userId == null;
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero header with gradient and rotating quote
-            AnimatedBuilder(
-              animation: _quoteCtrl,
-              builder: (context, _) => Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.teal.shade400, Colors.indigo.shade400],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
+    return AppSectionCard(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(16),
+      gradient: AppSectionCard.gradientFromScheme(
+        cs,
+        a: cs.surfaceContainerHighest,
+        b: cs.surface,
+        aAlpha: 0.78,
+        bAlpha: 0.60,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hero header with gradient and rotating quote
+          AnimatedBuilder(
+            animation: _quoteCtrl,
+            builder: (context, _) => DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: AppSectionCard.gradientFromScheme(
+                  cs,
+                  a: cs.primary,
+                  b: cs.secondary,
+                  aAlpha: 0.95,
+                  bAlpha: 0.85,
                 ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Padding(
                 padding: const EdgeInsets.all(14),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.psychology_alt,
-                      color: Colors.white,
-                      size: 30,
-                    ),
+                    Icon(Icons.psychology_alt, color: cs.onPrimary, size: 30),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Stress Analyzer',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.white,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: cs.onPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             _currentQuote,
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: cs.onPrimary.withValues(alpha: 0.85),
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -296,16 +302,17 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
                     ),
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Reminders',
-                          style: TextStyle(color: Colors.white),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: cs.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(width: 6),
                         Switch(
                           value: _remindersOn,
                           onChanged: (v) => setState(() => _remindersOn = v),
-                          activeThumbColor: Colors.white,
-                          activeTrackColor: Colors.white24,
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
                         ),
@@ -315,208 +322,213 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Quick presets to fill answers fast
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+          ),
+          const SizedBox(height: 16),
+          // Quick presets to fill answers fast
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _presetChip('Calm', 0),
+              _presetChip('Mild', 1),
+              _presetChip('Moderate', 2),
+              _presetChip('Tense', 3),
+              _presetChip('Overwhelmed', 4),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_dbLoading)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: LinearProgressIndicator(minHeight: 3),
+            ),
+          if (_dbError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_dbError!)),
+                  TextButton(
+                    onPressed: _dbLoading ? null : _initDb,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _presetChip('Calm', 0),
-                _presetChip('Mild', 1),
-                _presetChip('Moderate', 2),
-                _presetChip('Tense', 3),
-                _presetChip('Overwhelmed', 4),
+                Text(
+                  'Stress Level Questionnaire',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._questions.map(
+                  (q) => _SAQuestionTile(
+                    question: q.text,
+                    value: _answers[q.text] ?? 0,
+                    onChanged: (v) => setState(() => _answers[q.text] = v),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: FilledButton.tonalIcon(
+                    onPressed: () {
+                      _calculateScore();
+                      setState(() {});
+                    },
+                    icon: const Icon(Icons.assessment),
+                    label: const Text('Calculate Stress Score'),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            if (_dbLoading)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: LinearProgressIndicator(minHeight: 3),
-              ),
-            if (_dbError != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(_dbError!)),
-                    TextButton(
-                      onPressed: _dbLoading ? null : _initDb,
-                      child: const Text('Retry'),
+          ),
+          const SizedBox(height: 12),
+          if (_dailyScore > 0)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Circular gauge
+                SizedBox(
+                  width: 120,
+                  height: 120,
+                  child: CustomPaint(
+                    painter: _SAGaugePainter(_dailyScore, cs),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _dailyScore.toStringAsFixed(0),
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            _scoreLabel(_dailyScore),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Stress Level Questionnaire',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ..._questions.map(
-                    (q) => _SAQuestionTile(
-                      question: q.text,
-                      value: _answers[q.text] ?? 0,
-                      onChanged: (v) => setState(() => _answers[q.text] = v),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _calculateScore();
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.assessment),
-                      label: const Text('Calculate Stress Score'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (_dailyScore > 0)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Circular gauge
-                  SizedBox(
-                    width: 120,
-                    height: 120,
-                    child: CustomPaint(
-                      painter: _SAGaugePainter(_dailyScore),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _dailyScore.toStringAsFixed(0),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              _scoreLabel(_dailyScore),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Today\'s Stress Score',
-                          style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'A higher number indicates higher stress today. Use your result as a gentle nudge, not a judgment.',
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _dbSaving ? null : _saveRecord,
-                              icon: _dbSaving
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.save_alt),
-                              label: Text(_dbSaving ? 'Saving...' : 'Save'),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton.icon(
-                              onPressed: _exportReport,
-                              icon: const Icon(Icons.download),
-                              label: const Text('Export'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            const SizedBox(height: 10),
-            if (_history.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Weekly Trend',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        'Today\'s Stress Score',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () =>
-                            setState(() => _showGraph = !_showGraph),
-                        icon: Icon(
-                          _showGraph ? Icons.visibility : Icons.visibility_off,
+                      const SizedBox(height: 6),
+                      Text(
+                        'A higher number indicates higher stress today. Use your result as a gentle nudge, not a judgment.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _dbSaving ? null : _saveRecord,
+                            icon: _dbSaving
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.save_alt),
+                            label: Text(_dbSaving ? 'Saving...' : 'Save'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: _exportReport,
+                            icon: const Icon(Icons.download),
+                            label: const Text('Export'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 300),
-                    crossFadeState: _showGraph
-                        ? CrossFadeState.showFirst
-                        : CrossFadeState.showSecond,
-                    firstChild: SizedBox(
-                      height: 160,
-                      child: CustomPaint(
-                        painter: _SAStressGraphPainter(_history),
+                ),
+              ],
+            ),
+          const SizedBox(height: 10),
+          if (_history.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Weekly Trend',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    secondChild: const SizedBox.shrink(),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => setState(() => _showGraph = !_showGraph),
+                      icon: Icon(
+                        _showGraph ? Icons.visibility : Icons.visibility_off,
+                      ),
+                    ),
+                  ],
+                ),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 300),
+                  crossFadeState: _showGraph
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  firstChild: SizedBox(
+                    height: 160,
+                    child: CustomPaint(
+                      painter: _SAStressGraphPainter(_history, cs),
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Last saved: ${_lastSaved.toLocal().toString().split('.').first}',
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  secondChild: const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Last saved: ${_lastSaved.toLocal().toString().split('.').first}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
                   ),
-                ],
-              ),
-            if (_history.isEmpty &&
-                !userMissing &&
-                !_dbLoading &&
-                _dbError == null)
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  'No saved stress reports yet. Save one to build your weekly trend.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          if (_history.isEmpty &&
+              !userMissing &&
+              !_dbLoading &&
+              _dbError == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'No saved stress reports yet. Save one to build your weekly trend.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -555,46 +567,63 @@ class _SAQuestionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return AppSectionCard(
       margin: const EdgeInsets.symmetric(vertical: 5),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(question, style: const TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Row(
-              children: List.generate(5, (i) {
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => onChanged(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: i <= value ? Colors.teal : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      radius: 16,
+      gradient: AppSectionCard.gradientFromScheme(
+        cs,
+        a: cs.surfaceContainerHighest,
+        b: cs.surface,
+        aAlpha: 0.78,
+        bAlpha: 0.60,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: List.generate(5, (i) {
+              final selected = i <= value;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onChanged(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: selected ? cs.primary : cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: selected
+                            ? cs.primary.withValues(alpha: 0.65)
+                            : cs.outlineVariant,
                       ),
-                      child: Center(
-                        child: Text(
-                          '$i',
-                          style: TextStyle(
-                            color: i <= value ? Colors.white : Colors.black54,
-                            fontSize: 12,
-                          ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$i',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: selected ? cs.onPrimary : cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
                   ),
-                );
-              }),
-            ),
-          ],
-        ),
+                ),
+              );
+            }),
+          ),
+        ],
       ),
     );
   }
@@ -608,21 +637,23 @@ class _SAStressRecord {
 
 class _SAStressGraphPainter extends CustomPainter {
   final List<_SAStressRecord> records;
-  _SAStressGraphPainter(this.records);
+  final ColorScheme colorScheme;
+
+  _SAStressGraphPainter(this.records, this.colorScheme);
 
   @override
   void paint(Canvas canvas, Size size) {
     if (records.isEmpty) return;
     final paintLine = Paint()
-      ..color = Colors.teal
+      ..color = colorScheme.primary
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     final paintFill = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.teal.withValues(alpha: 0.25),
-          Colors.teal.withValues(alpha: 0.05),
+          colorScheme.primary.withValues(alpha: 0.22),
+          colorScheme.primary.withValues(alpha: 0.05),
         ],
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
@@ -650,7 +681,7 @@ class _SAStressGraphPainter extends CustomPainter {
     canvas.drawPath(path, paintLine);
 
     final pointPaint = Paint()
-      ..color = Colors.teal
+      ..color = colorScheme.primary
       ..style = PaintingStyle.fill;
     for (int i = 0; i < records.length; i++) {
       final x = records.length == 1 ? size.width / 2 : i * stepX;
@@ -667,7 +698,9 @@ class _SAStressGraphPainter extends CustomPainter {
 // Circular gauge painter for unique visualization
 class _SAGaugePainter extends CustomPainter {
   final double score; // 0..100
-  _SAGaugePainter(this.score);
+  final ColorScheme colorScheme;
+
+  _SAGaugePainter(this.score, this.colorScheme);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -675,7 +708,7 @@ class _SAGaugePainter extends CustomPainter {
     final radius = (size.shortestSide / 2) - 6;
     // background circle
     final bg = Paint()
-      ..color = Colors.grey.shade300
+      ..color = colorScheme.outlineVariant
       ..style = PaintingStyle.stroke
       ..strokeWidth = 10
       ..strokeCap = StrokeCap.round;
@@ -689,7 +722,7 @@ class _SAGaugePainter extends CustomPainter {
 
     // progress arc
     final grad = SweepGradient(
-      colors: [Colors.teal, Colors.indigo],
+      colors: [colorScheme.primary, colorScheme.secondary],
       startAngle: 0,
       endAngle: 3.14 * 1.5,
     );

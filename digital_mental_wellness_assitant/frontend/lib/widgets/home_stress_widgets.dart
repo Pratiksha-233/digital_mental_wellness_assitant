@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/stress_model.dart';
+import 'app_section_card.dart';
 
 /// Mini Stress Indicator Widget for Home Screen
 /// Shows a quick summary of current stress level
@@ -47,27 +48,19 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final stressColor = _getStressColor(_stressData?.stressLevel ?? 50);
+
     return GestureDetector(
       onTap: widget.onTap,
-      child: Container(
+      child: AppSectionCard(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              _getStressColor(_stressData?.stressLevel ?? 50).withOpacity(0.15),
-              _getStressColor(_stressData?.stressLevel ?? 50).withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _getStressColor(
-              _stressData?.stressLevel ?? 50,
-            ).withOpacity(0.3),
-            width: 1.5,
-          ),
+        gradient: AppSectionCard.gradientFromScheme(
+          cs,
+          a: stressColor,
+          b: cs.surface,
+          aAlpha: 0.16,
+          bAlpha: 0.85,
         ),
         child: _isLoading
             ? const SizedBox(
@@ -75,9 +68,9 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                 child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               )
             : _stressData == null
-            ? const SizedBox(
-                height: 100,
-                child: Center(child: Text('Unable to load stress data')),
+            ? Text(
+                'Unable to load stress data',
+                style: TextStyle(color: cs.onSurfaceVariant),
               )
             : _buildStressContent(),
       ),
@@ -85,6 +78,9 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
   }
 
   Widget _buildStressContent() {
+    final cs = Theme.of(context).colorScheme;
+    final stressColor = _getStressColor(_stressData?.stressLevel ?? 50);
+
     return Column(
       children: [
         // Enhanced responsive decorative image at the top
@@ -99,26 +95,13 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(borderRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: _getStressColor(
-                      _stressData?.stressLevel ?? 50,
-                    ).withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                border: Border.all(
+                  color: cs.outlineVariant.withValues(alpha: 0.6),
+                ),
                 gradient: LinearGradient(
                   colors: [
-                    _getStressColor(
-                      _stressData?.stressLevel ?? 50,
-                    ).withOpacity(0.1),
-                    Colors.white.withOpacity(0.8),
+                    stressColor.withValues(alpha: 0.14),
+                    cs.surfaceContainerHighest.withValues(alpha: 0.9),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -141,7 +124,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              Colors.black.withOpacity(0.3),
+                              cs.scrim.withValues(alpha: 0.28),
                               Colors.transparent,
                             ],
                           ),
@@ -158,12 +141,12 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.9,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _getStressColor(
-                              _stressData?.stressLevel ?? 50,
-                            ).withOpacity(0.3),
+                            color: stressColor.withValues(alpha: 0.28),
                             width: 1,
                           ),
                         ),
@@ -172,18 +155,14 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                           children: [
                             Icon(
                               Icons.self_improvement,
-                              color: _getStressColor(
-                                _stressData?.stressLevel ?? 50,
-                              ),
+                              color: stressColor,
                               size: 14,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'Wellness',
                               style: TextStyle(
-                                color: _getStressColor(
-                                  _stressData?.stressLevel ?? 50,
-                                ),
+                                color: stressColor,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -209,7 +188,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                   'Your Stress Level',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: cs.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -218,16 +197,19 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                   children: [
                     Text(
                       _stressData!.stressLevel.toStringAsFixed(1),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: cs.onSurface,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '/100',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -241,7 +223,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: _getStressColor(_stressData!.stressLevel),
+                    color: stressColor,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -251,9 +233,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: _getStressColor(
-                      _stressData!.stressLevel,
-                    ).withOpacity(0.2),
+                    color: stressColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -272,10 +252,8 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
           child: LinearProgressIndicator(
             value: _stressData!.stressLevel / 100,
             minHeight: 6,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _getStressColor(_stressData!.stressLevel),
-            ),
+            backgroundColor: cs.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(stressColor),
           ),
         ),
         const SizedBox(height: 12),
@@ -317,6 +295,8 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
   }
 
   Widget _buildQuickInfoItem(String icon, String value, String label) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -324,11 +304,15 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+        Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
       ],
     );
   }
@@ -380,20 +364,17 @@ class StressAlertBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final cs = Theme.of(context).colorScheme;
+    final categoryColor = _getCategoryColor();
+
+    return AppSectionCard(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _getCategoryColor().withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _getCategoryColor(), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: _getCategoryColor().withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      gradient: AppSectionCard.gradientFromScheme(
+        cs,
+        a: categoryColor,
+        b: cs.surface,
+        aAlpha: 0.14,
+        bAlpha: 0.85,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,13 +392,13 @@ class StressAlertBanner extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: _getCategoryColor(),
+                        color: categoryColor,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       message,
-                      style: TextStyle(fontSize: 13, color: Colors.black87),
+                      style: TextStyle(fontSize: 13, color: cs.onSurface),
                     ),
                   ],
                 ),
@@ -433,19 +414,17 @@ class StressAlertBanner extends StatelessWidget {
                   onPressed: onDismiss,
                   child: Text(
                     'Dismiss',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: cs.onSurfaceVariant),
                   ),
                 ),
               if (onViewDetails != null)
                 ElevatedButton(
                   onPressed: onViewDetails,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _getCategoryColor(),
+                    backgroundColor: categoryColor,
+                    foregroundColor: Colors.white,
                   ),
-                  child: const Text(
-                    'View Details',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: const Text('View Details'),
                 ),
             ],
           ),
@@ -492,15 +471,17 @@ class StressRecommendationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: cs.primaryContainer.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.8)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -510,7 +491,7 @@ class StressRecommendationChip extends StatelessWidget {
             Flexible(
               child: Text(
                 recommendation,
-                style: const TextStyle(fontSize: 12, color: Colors.blue),
+                style: TextStyle(fontSize: 12, color: cs.onSurface),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

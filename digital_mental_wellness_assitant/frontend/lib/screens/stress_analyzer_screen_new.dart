@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/stress_model.dart';
 import '../widgets/stress_widgets.dart';
+import '../widgets/app_section_card.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 
@@ -141,6 +142,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   }
 
   Widget _buildLoadingState() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -149,7 +152,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           const SizedBox(height: 16),
           Text(
             'Analyzing your stress level...',
-            style: TextStyle(color: Colors.grey[600]),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -157,6 +162,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   }
 
   Widget _buildErrorState() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -166,10 +173,13 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           Text(
             _errorMessage ?? 'An error occurred',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red, fontSize: 14),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: cs.error,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
+          FilledButton.tonalIcon(
             onPressed: _fetchStressData,
             icon: const Icon(Icons.refresh),
             label: const Text('Retry'),
@@ -180,6 +190,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   }
 
   Widget _buildMainContent() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     if (_currentStress == null) {
       return Center(
         child: Padding(
@@ -197,10 +209,12 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
               Text(
                 'This screen shows stress records saved in the database.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600]),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton.icon(
+              FilledButton.tonalIcon(
                 onPressed: _fetchStressData,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Refresh'),
@@ -268,16 +282,17 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
 
   Widget _buildTabButton(int index, String label) {
     final isSelected = _selectedTab == index;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return GestureDetector(
       onTap: () => setState(() => _selectedTab = index),
       child: Column(
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Colors.blue : Colors.grey,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? cs.primary : cs.onSurfaceVariant,
             ),
           ),
           if (isSelected)
@@ -286,7 +301,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
               height: 3,
               width: 40,
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: cs.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -296,6 +311,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   }
 
   Widget _buildHistoryTab() {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     if (_stressHistory == null || _stressHistory!.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(32),
@@ -305,7 +322,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             const SizedBox(height: 16),
             Text(
               'No history available yet',
-              style: TextStyle(color: Colors.grey[600]),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -314,22 +333,24 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
 
     return Column(
       children: [
-        Container(
+        AppSectionCard(
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-            ],
+          gradient: AppSectionCard.gradientFromScheme(
+            cs,
+            a: cs.surfaceContainerHighest,
+            b: cs.surface,
+            aAlpha: 0.82,
+            bAlpha: 0.62,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Last 30 Days',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 12),
               SizedBox(height: 150, child: _buildSimpleChart(_stressHistory!)),
@@ -354,13 +375,15 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   }
 
   Widget _buildHistoryItem(StressHistoryRecord record) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Row(
         children: [
@@ -388,18 +411,21 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
               children: [
                 Text(
                   record.stressCategory,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 Text(
                   'Emotion: ${record.primaryEmotion}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 Text(
                   DateFormat('MMM dd, yyyy').format(record.timestamp),
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -417,6 +443,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
       );
     }
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     final stats = _stressStats!;
     return Column(
       children: [
@@ -433,7 +462,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
               _buildStatCard(
                 'Average',
                 stats.averageStress.toStringAsFixed(1),
-                Colors.blue,
+                cs.primary,
               ),
               _buildStatCard(
                 'Current',
@@ -443,33 +472,35 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
               _buildStatCard(
                 'Min',
                 stats.minStress.toStringAsFixed(1),
-                Colors.green,
+                cs.tertiary,
               ),
               _buildStatCard(
                 'Max',
                 stats.maxStress.toStringAsFixed(1),
-                Colors.red,
+                cs.error,
               ),
             ],
           ),
         ),
         // Trend indicator
-        Container(
+        AppSectionCard(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-            ],
+          gradient: AppSectionCard.gradientFromScheme(
+            cs,
+            a: cs.surfaceContainerHighest,
+            b: cs.surface,
+            aAlpha: 0.82,
+            bAlpha: 0.62,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Overall Trend',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               Row(
                 children: [
@@ -477,7 +508,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
                   const SizedBox(width: 8),
                   Text(
                     stats.trend.replaceAll('_', ' ').toUpperCase(),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ],
               ),
@@ -485,22 +518,24 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           ),
         ),
         // Category distribution
-        Container(
+        AppSectionCard(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-            ],
+          gradient: AppSectionCard.gradientFromScheme(
+            cs,
+            a: cs.surfaceContainerHighest,
+            b: cs.surface,
+            aAlpha: 0.82,
+            bAlpha: 0.62,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Distribution (Last ${30} Days)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 16),
               _buildDistributionBar('LOW', stats.lowCount, Colors.green),
@@ -524,23 +559,32 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   }
 
   Widget _buildStatCard(String label, String value, Color color) {
-    return Container(
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    return AppSectionCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+      gradient: AppSectionCard.gradientFromScheme(
+        cs,
+        a: cs.surfaceContainerHighest,
+        b: cs.surface,
+        aAlpha: 0.82,
+        bAlpha: 0.62,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w900,
               color: color,
             ),
           ),
@@ -552,6 +596,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   Widget _buildDistributionBar(String category, int count, Color color) {
     final total = (_stressStats?.totalRecords ?? 1).toDouble();
     final percentage = (count / total) * 100;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -562,14 +608,16 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             children: [
               Text(
                 category,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               Text(
                 '$count (${percentage.toStringAsFixed(1)}%)',
-                style: const TextStyle(fontSize: 12),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -579,7 +627,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             child: LinearProgressIndicator(
               value: count / (total > 0 ? total : 1),
               minHeight: 8,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: cs.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
