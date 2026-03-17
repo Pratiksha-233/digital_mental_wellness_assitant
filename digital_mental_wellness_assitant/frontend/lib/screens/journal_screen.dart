@@ -3,7 +3,8 @@ import '../services/api_service.dart';
 
 class JournalScreen extends StatefulWidget {
   final int userId;
-  const JournalScreen({super.key, required this.userId});
+  final DateTime? selectedDate;
+  const JournalScreen({super.key, required this.userId, this.selectedDate});
 
   @override
   State<JournalScreen> createState() => _JournalScreenState();
@@ -15,10 +16,30 @@ class _JournalScreenState extends State<JournalScreen> {
   bool _isLoading = false;
   final ApiService _api = ApiService();
 
+  String _formatSelectedDate(DateTime d) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
   void _analyzeEmotion() async {
     if (_controller.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please write something before analyzing')),
+        const SnackBar(
+          content: Text('Please write something before analyzing'),
+        ),
       );
       return;
     }
@@ -31,9 +52,9 @@ class _JournalScreenState extends State<JournalScreen> {
       setState(() => _emotion = result['emotion']);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error analyzing emotion: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error analyzing emotion: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -41,11 +62,16 @@ class _JournalScreenState extends State<JournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selected = widget.selectedDate;
+    final title = selected == null
+        ? 'Journal'
+        : 'Journal · ${_formatSelectedDate(selected)}';
+    final hint = selected == null
+        ? 'How are you feeling today?'
+        : 'How did you feel on ${_formatSelectedDate(selected)}?';
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Journal'),
-        backgroundColor: Colors.teal,
-      ),
+      appBar: AppBar(title: Text(title), backgroundColor: Colors.teal),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -53,10 +79,10 @@ class _JournalScreenState extends State<JournalScreen> {
             TextField(
               controller: _controller,
               maxLines: 5,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Write your thoughts...',
                 border: OutlineInputBorder(),
-                hintText: 'How are you feeling today?',
+                hintText: hint,
               ),
             ),
             const SizedBox(height: 16),
@@ -103,8 +129,8 @@ class _JournalScreenState extends State<JournalScreen> {
                           color: _emotion == 'happy'
                               ? Colors.green
                               : _emotion == 'sad'
-                                  ? Colors.blue
-                                  : Colors.orange,
+                              ? Colors.blue
+                              : Colors.orange,
                         ),
                       ),
                     ],
