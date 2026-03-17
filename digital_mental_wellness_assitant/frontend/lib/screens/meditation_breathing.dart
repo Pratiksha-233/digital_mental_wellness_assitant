@@ -44,7 +44,7 @@ class _BackgroundPainter extends CustomPainter {
 }
 
 class _MeditationBreathingPageState extends State<MeditationBreathingPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _staggerController;
   late final AnimationController _bgController;
   late final Animation<double> _bgPulse;
