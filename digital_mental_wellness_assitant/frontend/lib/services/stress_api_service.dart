@@ -3,17 +3,22 @@
 library;
 
 import '../models/stress_model.dart';
+import '../utils/constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class StressApiService {
-  final String baseUrl =
-      'http://localhost:5000'; // Update with your backend URL
+  // Use the same dynamic base URL as the rest of the app.
+  // This supports:
+  // - Android emulator: http://10.0.2.2:5000
+  // - Real phones (Wi-Fi): set override in Profile (e.g. http://192.168.1.9:5000)
+  // - Or pass --dart-define=BACKEND_BASE=...
+  String get _baseUrl => apiBaseUrl;
 
   /// HTTP GET request helper method
   Future<Map<String, dynamic>?> get(String endpoint) async {
     try {
-      final url = Uri.parse('$baseUrl$endpoint');
+      final url = Uri.parse('$_baseUrl$endpoint');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);

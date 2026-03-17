@@ -20,9 +20,13 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   StressData? _currentStress;
   List<StressHistoryRecord>? _stressHistory;
   StressStats? _stressStats;
-  bool _isLoading = true;
+  bool _isLoading = false;
+  bool _loadInFlight = false;
   String? _errorMessage;
   int _selectedTab = 0; // 0: Current, 1: History, 2: Stats
+
+  Map<String, dynamic>? _faceDetectionSummary;
+  Map<String, dynamic>? _latestFaceDetection;
 
   StressData _stressDataFromHistory(StressHistoryRecord record) {
     return StressData(
@@ -51,7 +55,11 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
       vsync: this,
       duration: const Duration(seconds: 14),
     )..repeat(reverse: true);
-    _fetchStressData();
+    // Start loading after first paint so navigation feels instant.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fetchStressData(showBlockingLoader: false);
+    });
   }
 
   @override
@@ -60,20 +68,34 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
     super.dispose();
   }
 
-  Future<void> _fetchStressData() async {
-    setState(() {
-      _isLoading = true;
+  Future<void> _fetchStressData({required bool showBlockingLoader}) async {
+    if (_loadInFlight) return;
+    _loadInFlight = true;
+    if (mounted && showBlockingLoader) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    } else {
       _errorMessage = null;
-    });
+    }
 
     try {
       final api = ApiService();
 
-      // Fetch history first (DB-backed). This keeps the screen useful even if
-      // stress calculation fails (e.g., missing ML deps, no recent mood data).
-      final historyJson = await api.get(
-        '/stress/history?user_id=${widget.userId}&days=30&limit=100',
-      );
+      // Fetch what we can in parallel to speed up time-to-content.
+      final results = await Future.wait<dynamic>([
+        api.get('/stress/history?user_id=${widget.userId}&days=30&limit=100'),
+        api.get('/stress/stats?user_id=${widget.userId}'),
+        api.getFaceDetectionAnalytics(widget.userId),
+        api.getFaceDetectionLogs(widget.userId, limit: 1, days: 30),
+      ]);
+
+      final historyJson = results[0] as Map<String, dynamic>?;
+      final statsJson = results[1] as Map<String, dynamic>?;
+      final faceSummary = results[2] as Map<String, dynamic>;
+      final faceLogs = results[3] as List<Map<String, dynamic>>;
+
       final historyRows = (historyJson?['data'] is List)
           ? (historyJson!['data'] as List)
           : const <dynamic>[];
@@ -86,41 +108,57 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           )
           .toList();
       history.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      _stressHistory = history;
 
-      // Try fetching current stress (also saves DB). If it fails, fall back to
-      // latest historical DB record.
-      final stressJson = await api.get(
-        '/stress/calculate?user_id=${widget.userId}',
-      );
-      if (stressJson != null && stressJson['data'] is Map) {
-        _currentStress = StressData.fromJson(
-          (stressJson['data'] as Map).map((k, v) => MapEntry(k.toString(), v)),
-        );
-      } else if (_stressHistory != null && _stressHistory!.isNotEmpty) {
-        _currentStress = _stressDataFromHistory(_stressHistory!.first);
-      } else {
-        // No DB history and couldn't calculate.
-        _currentStress = null;
-      }
+      final nextStats = statsJson == null
+          ? null
+          : StressStats.fromJson(statsJson);
+      final nextCurrent = history.isNotEmpty
+          ? _stressDataFromHistory(history.first)
+          : null;
 
-      // Fetch stats (optional; may be 404 if no history)
-      final statsJson = await api.get('/stress/stats?user_id=${widget.userId}');
-      _stressStats = statsJson == null ? null : StressStats.fromJson(statsJson);
+      final nextLatestFace = faceLogs.isNotEmpty ? faceLogs.first : null;
 
+      if (!mounted) return;
       setState(() {
+        _stressHistory = history;
+        _stressStats = nextStats;
+        _currentStress = nextCurrent;
+        _faceDetectionSummary = faceSummary;
+        _latestFaceDetection = nextLatestFace;
         _isLoading = false;
-        if (_currentStress == null &&
-            (_stressHistory == null || _stressHistory!.isEmpty)) {
+        if (_currentStress == null && (history.isEmpty)) {
           _errorMessage =
               'No stress data available yet. Add a stress entry (questionnaire) or try Calculate.';
         }
       });
+
+      // Kick off a fresh calculation in the background (best-effort) so values update,
+      // but never block the screen from opening.
+      api
+          .get('/stress/calculate?user_id=${widget.userId}')
+          .timeout(const Duration(seconds: 8))
+          .then((stressJson) {
+            if (!mounted) return;
+            if (stressJson != null && stressJson['data'] is Map) {
+              final parsed = StressData.fromJson(
+                (stressJson['data'] as Map).map(
+                  (k, v) => MapEntry(k.toString(), v),
+                ),
+              );
+              setState(() {
+                _currentStress = parsed;
+              });
+            }
+          })
+          .catchError((_) {});
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Failed to load stress data: $e';
         _isLoading = false;
       });
+    } finally {
+      _loadInFlight = false;
     }
   }
 
@@ -132,102 +170,59 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
         elevation: 0,
         backgroundColor: Colors.transparent,
         centerTitle: true,
-      ),
-      body: _isLoading
-          ? _buildLoadingState()
-          : _errorMessage != null
-          ? _buildErrorState()
-          : _buildMainContent(),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(
-            'Analyzing your stress level...',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('❌', style: TextStyle(fontSize: 48)),
-          const SizedBox(height: 16),
-          Text(
-            _errorMessage ?? 'An error occurred',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: cs.error,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.tonalIcon(
-            onPressed: _fetchStressData,
+        actions: [
+          IconButton(
+            onPressed: () {
+              _fetchStressData(showBlockingLoader: false);
+            },
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
           ),
         ],
       ),
+      // Render immediately; show placeholders while data loads.
+      body: _buildMainContent(),
     );
   }
 
   Widget _buildMainContent() {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    if (_currentStress == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.insights, size: 44),
-              const SizedBox(height: 12),
-              const Text(
-                'No stress record yet',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This screen shows stress records saved in the database.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton.tonalIcon(
-                onPressed: _fetchStressData,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Refresh'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final hasAnyData =
+        _currentStress != null || (_stressHistory?.isNotEmpty ?? false);
 
     return SingleChildScrollView(
       child: Column(
         children: [
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: AppSectionCard(
+                padding: const EdgeInsets.all(12),
+                gradient: AppSectionCard.gradientFromScheme(
+                  cs,
+                  a: cs.errorContainer,
+                  b: cs.surface,
+                  aAlpha: 0.55,
+                  bAlpha: 0.65,
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: cs.error),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onErrorContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Tabs
           Padding(
             padding: const EdgeInsets.all(16),
@@ -244,27 +239,50 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           // Tab content
           if (_selectedTab == 0) ...[
             // Current stress display
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: StressLevelGauge(
-                stressLevel: _currentStress!.stressLevel,
-                stressCategory: _currentStress!.stressCategory,
+            if (!hasAnyData && _isLoading)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Loading…',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else if (!hasAnyData)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No stress record yet. Add a stress entry (questionnaire) and come back.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: StressLevelGauge(
+                  stressLevel: (_currentStress?.stressLevel ?? 0).toDouble(),
+                  stressCategory: _currentStress?.stressCategory ?? 'N/A',
+                ),
               ),
-            ),
-            StressCategoryBanner(
-              category: _currentStress!.stressCategory,
-              emotion: _currentStress!.primaryEmotion,
-              energyLevel: _currentStress!.energyLevel,
-              moodPattern: _currentStress!.moodPattern,
-            ),
-            if (_currentStress!.contributingFactors.isNotEmpty)
-              ContributingFactorsCard(
-                factors: _currentStress!.contributingFactors,
+              StressCategoryBanner(
+                category: _currentStress?.stressCategory ?? 'N/A',
+                emotion: _currentStress?.primaryEmotion ?? 'N/A',
+                energyLevel: _currentStress?.energyLevel ?? 0,
+                moodPattern: _currentStress?.moodPattern ?? 'N/A',
               ),
-            if (_currentStress!.recommendations.isNotEmpty)
-              RecommendationsCard(
-                recommendations: _currentStress!.recommendations,
-              ),
+              if ((_currentStress?.contributingFactors.isNotEmpty ?? false))
+                ContributingFactorsCard(
+                  factors: _currentStress!.contributingFactors,
+                ),
+              if ((_currentStress?.recommendations.isNotEmpty ?? false))
+                RecommendationsCard(
+                  recommendations: _currentStress!.recommendations,
+                ),
+            ],
             const SizedBox(height: 20),
           ],
           if (_selectedTab == 1) ...[
@@ -450,38 +468,62 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
     return Column(
       children: [
         // Key metrics grid
-        Container(
-          margin: const EdgeInsets.all(16),
-          child: GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            children: [
-              _buildStatCard(
-                'Average',
-                stats.averageStress.toStringAsFixed(1),
-                cs.primary,
-              ),
-              _buildStatCard(
-                'Current',
-                stats.currentStress.toStringAsFixed(1),
-                _getStressColor(stats.currentStress),
-              ),
-              _buildStatCard(
-                'Min',
-                stats.minStress.toStringAsFixed(1),
-                cs.tertiary,
-              ),
-              _buildStatCard(
-                'Max',
-                stats.maxStress.toStringAsFixed(1),
-                cs.error,
-              ),
-            ],
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return GridView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  // More columns on wide screens so cards don't look oversized.
+                  maxCrossAxisExtent: 260,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  // Keep the metric boxes compact (avoid tall stretched cards).
+                  mainAxisExtent: 96,
+                ),
+                children: [
+                  _buildStatCard(
+                    'Average',
+                    stats.averageStress.toStringAsFixed(1),
+                    cs.primary,
+                  ),
+                  _buildStatCard(
+                    'Current',
+                    stats.currentStress.toStringAsFixed(1),
+                    _getStressColor(stats.currentStress),
+                  ),
+                  _buildStatCard(
+                    'Min',
+                    stats.minStress.toStringAsFixed(1),
+                    cs.tertiary,
+                  ),
+                  _buildStatCard(
+                    'Max',
+                    stats.maxStress.toStringAsFixed(1),
+                    cs.error,
+                  ),
+                ],
+              );
+            },
           ),
         ),
+
+        // Emotion (from stored face detections)
+        if (_faceDetectionSummary != null)
+          AppSectionCard(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.all(16),
+            gradient: AppSectionCard.gradientFromScheme(
+              cs,
+              a: cs.surfaceContainerHighest,
+              b: cs.surface,
+              aAlpha: 0.82,
+              bAlpha: 0.62,
+            ),
+            child: _buildEmotionStats(theme),
+          ),
         // Trend indicator
         AppSectionCard(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -558,11 +600,100 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
     );
   }
 
+  Widget _buildEmotionStats(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final summary = _faceDetectionSummary ?? const {};
+    final total = (summary['total'] as num?)?.toInt() ?? 0;
+    final avgConf = (summary['avg_confidence'] as num?)?.toDouble() ?? 0.0;
+    final byEmotion = (summary['by_emotion'] as Map?) ?? const {};
+
+    String topEmotion = 'N/A';
+    if (byEmotion.isNotEmpty) {
+      final mostCommon = byEmotion.entries.where((e) => e.value is num).toList()
+        ..sort((a, b) => (b.value as num).compareTo(a.value as num));
+      if (mostCommon.isNotEmpty) {
+        topEmotion = mostCommon.first.key.toString();
+      }
+    }
+
+    String latest = 'No recent face detection';
+    final last = _latestFaceDetection;
+    if (last != null) {
+      final em = (last['detected_emotion'] ?? '').toString();
+      final confRaw = last['confidence_score'];
+      final conf = (confRaw is num)
+          ? confRaw.toDouble()
+          : (double.tryParse(confRaw?.toString() ?? '') ?? 0.0);
+      latest = em.isEmpty
+          ? latest
+          : '$em (${(conf * 100).toStringAsFixed(0)}%)';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Detected Emotion (Face)',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Most common', style: theme.textTheme.labelSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    topEmotion,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Latest', style: theme.textTheme.labelSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    latest,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: cs.primary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Total scans: $total • Avg confidence: ${(avgConf * 100).toStringAsFixed(0)}%',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: cs.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildStatCard(String label, String value, Color color) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     return AppSectionCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       gradient: AppSectionCard.gradientFromScheme(
         cs,
         a: cs.surfaceContainerHighest,

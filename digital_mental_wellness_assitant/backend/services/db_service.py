@@ -445,3 +445,47 @@ def get_face_detection_summary(user_id, days=30):
     finally:
         cursor.close()
         conn.close()
+
+
+def get_face_detection_logs(user_id, limit=50, days=30):
+    """Return latest face detection log rows for the user.
+
+    Output row keys:
+      - detected_emotion
+      - confidence_score
+      - faces_detected
+      - detection_method
+      - timestamp
+    """
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not fetch face detection logs — DB connection failed.")
+        return []
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT detected_emotion,
+                   confidence_score,
+                   faces_detected,
+                   detection_method,
+                   timestamp
+            FROM face_detection_logs
+            WHERE user_id = %s
+              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+            ORDER BY timestamp DESC
+            LIMIT %s
+            """,
+            (user_id, days, int(limit)),
+        )
+        return cursor.fetchall() or []
+    except Error as e:
+        print("❌ get_face_detection_logs error:", e)
+        return []
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        conn.close()

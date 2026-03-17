@@ -2,6 +2,7 @@ flask
 flask-cors
 mysql-connector-python
 python-dotenv
+cryptography
 tensorflow
 scikit-learn
 gunicorn

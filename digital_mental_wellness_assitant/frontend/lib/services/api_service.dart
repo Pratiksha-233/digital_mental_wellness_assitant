@@ -224,6 +224,37 @@ class ApiService {
     return {'total': 0, 'by_emotion': {}, 'avg_confidence': 0.0};
   }
 
+  Future<List<Map<String, dynamic>>> getFaceDetectionLogs(
+    int userId, {
+    int limit = 50,
+    int days = 30,
+  }) async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+              '$apiBaseUrl/analytics/face-detections/logs?user_id=$userId&limit=$limit&days=$days',
+            ),
+          )
+          .timeout(const Duration(seconds: 12));
+      if (res.statusCode != 200) return const [];
+      final decoded = jsonDecode(res.body);
+      final rows = (decoded is Map && decoded['data'] is List)
+          ? (decoded['data'] as List)
+          : const [];
+      final out = <Map<String, dynamic>>[];
+      for (final r in rows) {
+        if (r is Map) {
+          out.add(r.map((k, v) => MapEntry(k.toString(), v)));
+        }
+      }
+      return out;
+    } catch (e) {
+      debugPrint('getFaceDetectionLogs error: $e');
+      return const [];
+    }
+  }
+
   /// Save a questionnaire-based stress score to the backend (stored in MySQL).
   Future<bool> saveQuestionnaireStress({
     required int userId,

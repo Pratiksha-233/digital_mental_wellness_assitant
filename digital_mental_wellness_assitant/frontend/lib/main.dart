@@ -19,9 +19,11 @@ import 'screens/resources_screen.dart';
 import 'screens/meditate_screen.dart';
 import 'screens/realtime_detection_screen.dart';
 import 'services/profile_service.dart';
+import 'services/backend_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'theme/brand_theme.dart';
+import 'package:camera/camera.dart';
 
 class _GlobalEnterIntent extends Intent {
   const _GlobalEnterIntent();
@@ -29,9 +31,11 @@ class _GlobalEnterIntent extends Intent {
 
 String? _initialStoredDisplayName; // loaded before runApp
 int? _initialStoredUserId;
+List<CameraDescription> _initialCameras = const [];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await BackendConfig.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Ensure auth persistence on web so refresh keeps the session
   try {
@@ -46,6 +50,20 @@ Future<void> main() async {
   try {
     _initialStoredUserId = await ProfileService.getUserId();
   } catch (_) {}
+
+  // Preload cameras once for desktop/mobile.
+  // On Web, camera access often requires a user gesture, so preloading here can hang.
+  if (!kIsWeb) {
+    try {
+      _initialCameras = await availableCameras().timeout(
+        const Duration(seconds: 35),
+      );
+    } catch (_) {
+      _initialCameras = const [];
+    }
+  } else {
+    _initialCameras = const [];
+  }
   runApp(const MentalWellnessApp());
 }
 
@@ -94,7 +112,8 @@ class MentalWellnessApp extends StatelessWidget {
             '/week': (c) => const WeekViewScreen(),
             '/resources': (c) => const ResourcesScreen(),
             '/meditation': (c) => const MeditateScreen(),
-            '/detection': (c) => const RealtimeDetectionScreen(),
+            '/detection': (c) =>
+                RealtimeDetectionScreen(initialCameras: _initialCameras),
             '/home': (c) {
               final user = FirebaseAuth.instance.currentUser;
               return HomeScreen(

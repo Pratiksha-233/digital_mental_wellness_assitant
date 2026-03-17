@@ -965,17 +965,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.tonalIcon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MoodTrackerScreen(),
+                        Align(
+                          alignment: Alignment.center,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.tonalIcon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const MoodTrackerScreen(),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.emoji_emotions_outlined),
+                                label: const Text("Log Today's Mood"),
                               ),
                             ),
-                            icon: const Icon(Icons.emoji_emotions_outlined),
-                            label: const Text("Log Today's Mood"),
                           ),
                         ),
                       ],

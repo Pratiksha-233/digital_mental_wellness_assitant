@@ -34,10 +34,20 @@ else:
     print("Keras not available, ML features disabled")
 
 # Load Haar Cascade for face detection
-haar_file = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-face_cascade = cv2.CascadeClassifier(haar_file)
+# alt2 is often a bit more tolerant than the default cascade
+haar_candidates = [
+    cv2.data.haarcascades + 'haarcascade_frontalface_alt2.xml',
+    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
+]
 
-if face_cascade.empty():
+face_cascade = None
+for haar_file in haar_candidates:
+    cascade = cv2.CascadeClassifier(haar_file)
+    if cascade is not None and not cascade.empty():
+        face_cascade = cascade
+        break
+
+if face_cascade is None:
     print("Error: Could not load Haar Cascade")
 
 def extract_features(image):
