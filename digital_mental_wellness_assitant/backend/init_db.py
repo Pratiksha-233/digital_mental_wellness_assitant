@@ -1,17 +1,3 @@
-"""Run SQL schema and sample data to initialize the `mental_wellness` database.
-
-Usage (from project root):
-    python -m backend.init_db
-
-Or from backend folder:
-    python init_db.py
-
-It reads these files (relative to project root):
-- frontend/database/mental_wellness.sql
-- frontend/database/sample_data.sql
-
-Make sure `backend/.env` contains correct DB credentials.
-"""
 import os
 from pathlib import Path
 import sys
@@ -95,7 +81,7 @@ def main():
         conn = mysql.connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'mysqlworld@123'),
+            password=config.DB_CONFIG.get('password', 'nayan@337'),
             database=os.getenv('DB_NAME', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')

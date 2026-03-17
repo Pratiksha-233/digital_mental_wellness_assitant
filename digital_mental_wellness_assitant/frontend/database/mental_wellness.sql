@@ -77,3 +77,15 @@ CREATE TABLE IF NOT EXISTS stress_logs (
 	INDEX idx_timestamp (timestamp),
 	INDEX idx_stress_level (stress_level)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS face_detection_logs (
+    detection_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    detected_emotion VARCHAR(50),
+    confidence_score FLOAT,
+    faces_detected INT,
+    detection_method VARCHAR(20),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
