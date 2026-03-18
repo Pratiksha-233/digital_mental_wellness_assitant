@@ -8,11 +8,13 @@ class RealtimeDetectionService {
   /// Predict emotion from text
   static Future<Map<String, dynamic>> predictEmotion(String text) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/predict-emotion'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'text': text}),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/predict-emotion'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'text': text}),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -26,19 +28,29 @@ class RealtimeDetectionService {
   }
 
   /// Predict emotion from base64 image
-  static Future<Map<String, dynamic>> predictImageEmotion(String base64Image) async {
+  static Future<Map<String, dynamic>> predictImageEmotion(
+    String base64Image, {
+    int? userId,
+  }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/predict-image'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'image': base64Image}),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/predict-image'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'image': base64Image,
+              if (userId != null) 'user_id': userId,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
         final error = jsonDecode(response.body);
-        throw Exception(error['message'] ?? 'Failed to predict emotion from image');
+        throw Exception(
+          error['message'] ?? 'Failed to predict emotion from image',
+        );
       }
     } catch (e) {
       throw Exception('Error predicting emotion from image: $e');

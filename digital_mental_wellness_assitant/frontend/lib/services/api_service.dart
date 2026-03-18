@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
@@ -44,15 +45,20 @@ class ApiService {
       if (userId != null) {
         body['user_id'] = userId;
       }
-      final resp = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      final resp = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
       if (resp.statusCode == 200) {
         return jsonDecode(resp.body) as Map<String, dynamic>;
       }
       debugPrint('sendChatMessage error: statusCode=${resp.statusCode}');
+      return null;
+    } on TimeoutException {
+      debugPrint('sendChatMessage timeout');
       return null;
     } catch (e) {
       debugPrint('sendChatMessage exception: $e');
@@ -206,5 +212,35 @@ class ApiService {
       return jsonDecode(res.body) as List<dynamic>;
     }
     return [];
+  }
+
+  Future<Map<String, dynamic>> getFaceDetectionAnalytics(int userId) async {
+    final res = await http.get(
+      Uri.parse('$apiBaseUrl/analytics/face-detections?user_id=$userId'),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return {'total': 0, 'by_emotion': {}, 'avg_confidence': 0.0};
+  }
+
+  /// Save a questionnaire-based stress score to the backend (stored in MySQL).
+  Future<bool> saveQuestionnaireStress({
+    required int userId,
+    required double stressLevel,
+  }) async {
+    try {
+      final resp = await http
+          .post(
+            Uri.parse('$apiBaseUrl/stress/questionnaire'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'user_id': userId, 'stress_level': stressLevel}),
+          )
+          .timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('saveQuestionnaireStress error: $e');
+      return false;
+    }
   }
 }

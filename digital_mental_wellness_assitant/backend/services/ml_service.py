@@ -180,16 +180,18 @@ class MLService:
             }
 
         try:
+            lowered = (text or '').lower()
             seq = self.tokenizer.texts_to_sequences([text])
             padded = pad_sequences(seq, maxlen=self.max_len, padding='post')
-            preds = self.model.predict(padded)
+            preds = self.model.predict(padded, verbose=0)
             label_index = int(np.argmax(preds))
             emotion = self.label_map.get(label_index, "Unknown")
             confidence = float(np.max(preds))
 
             # Map fine‑grained emotion to coarse sentiment
             negative_emotions = {"Sadness", "Anger", "Fear"}
-            positive_emotions = {"Joy", "Love", "Surprise"}
+            # NOTE: 'Surprise' is not reliably positive for wellness contexts.
+            positive_emotions = {"Joy", "Love"}
 
             if emotion in positive_emotions:
                 sentiment = 'positive'
@@ -197,6 +199,74 @@ class MLService:
                 sentiment = 'negative'
             else:
                 sentiment = 'neutral'
+
+            # Lightweight keyword-based overrides to improve reliability
+            # for common wellness topics where the model can be noisy.
+            sleep_keywords = [
+                "insomnia",
+                "can't sleep",
+                "cannot sleep",
+                "cant sleep",
+                "sleepless",
+                "sleep problem",
+                "sleeping problem",
+                "trouble sleeping",
+                "wake up",
+                "waking up",
+                "nightmare",
+                "nightmares",
+            ]
+            anxiety_keywords = [
+                "anxious",
+                "anxiety",
+                "panic",
+                "panic attack",
+                "worried",
+                "worry",
+                "overthinking",
+                "overwhelmed",
+            ]
+            sad_keywords = [
+                "depressed",
+                "depression",
+                "hopeless",
+                "sad",
+                "low",
+                "empty",
+                "cry",
+                "crying",
+            ]
+            anger_keywords = [
+                "angry",
+                "anger",
+                "furious",
+                "irritated",
+                "frustrated",
+            ]
+
+            has_sleep = any(k in lowered for k in sleep_keywords)
+            has_anxiety = any(k in lowered for k in anxiety_keywords)
+            has_sad = any(k in lowered for k in sad_keywords)
+            has_anger = any(k in lowered for k in anger_keywords)
+
+            # Only override emotion when the model is low-confidence or
+            # the predicted emotion contradicts clear negative keywords.
+            if has_sleep and (emotion in {"Joy", "Love", "Surprise"} or sentiment != 'negative'):
+                if confidence < 0.75 or emotion == "Surprise":
+                    emotion = "Fear"
+                sentiment = 'negative'
+            elif has_anxiety and sentiment != 'negative':
+                if confidence < 0.75 or emotion == "Surprise":
+                    emotion = "Fear"
+                sentiment = 'negative'
+            elif has_sad and sentiment != 'negative':
+                if confidence < 0.75 or emotion in {"Joy", "Love", "Surprise"}:
+                    emotion = "Sadness"
+                sentiment = 'negative'
+            elif has_anger and sentiment != 'negative':
+                if confidence < 0.75 or emotion in {"Joy", "Love", "Surprise"}:
+                    emotion = "Anger"
+                sentiment = 'negative'
 
             return {
                 'emotion': emotion,

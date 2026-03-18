@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/app_section_card.dart';
 
 class JournalScreen extends StatefulWidget {
   final int userId;
-  const JournalScreen({super.key, required this.userId});
+  final DateTime? selectedDate;
+  const JournalScreen({super.key, required this.userId, this.selectedDate});
 
   @override
   State<JournalScreen> createState() => _JournalScreenState();
@@ -15,10 +17,30 @@ class _JournalScreenState extends State<JournalScreen> {
   bool _isLoading = false;
   final ApiService _api = ApiService();
 
+  String _formatSelectedDate(DateTime d) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
+  }
+
   void _analyzeEmotion() async {
     if (_controller.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please write something before analyzing')),
+        const SnackBar(
+          content: Text('Please write something before analyzing'),
+        ),
       );
       return;
     }
@@ -31,9 +53,9 @@ class _JournalScreenState extends State<JournalScreen> {
       setState(() => _emotion = result['emotion']);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error analyzing emotion: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error analyzing emotion: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -41,78 +63,106 @@ class _JournalScreenState extends State<JournalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final selected = widget.selectedDate;
+    final title = selected == null
+        ? 'Journal'
+        : 'Journal · ${_formatSelectedDate(selected)}';
+    final hint = selected == null
+        ? 'How are you feeling today?'
+        : 'How did you feel on ${_formatSelectedDate(selected)}?';
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Journal'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Write your thoughts...',
-                border: OutlineInputBorder(),
-                hintText: 'How are you feeling today?',
-              ),
+      appBar: AppBar(title: Text(title)),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          AppSectionCard(
+            gradient: AppSectionCard.gradientFromScheme(
+              cs,
+              a: cs.primaryContainer,
+              b: cs.secondaryContainer,
+              aAlpha: 0.35,
+              bAlpha: 0.22,
             ),
-            const SizedBox(height: 16),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton.icon(
-                    onPressed: _analyzeEmotion,
-                    icon: const Icon(Icons.analytics_outlined),
-                    label: const Text('Analyze Emotion'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _controller,
+                  maxLines: 6,
+                  decoration: InputDecoration(
+                    labelText: 'Write your thoughts...',
+                    hintText: hint,
                   ),
-            const SizedBox(height: 20),
-            if (_emotion != null)
-              Card(
-                color: Colors.teal.shade50,
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+                const SizedBox(height: 16),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.tonalIcon(
+                          onPressed: _analyzeEmotion,
+                          icon: const Icon(Icons.analytics_outlined),
+                          label: const Text('Analyze Emotion'),
+                        ),
+                      ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_emotion != null)
+            Builder(
+              builder: (context) {
+                final label = _emotion!.toLowerCase();
+                final Color accent;
+                switch (label) {
+                  case 'happy':
+                    accent = cs.tertiary;
+                    break;
+                  case 'sad':
+                    accent = cs.secondary;
+                    break;
+                  case 'angry':
+                  case 'fear':
+                  case 'difficult':
+                    accent = cs.error;
+                    break;
+                  default:
+                    accent = cs.primary;
+                }
+
+                return AppSectionCard(
+                  gradient: AppSectionCard.gradientFromScheme(
+                    cs,
+                    a: accent.withValues(alpha: 0.22),
+                    b: cs.surface,
+                    aAlpha: 1,
+                    bAlpha: 0.65,
+                  ),
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         'Detected Emotion:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         _emotion!.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: _emotion == 'happy'
-                              ? Colors.green
-                              : _emotion == 'sad'
-                                  ? Colors.blue
-                                  : Colors.orange,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: accent,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-          ],
-        ),
+                );
+              },
+            ),
+        ],
       ),
     );
   }

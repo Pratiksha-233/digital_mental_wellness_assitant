@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,7 +7,8 @@ class MeditationBreathingPage extends StatefulWidget {
   const MeditationBreathingPage({super.key});
 
   @override
-  State<MeditationBreathingPage> createState() => _MeditationBreathingPageState();
+  State<MeditationBreathingPage> createState() =>
+      _MeditationBreathingPageState();
 }
 
 // Simple soft blobs background painter. 't' ranges 0..1 for animation phase.
@@ -19,22 +21,30 @@ class _BackgroundPainter extends CustomPainter {
     final Paint p = Paint();
     // blob 1
     final double r1 = size.width * 0.45;
-    final Offset c1 = Offset(size.width * (0.15 + 0.05 * t), size.height * 0.12);
+    final Offset c1 = Offset(
+      size.width * (0.15 + 0.05 * t),
+      size.height * 0.12,
+    );
     p.color = Colors.teal.withOpacity(0.06 + 0.02 * (1 - t));
     canvas.drawCircle(c1, r1, p);
 
     // blob 2
     final double r2 = size.width * 0.35;
-    final Offset c2 = Offset(size.width * (0.85 - 0.05 * t), size.height * 0.28);
+    final Offset c2 = Offset(
+      size.width * (0.85 - 0.05 * t),
+      size.height * 0.28,
+    );
     p.color = Colors.purple.withOpacity(0.04 + 0.02 * t);
     canvas.drawCircle(c2, r2, p);
   }
 
   @override
-  bool shouldRepaint(covariant _BackgroundPainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _BackgroundPainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
-class _MeditationBreathingPageState extends State<MeditationBreathingPage> with SingleTickerProviderStateMixin {
+class _MeditationBreathingPageState extends State<MeditationBreathingPage>
+    with TickerProviderStateMixin {
   late final AnimationController _staggerController;
   late final AnimationController _bgController;
   late final Animation<double> _bgPulse;
@@ -44,9 +54,18 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
   @override
   void initState() {
     super.initState();
-    _staggerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..forward();
-    _bgController = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat();
-    _bgPulse = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _bgController, curve: Curves.easeInOut));
+    _staggerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+    _bgController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+    _bgPulse = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _bgController, curve: Curves.easeInOut));
   }
 
   @override
@@ -82,7 +101,10 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
     return FadeTransition(
       opacity: animation,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(animation),
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.1),
+          end: Offset.zero,
+        ).animate(animation),
         child: AnimatedScale(
           scale: _cardScale[index] ?? 1.0,
           duration: const Duration(milliseconds: 120),
@@ -112,7 +134,11 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: const [
-                    BoxShadow(color: Color(0x11000000), blurRadius: 10, offset: Offset(0, 6)),
+                    BoxShadow(
+                      color: Color(0x11000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 6),
+                    ),
                   ],
                 ),
                 padding: const EdgeInsets.all(18),
@@ -120,19 +146,42 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(color: accent.withOpacity(0.14), borderRadius: BorderRadius.circular(10)),
-                        child: Hero(tag: 'icon_$index', child: Icon(Icons.self_improvement, color: accent, size: 28)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
-                      if (trailing != null) trailing,
-                    ]),
+                    Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Hero(
+                            tag: 'icon_$index',
+                            child: Icon(
+                              Icons.self_improvement,
+                              color: accent,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        if (trailing != null) trailing,
+                      ],
+                    ),
                     const SizedBox(height: 8),
-                    Text(subtitle, style: const TextStyle(color: Colors.black54)),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: Colors.black54),
+                    ),
                     const SizedBox(height: 18),
                     Row(
                       children: [
@@ -140,7 +189,10 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
                           style: ElevatedButton.styleFrom(
                             backgroundColor: accent,
                             shape: const StadiumBorder(),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                           ),
                           onPressed: () {
                             HapticFeedback.selectionClick();
@@ -150,7 +202,7 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
                           label: Text(buttonLabel),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -179,74 +231,135 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage> with 
               animation: _bgPulse,
               builder: (context, child) {
                 final t = _bgPulse.value;
-                return CustomPaint(
-                  painter: _BackgroundPainter(t),
-                );
+                return CustomPaint(painter: _BackgroundPainter(t));
               },
             ),
           ),
           SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const SizedBox(height: 6),
-              // header animation
-              FadeTransition(
-                opacity: CurvedAnimation(parent: _staggerController, curve: const Interval(0.0, 0.25, curve: Curves.easeOut)),
-                child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, -0.05), end: Offset.zero).animate(CurvedAnimation(parent: _staggerController, curve: const Interval(0.0, 0.25, curve: Curves.easeOut))),
-                  child: const Text('Meditation & Breathing', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Color(0xFF7B3DD6))),
-                ),
-              ),
-              const SizedBox(height: 6),
-              FadeTransition(
-                opacity: CurvedAnimation(parent: _staggerController, curve: const Interval(0.05, 0.35, curve: Curves.easeOut)),
-                child: const Text('Find your calm through guided breathing exercises', style: TextStyle(color: Colors.black54)),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 18,
-                runSpacing: 18,
-                children: [
-                  _buildCard(
-                    index: 0,
-                    accent: Colors.blue.shade600,
-                    title: 'Box Breathing',
-                    subtitle: 'A calming technique to reduce stress and anxiety\n16s per cycle',
-                    buttonLabel: 'Start Exercise',
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
-                      child: Row(children: [
-                        const Icon(Icons.repeat, size: 16, color: Colors.blue),
-                        const SizedBox(width: 6),
-                        Text('$boxBreathingCounter', style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold)),
-                      ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 6),
+                // header animation
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _staggerController,
+                    curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
+                  ),
+                  child: SlideTransition(
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, -0.05),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: _staggerController,
+                            curve: const Interval(
+                              0.0,
+                              0.25,
+                              curve: Curves.easeOut,
+                            ),
+                          ),
+                        ),
+                    child: const Text(
+                      'Meditation & Breathing',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF7B3DD6),
+                      ),
                     ),
-                    onStart: _startBoxBreathing,
                   ),
-                  _buildCard(
-                    index: 1,
-                    accent: Colors.purple,
-                    title: '4-7-8 Breathing',
-                    subtitle: 'Perfect for falling asleep and deep relaxation\n19s per cycle',
-                    buttonLabel: 'Start Exercise',
-                    onStart: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FourSevenEightBreathingExercise()));
-                    },
+                ),
+                const SizedBox(height: 6),
+                FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _staggerController,
+                    curve: const Interval(0.05, 0.35, curve: Curves.easeOut),
                   ),
-                  _buildCard(
-                    index: 2,
-                    accent: Colors.green.shade600,
-                    title: 'Calm Breathing',
-                    subtitle: 'Simple and effective for everyday stress relief\n10s per cycle',
-                    buttonLabel: 'Start Exercise',
-                    onStart: () {
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => BasicExerciseDemo(title: 'Calm Breathing')));
-                    },
+                  child: const Text(
+                    'Find your calm through guided breathing exercises',
+                    style: TextStyle(color: Colors.black54),
                   ),
-                ],
-              ),
-            ]),
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 18,
+                  runSpacing: 18,
+                  children: [
+                    _buildCard(
+                      index: 0,
+                      accent: Colors.blue.shade600,
+                      title: 'Box Breathing',
+                      subtitle:
+                          'A calming technique to reduce stress and anxiety\n16s per cycle',
+                      buttonLabel: 'Start Exercise',
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.repeat,
+                              size: 16,
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$boxBreathingCounter',
+                              style: TextStyle(
+                                color: Colors.blue.shade800,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      onStart: _startBoxBreathing,
+                    ),
+                    _buildCard(
+                      index: 1,
+                      accent: Colors.purple,
+                      title: '4-7-8 Breathing',
+                      subtitle:
+                          'Perfect for falling asleep and deep relaxation\n19s per cycle',
+                      buttonLabel: 'Start Exercise',
+                      onStart: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const FourSevenEightBreathingExercise(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildCard(
+                      index: 2,
+                      accent: Colors.green.shade600,
+                      title: 'Calm Breathing',
+                      subtitle:
+                          'Simple and effective for everyday stress relief\n10s per cycle',
+                      buttonLabel: 'Start Exercise',
+                      onStart: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                BasicExerciseDemo(title: 'Calm Breathing'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -262,13 +375,17 @@ class BasicExerciseDemo extends StatefulWidget {
   State<BasicExerciseDemo> createState() => _BasicExerciseDemoState();
 }
 
-class _BasicExerciseDemoState extends State<BasicExerciseDemo> with SingleTickerProviderStateMixin {
+class _BasicExerciseDemoState extends State<BasicExerciseDemo>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctl;
 
   @override
   void initState() {
     super.initState();
-    _ctl = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
+    _ctl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -280,11 +397,26 @@ class _BasicExerciseDemoState extends State<BasicExerciseDemo> with SingleTicker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: Colors.white, foregroundColor: Colors.black87, elevation: 0),
+      appBar: AppBar(
+        title: Text(widget.title),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+      ),
       body: Center(
         child: ScaleTransition(
-          scale: Tween(begin: 0.8, end: 1.15).animate(CurvedAnimation(parent: _ctl, curve: Curves.easeInOut)),
-          child: Container(width: 220, height: 220, decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle)),
+          scale: Tween(
+            begin: 0.8,
+            end: 1.15,
+          ).animate(CurvedAnimation(parent: _ctl, curve: Curves.easeInOut)),
+          child: Container(
+            width: 220,
+            height: 220,
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              shape: BoxShape.circle,
+            ),
+          ),
         ),
       ),
     );
@@ -299,7 +431,8 @@ class BoxBreathingExercise extends StatefulWidget {
   State<BoxBreathingExercise> createState() => _BoxBreathingExerciseState();
 }
 
-class _BoxBreathingExerciseState extends State<BoxBreathingExercise> with SingleTickerProviderStateMixin {
+class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
+    with SingleTickerProviderStateMixin {
   final List<String> phases = ['Breathe In', 'Hold', 'Breathe Out', 'Hold'];
   final List<int> phaseDurations = [4, 4, 4, 4];
   int phaseIndex = 0;
@@ -315,7 +448,10 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise> with Single
   void initState() {
     super.initState();
     secondsLeft = phaseDurations[0];
-    _phaseController = AnimationController(vsync: this, duration: Duration(seconds: phaseDurations[0]));
+    _phaseController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: phaseDurations[0]),
+    );
     // Auto start after build to match desired UX (show Pause & End only)
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
@@ -375,6 +511,12 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise> with Single
   @override
   Widget build(BuildContext context) {
     final phase = phases[phaseIndex];
+    final mq = MediaQuery.of(context);
+    // Keep the ring large on big screens, but avoid overflow on smaller ones.
+    final ringSize = math.min(
+      (mq.size.width * 0.78).clamp(220.0, 320.0),
+      (mq.size.height * 0.42).clamp(220.0, 320.0),
+    );
     return Scaffold(
       backgroundColor: const Color(0xFFF3F0FB),
       body: Container(
@@ -386,59 +528,88 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise> with Single
           ),
         ),
         width: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            const Text('Box Breathing', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white)),
-            const SizedBox(height: 36),
-            AnimatedBuilder(
-              animation: _phaseController,
-              builder: (context, _) {
-                // remaining fraction
-                final remaining = secondsLeft / phaseDurations[phaseIndex];
-                return SizedBox(
-                  width: 300,
-                  height: 300,
-                  child: CustomPaint(
-                    painter: _RemainingRingPainter(fraction: remaining),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('$secondsLeft', style: const TextStyle(fontSize: 60, fontWeight: FontWeight.bold, color: Colors.white)),
-                          const SizedBox(height: 8),
-                          Text(paused ? 'Paused' : phase, style: const TextStyle(fontSize: 20, color: Colors.white70)),
-                        ],
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Box Breathing',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 28),
+              AnimatedBuilder(
+                animation: _phaseController,
+                builder: (context, _) {
+                  // remaining fraction
+                  final remaining = secondsLeft / phaseDurations[phaseIndex];
+                  return SizedBox(
+                    width: ringSize,
+                    height: ringSize,
+                    child: CustomPaint(
+                      painter: _RemainingRingPainter(fraction: remaining),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$secondsLeft',
+                              style: const TextStyle(
+                                fontSize: 60,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              paused ? 'Paused' : phase,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'Cycle ${cyclesCompleted + 1}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _PhaseSequence(currentIndex: phaseIndex, phases: phases),
+              const SizedBox(height: 34),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _glassButton(
+                    icon: paused ? Icons.play_arrow : Icons.pause,
+                    label: paused ? 'Resume' : 'Pause',
+                    onTap: running ? _pauseResume : null,
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-            Text('Cycle ${cyclesCompleted + 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 14),
-            _PhaseSequence(currentIndex: phaseIndex, phases: phases),
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _glassButton(
-                  icon: paused ? Icons.play_arrow : Icons.pause,
-                  label: paused ? 'Resume' : 'Pause',
-                  onTap: running ? _pauseResume : null,
-                ),
-                const SizedBox(width: 20),
-                _glassButton(
-                  icon: Icons.refresh,
-                  label: 'End Session',
-                  onTap: _stopAndReturn,
-                ),
-              ],
-            ),
-            const SizedBox(height: 60),
-          ],
+                  const SizedBox(width: 20),
+                  _glassButton(
+                    icon: Icons.refresh,
+                    label: 'End Session',
+                    onTap: _stopAndReturn,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
@@ -466,11 +637,18 @@ class _RemainingRingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawCircle(center, radius, base);
     final sweep = 2 * 3.141592653589793 * fraction;
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -3.141592653589793 / 2, sweep, false, active);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -3.141592653589793 / 2,
+      sweep,
+      false,
+      active,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _RemainingRingPainter oldDelegate) => oldDelegate.fraction != fraction;
+  bool shouldRepaint(covariant _RemainingRingPainter oldDelegate) =>
+      oldDelegate.fraction != fraction;
 }
 
 class _PhaseSequence extends StatelessWidget {
@@ -481,19 +659,37 @@ class _PhaseSequence extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final styleInactive = const TextStyle(color: Colors.white70, fontSize: 14);
-    final styleActive = const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold);
+    final styleActive = const TextStyle(
+      color: Colors.white,
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
+    );
     final children = <InlineSpan>[];
     for (int i = 0; i < phases.length; i++) {
-      children.add(TextSpan(text: phases[i], style: i == currentIndex ? styleActive : styleInactive));
+      children.add(
+        TextSpan(
+          text: phases[i],
+          style: i == currentIndex ? styleActive : styleInactive,
+        ),
+      );
       if (i != phases.length - 1) {
-        children.add(const TextSpan(text: '  →  ', style: TextStyle(color: Colors.white54, fontSize: 14)));
+        children.add(
+          const TextSpan(
+            text: '  →  ',
+            style: TextStyle(color: Colors.white54, fontSize: 14),
+          ),
+        );
       }
     }
     return RichText(text: TextSpan(children: children));
   }
 }
 
-Widget _glassButton({required IconData icon, required String label, required VoidCallback? onTap}) {
+Widget _glassButton({
+  required IconData icon,
+  required String label,
+  required VoidCallback? onTap,
+}) {
   return Opacity(
     opacity: onTap == null ? 0.6 : 1,
     child: InkWell(
@@ -511,7 +707,13 @@ Widget _glassButton({required IconData icon, required String label, required Voi
           children: [
             Icon(icon, color: Colors.white),
             const SizedBox(width: 12),
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -524,7 +726,8 @@ class FourSevenEightBreathingExercise extends StatefulWidget {
   const FourSevenEightBreathingExercise({super.key});
 
   @override
-  State<FourSevenEightBreathingExercise> createState() => _FourSevenEightBreathingExerciseState();
+  State<FourSevenEightBreathingExercise> createState() =>
+      _FourSevenEightBreathingExerciseState();
 }
 
 // Calm Breathing Exercise (simple 5s in, 5s out)
@@ -535,7 +738,8 @@ class CalmBreathingExercise extends StatefulWidget {
   State<CalmBreathingExercise> createState() => _CalmBreathingExerciseState();
 }
 
-class _CalmBreathingExerciseState extends State<CalmBreathingExercise> with SingleTickerProviderStateMixin {
+class _CalmBreathingExerciseState extends State<CalmBreathingExercise>
+    with SingleTickerProviderStateMixin {
   final List<String> phases = ['Breathe In', 'Breathe Out'];
   final List<int> phaseDurations = [5, 5]; // total 10s per cycle
   int phaseIndex = 0;
@@ -549,7 +753,10 @@ class _CalmBreathingExerciseState extends State<CalmBreathingExercise> with Sing
   @override
   void initState() {
     super.initState();
-    _ctl = AnimationController(vsync: this, duration: const Duration(seconds: 5));
+    _ctl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -607,6 +814,11 @@ class _CalmBreathingExerciseState extends State<CalmBreathingExercise> with Sing
   @override
   Widget build(BuildContext context) {
     final phase = phases[phaseIndex];
+    final mq = MediaQuery.of(context);
+    final ringSize = math.min(
+      (mq.size.width * 0.78).clamp(220.0, 320.0),
+      (mq.size.height * 0.42).clamp(220.0, 320.0),
+    );
     return Scaffold(
       backgroundColor: const Color(0xFFF3FDF7),
       body: Container(
@@ -618,65 +830,99 @@ class _CalmBreathingExerciseState extends State<CalmBreathingExercise> with Sing
           ),
         ),
         width: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            const Text('Calm Breathing', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white)),
-            const SizedBox(height: 36),
-            AnimatedBuilder(
-              animation: _ctl,
-              builder: (context, _) {
-                final remainingFraction = secondsLeft / phaseDurations[phaseIndex];
-                return SizedBox(
-                  width: 300,
-                  height: 300,
-                  child: CustomPaint(
-                    painter: _RemainingRingPainter(fraction: remainingFraction),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('$secondsLeft', style: const TextStyle(fontSize: 60, fontWeight: FontWeight.bold, color: Colors.white)),
-                          const SizedBox(height: 8),
-                          Text(paused ? 'Paused' : phase, style: const TextStyle(fontSize: 20, color: Colors.white70)),
-                        ],
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Calm Breathing',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 28),
+              AnimatedBuilder(
+                animation: _ctl,
+                builder: (context, _) {
+                  final remainingFraction =
+                      secondsLeft / phaseDurations[phaseIndex];
+                  return SizedBox(
+                    width: ringSize,
+                    height: ringSize,
+                    child: CustomPaint(
+                      painter: _RemainingRingPainter(
+                        fraction: remainingFraction,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$secondsLeft',
+                              style: const TextStyle(
+                                fontSize: 60,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              paused ? 'Paused' : phase,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'Cycle ${cyclesCompleted + 1}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _PhaseSequence(currentIndex: phaseIndex, phases: phases),
+              const SizedBox(height: 34),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _glassButton(
+                    icon: paused ? Icons.play_arrow : Icons.pause,
+                    label: paused ? 'Resume' : 'Pause',
+                    onTap: running ? _pauseResume : null,
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-            Text('Cycle ${cyclesCompleted + 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 14),
-            _PhaseSequence(currentIndex: phaseIndex, phases: phases),
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _glassButton(
-                  icon: paused ? Icons.play_arrow : Icons.pause,
-                  label: paused ? 'Resume' : 'Pause',
-                  onTap: running ? _pauseResume : null,
-                ),
-                const SizedBox(width: 20),
-                _glassButton(
-                  icon: Icons.refresh,
-                  label: 'End Session',
-                  onTap: _endSession,
-                ),
-              ],
-            ),
-            const SizedBox(height: 60),
-          ],
+                  const SizedBox(width: 20),
+                  _glassButton(
+                    icon: Icons.refresh,
+                    label: 'End Session',
+                    onTap: _endSession,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _FourSevenEightBreathingExerciseState extends State<FourSevenEightBreathingExercise> with SingleTickerProviderStateMixin {
+class _FourSevenEightBreathingExerciseState
+    extends State<FourSevenEightBreathingExercise>
+    with SingleTickerProviderStateMixin {
   final List<String> phases = ['Breathe In', 'Hold', 'Breathe Out'];
   final List<int> phaseDurations = [4, 7, 8];
   int phaseIndex = 0;
@@ -690,7 +936,10 @@ class _FourSevenEightBreathingExerciseState extends State<FourSevenEightBreathin
   @override
   void initState() {
     super.initState();
-    _ctl = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _ctl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -740,7 +989,9 @@ class _FourSevenEightBreathingExerciseState extends State<FourSevenEightBreathin
         secondsLeft = phaseDurations[phaseIndex];
         _ctl.duration = Duration(seconds: secondsLeft);
         _ctl.forward(from: 0);
-        if (phaseIndex == 0) cyclesCompleted += 1; // new cycle begins after exhale completes
+        if (phaseIndex == 0) {
+          cyclesCompleted += 1; // new cycle begins after exhale completes
+        }
       }
     });
   }
@@ -748,6 +999,11 @@ class _FourSevenEightBreathingExerciseState extends State<FourSevenEightBreathin
   @override
   Widget build(BuildContext context) {
     final phase = phases[phaseIndex];
+    final mq = MediaQuery.of(context);
+    final ringSize = math.min(
+      (mq.size.width * 0.78).clamp(220.0, 320.0),
+      (mq.size.height * 0.42).clamp(220.0, 320.0),
+    );
     return Scaffold(
       backgroundColor: const Color(0xFFF3F0FB),
       body: Container(
@@ -759,58 +1015,90 @@ class _FourSevenEightBreathingExerciseState extends State<FourSevenEightBreathin
           ),
         ),
         width: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            const Text('4-7-8 Breathing', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white)),
-            const SizedBox(height: 36),
-            AnimatedBuilder(
-              animation: _ctl,
-              builder: (context, _) {
-                final remainingFraction = secondsLeft / phaseDurations[phaseIndex];
-                return SizedBox(
-                  width: 300,
-                  height: 300,
-                  child: CustomPaint(
-                    painter: _RemainingRingPainter(fraction: remainingFraction),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('$secondsLeft', style: const TextStyle(fontSize: 60, fontWeight: FontWeight.bold, color: Colors.white)),
-                          const SizedBox(height: 8),
-                          Text(paused ? 'Paused' : phase, style: const TextStyle(fontSize: 20, color: Colors.white70)),
-                        ],
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                '4-7-8 Breathing',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 28),
+              AnimatedBuilder(
+                animation: _ctl,
+                builder: (context, _) {
+                  final remainingFraction =
+                      secondsLeft / phaseDurations[phaseIndex];
+                  return SizedBox(
+                    width: ringSize,
+                    height: ringSize,
+                    child: CustomPaint(
+                      painter: _RemainingRingPainter(
+                        fraction: remainingFraction,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$secondsLeft',
+                              style: const TextStyle(
+                                fontSize: 60,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              paused ? 'Paused' : phase,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  );
+                },
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'Cycle ${cyclesCompleted + 1}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 14),
+              _PhaseSequence(currentIndex: phaseIndex, phases: phases),
+              const SizedBox(height: 34),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _glassButton(
+                    icon: paused ? Icons.play_arrow : Icons.pause,
+                    label: paused ? 'Resume' : 'Pause',
+                    onTap: running ? _pauseResume : null,
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 28),
-            Text('Cycle ${cyclesCompleted + 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 14),
-            _PhaseSequence(currentIndex: phaseIndex, phases: phases),
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _glassButton(
-                  icon: paused ? Icons.play_arrow : Icons.pause,
-                  label: paused ? 'Resume' : 'Pause',
-                  onTap: running ? _pauseResume : null,
-                ),
-                const SizedBox(width: 20),
-                _glassButton(
-                  icon: Icons.refresh,
-                  label: 'End Session',
-                  onTap: _endSession,
-                ),
-              ],
-            ),
-            const SizedBox(height: 60),
-          ],
+                  const SizedBox(width: 20),
+                  _glassButton(
+                    icon: Icons.refresh,
+                    label: 'End Session',
+                    onTap: _endSession,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );

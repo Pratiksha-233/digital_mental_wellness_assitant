@@ -77,10 +77,7 @@ class ContributingFactor {
   final String factor;
   final double contribution;
 
-  ContributingFactor({
-    required this.factor,
-    required this.contribution,
-  });
+  ContributingFactor({required this.factor, required this.contribution});
 
   factory ContributingFactor.fromJson(Map<String, dynamic> json) {
     return ContributingFactor(
@@ -138,15 +135,24 @@ class StressHistoryRecord {
   });
 
   factory StressHistoryRecord.fromJson(Map<String, dynamic> json) {
+    final energyRaw = json['energy_level'];
+    final energy = energyRaw is int
+        ? energyRaw
+        : int.tryParse(energyRaw?.toString() ?? '') ?? 0;
     return StressHistoryRecord(
-      stressId: json['stress_id'] as int,
-      userId: json['user_id'] as int,
-      stressLevel: (json['stress_level'] as num).toDouble(),
-      stressCategory: json['stress_category'] as String,
-      primaryEmotion: json['primary_emotion'] as String,
-      energyLevel: json['energy_level'] as int,
-      moodPattern: json['mood_pattern'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      stressId: int.tryParse(json['stress_id']?.toString() ?? '') ?? 0,
+      userId: int.tryParse(json['user_id']?.toString() ?? '') ?? 0,
+      stressLevel:
+          (json['stress_level'] as num?)?.toDouble() ??
+          double.tryParse(json['stress_level']?.toString() ?? '') ??
+          0.0,
+      stressCategory: (json['stress_category'] ?? 'MODERATE').toString(),
+      primaryEmotion: (json['primary_emotion'] ?? 'Unknown').toString(),
+      energyLevel: energy,
+      moodPattern: (json['mood_pattern'] ?? 'unknown').toString(),
+      timestamp:
+          DateTime.tryParse((json['timestamp'] ?? '').toString()) ??
+          DateTime.now(),
     );
   }
 }

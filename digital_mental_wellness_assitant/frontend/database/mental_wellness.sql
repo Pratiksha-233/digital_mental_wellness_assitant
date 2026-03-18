@@ -88,4 +88,8 @@ CREATE TABLE IF NOT EXISTS face_detection_logs (
     detection_method VARCHAR(20),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+<<<<<<< HEAD
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+=======
+);
+>>>>>>> da066f3ed967c08f3ab04fc811d8c08a2b3b16ec

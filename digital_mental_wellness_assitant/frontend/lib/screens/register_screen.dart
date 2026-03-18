@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import '../services/enter_broadcaster.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import '../widgets/auth_shell.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,8 +13,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
-    with TickerProviderStateMixin {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -25,7 +25,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   final AuthService _authService = AuthService();
   bool _isLoading = false;
   late final StreamSubscription<void> _enterSub;
-  late final AnimationController _bgController;
 
   bool _showPassword = false;
   bool _showConfirmPassword = false;
@@ -64,10 +63,11 @@ class _RegisterScreenState extends State<RegisterScreen>
       final messenger = ScaffoldMessenger.of(context);
       messenger.hideCurrentSnackBar();
       messenger.removeCurrentMaterialBanner();
+      final cs = Theme.of(context).colorScheme;
       messenger.showMaterialBanner(
         MaterialBanner(
-          backgroundColor: Colors.green.shade50,
-          leading: const Icon(Icons.check_circle, color: Colors.green),
+          backgroundColor: cs.primaryContainer,
+          leading: Icon(Icons.check_circle, color: cs.primary),
           content: Text(
             'Registered successfully: ${_nameController.text} (${_emailController.text})',
           ),
@@ -98,12 +98,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   void initState() {
     super.initState();
-    // background animation (distinct palette, slightly slower)
-    _bgController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 11),
-    )..repeat(reverse: true);
-
     _enterSub = EnterBroadcaster.instance.stream.listen((_) {
       if (!mounted) return;
       _register();
@@ -120,267 +114,155 @@ class _RegisterScreenState extends State<RegisterScreen>
     _nameFocus.dispose();
     _emailFocus.dispose();
     _passwordFocus.dispose();
-    _bgController.dispose();
+    _confirmPasswordFocus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE0F2F1), // Light teal background
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 520;
-            final cardPadding = isCompact ? 24.0 : 40.0;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final isCompact = MediaQuery.sizeOf(context).width < 520;
 
-            return Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isCompact ? 20.0 : 24.0,
-                  vertical: 24.0,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(cardPadding),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Illustration
-                        SizedBox(
-                          height: 150,
-                          child: Lottie.network(
-                            'https://assets7.lottiefiles.com/packages/lf20_tfb3estd.json', // Keeping existing Lottie
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Create Account',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF009688),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Join us to start your wellness journey',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Name Field
-                        TextField(
-                          controller: _nameController,
-                          focusNode: _nameFocus,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) => _emailFocus.requestFocus(),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF5F5F5),
-                            hintText: 'Full Name',
-                            prefixIcon: const Icon(
-                              Icons.person_outline,
-                              color: Colors.teal,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Email Field
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          focusNode: _emailFocus,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) => _passwordFocus.requestFocus(),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF5F5F5),
-                            hintText: 'Email Address',
-                            prefixIcon: const Icon(
-                              Icons.email_outlined,
-                              color: Colors.teal,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password Field
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: !_showPassword,
-                          focusNode: _passwordFocus,
-                          textInputAction: TextInputAction.next,
-                          onSubmitted: (_) =>
-                              _confirmPasswordFocus.requestFocus(),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF5F5F5),
-                            hintText: 'Password',
-                            prefixIcon: const Icon(
-                              Icons.lock_outline,
-                              color: Colors.teal,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _showPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(
-                                () => _showPassword = !_showPassword,
-                              ),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Confirm Password Field
-                        TextField(
-                          controller: _confirmPasswordController,
-                          obscureText: !_showConfirmPassword,
-                          focusNode: _confirmPasswordFocus,
-                          textInputAction: TextInputAction.done,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF5F5F5),
-                            hintText: 'Confirm Password',
-                            prefixIcon: const Icon(
-                              Icons.lock_outline,
-                              color: Colors.teal,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _showConfirmPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(
-                                () => _showConfirmPassword =
-                                    !_showConfirmPassword,
-                              ),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Sign Up Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _register,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFF009688,
-                              ), // Teal to match login
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Sign Up',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Login Link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Already have an account? ",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Login',
-                                style: TextStyle(
-                                  color: Color(0xFF009688),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+    return AuthScaffold(
+      scrollable: false,
+      child: AuthCard(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AuthModeToggle(
+              mode: AuthMode.register,
+              onChanged: (mode) {
+                if (mode == AuthMode.signIn) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: isCompact ? 110 : 130,
+              child: Lottie.network(
+                'https://assets7.lottiefiles.com/packages/lf20_tfb3estd.json',
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Create Account',
+              textAlign: TextAlign.center,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Join us to start your wellness journey',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            AutofillGroup(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _nameController,
+                    focusNode: _nameFocus,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
+                    onSubmitted: (_) => _emailFocus.requestFocus(),
+                    decoration: const InputDecoration(
+                      labelText: 'Full name',
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    focusNode: _emailFocus,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
+                    onSubmitted: (_) => _passwordFocus.requestFocus(),
+                    decoration: const InputDecoration(
+                      labelText: 'Email address',
+                      hintText: 'name@example.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: !_showPassword,
+                    focusNode: _passwordFocus,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.newPassword],
+                    onSubmitted: (_) => _confirmPasswordFocus.requestFocus(),
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () =>
+                            setState(() => _showPassword = !_showPassword),
+                        tooltip: _showPassword
+                            ? 'Hide password'
+                            : 'Show password',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: !_showConfirmPassword,
+                    focusNode: _confirmPasswordFocus,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.newPassword],
+                    onSubmitted: (_) => _register(),
+                    decoration: InputDecoration(
+                      labelText: 'Confirm password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _showConfirmPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () => setState(
+                          () => _showConfirmPassword = !_showConfirmPassword,
+                        ),
+                        tooltip: _showConfirmPassword
+                            ? 'Hide password'
+                            : 'Show password',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: FilledButton(
+                onPressed: _isLoading ? null : _register,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Create account'),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -110,6 +110,11 @@ def insert_mood_log(user_id, mood_label, energy_level, activities, note):
             VALUES (%s, %s, %s, %s, %s)
         """
         cursor.execute(sql, (user_id, mood_label, energy_level, activities, note))
+
+        # Also persist activities as individual rows for analytics.
+        # `activities` is stored in mood_logs as a comma-separated string.
+        _insert_activity_logs_from_csv(conn, user_id=user_id, activities_csv=activities)
+
         conn.commit()
         print("🧾 Structured mood log inserted successfully.")
         return True, None
@@ -260,6 +265,183 @@ def get_user_progress(user_id):
     except Error as e:
         print("❌ get_user_progress error:", e)
         return {'mood_checkins': 0, 'journal_entries': 0, 'days_active': 0}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def _insert_activity_logs_from_csv(conn, *, user_id: int, activities_csv: str, timestamp=None):
+    """Insert activity log rows from a CSV string into activity_logs.
+
+    Uses the provided open connection and does NOT commit.
+    """
+    if not activities_csv:
+        return
+
+    # Keep splitting rules very simple (the app sends a comma-separated list).
+    raw_items = [s.strip() for s in str(activities_csv).split(',')]
+    activity_types = [s for s in raw_items if s]
+    if not activity_types:
+        return
+
+    cursor = conn.cursor()
+    try:
+        if timestamp is None:
+            sql = """
+                INSERT INTO activity_logs (user_id, activity_type)
+                VALUES (%s, %s)
+            """
+            for activity_type in activity_types:
+                cursor.execute(sql, (user_id, activity_type))
+        else:
+            sql = """
+                INSERT INTO activity_logs (user_id, activity_type, timestamp)
+                VALUES (%s, %s, %s)
+            """
+            for activity_type in activity_types:
+                cursor.execute(sql, (user_id, activity_type, timestamp))
+    finally:
+        cursor.close()
+
+
+def backfill_activity_logs_from_mood_logs(user_id: int, days: int = 30) -> int:
+    """Backfill activity_logs from mood_logs for the given user.
+
+    This is intentionally conservative: it only runs when the user has no
+    activity_logs rows at all (to avoid duplicates).
+
+    Returns number of activity rows inserted.
+    """
+    conn = get_connection()
+    if not conn:
+        return 0
+
+    inserted = 0
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT COUNT(*) AS c FROM activity_logs WHERE user_id = %s",
+            (user_id,),
+        )
+        row = cursor.fetchone() or {}
+        if int(row.get('c') or 0) > 0:
+            return 0
+
+        cursor.execute(
+            """
+            SELECT activities, timestamp
+            FROM mood_logs
+            WHERE user_id = %s
+              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+            ORDER BY timestamp ASC
+            """,
+            (user_id, days),
+        )
+        mood_rows = cursor.fetchall() or []
+        for r in mood_rows:
+            before = inserted
+            _insert_activity_logs_from_csv(
+                conn,
+                user_id=user_id,
+                activities_csv=r.get('activities') or '',
+                timestamp=r.get('timestamp'),
+            )
+            # Estimate inserted rows by counting CSV items.
+            raw_items = [s.strip() for s in str(r.get('activities') or '').split(',')]
+            inserted += len([s for s in raw_items if s])
+            if inserted != before:
+                pass
+
+        conn.commit()
+        return inserted
+    except Error as e:
+        print('❌ backfill_activity_logs_from_mood_logs error:', e)
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return 0
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        conn.close()
+
+
+def insert_face_detection_log(user_id, detected_emotion, confidence_score, faces_detected, detection_method='image'):
+    """Insert a face detection log into face_detection_logs table."""
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not insert face detection log — DB connection failed.")
+        return False, 'db_connection_failed'
+    try:
+        cursor = conn.cursor()
+        sql = """
+            INSERT INTO face_detection_logs (user_id, detected_emotion, confidence_score, faces_detected, detection_method)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(sql, (user_id, detected_emotion, confidence_score, faces_detected, detection_method))
+        conn.commit()
+        print("📸 Face detection log inserted successfully.")
+        return True, None
+    except Error as e:
+        err = str(e)
+        print("❌ Insert face detection log error:", err)
+        return False, err
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_face_detection_summary(user_id, days=30):
+    """Return summary counts and average confidence for face detection logs."""
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not fetch face detection summary — DB connection failed.")
+        return {
+            'total': 0,
+            'by_emotion': {},
+            'avg_confidence': 0.0,
+        }
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(detected_emotion, 'Unknown') AS emotion,
+                COUNT(*) AS count,
+                AVG(confidence_score) AS avg_confidence
+            FROM face_detection_logs
+            WHERE user_id = %s
+              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+            GROUP BY emotion
+            ORDER BY count DESC
+            """,
+            (user_id, days),
+        )
+        rows = cursor.fetchall()
+
+        total = sum(int(r.get('count') or 0) for r in rows)
+        by_emotion = {r.get('emotion') or 'Unknown': int(r.get('count') or 0) for r in rows}
+        weighted_sum = sum(
+            (float(r.get('avg_confidence') or 0.0) * int(r.get('count') or 0)) for r in rows
+        )
+        avg_confidence = float(weighted_sum / total) if total > 0 else 0.0
+
+        return {
+            'total': total,
+            'by_emotion': by_emotion,
+            'avg_confidence': avg_confidence,
+        }
+    except Error as e:
+        print("❌ get_face_detection_summary error:", e)
+        return {
+            'total': 0,
+            'by_emotion': {},
+            'avg_confidence': 0.0,
+        }
     finally:
         cursor.close()
         conn.close()

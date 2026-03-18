@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
+import '../widgets/app_section_card.dart';
 
 class MoodTrackerScreen extends StatefulWidget {
   const MoodTrackerScreen({super.key});
@@ -41,7 +42,13 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     super.dispose();
   }
 
-  Widget _moodButton(int idx, String emoji, String label) {
+  Widget _moodButton(
+    BuildContext context,
+    int idx,
+    String emoji,
+    String label,
+  ) {
+    final cs = Theme.of(context).colorScheme;
     final isSelected = _selectedMood == idx;
     return GestureDetector(
       onTap: _isSaving ? null : () => setState(() => _selectedMood = idx),
@@ -50,9 +57,11 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
         height: 98,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.purple.shade50 : Colors.white,
+          color: isSelected
+              ? cs.secondaryContainer.withValues(alpha: 0.55)
+              : cs.surface.withValues(alpha: 0.75),
           border: Border.all(
-            color: isSelected ? Colors.purple : Colors.grey.shade300,
+            color: isSelected ? cs.secondary : cs.outlineVariant,
           ),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -61,14 +70,15 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           children: [
             Text(emoji, style: const TextStyle(fontSize: 30)),
             const SizedBox(height: 8),
-            Text(label, style: TextStyle(fontSize: 13, color: Colors.black87)),
+            Text(label, style: TextStyle(fontSize: 13, color: cs.onSurface)),
           ],
         ),
       ),
     );
   }
 
-  Widget _energySegment(int idx) {
+  Widget _energySegment(BuildContext context, int idx) {
+    final cs = Theme.of(context).colorScheme;
     final active = idx <= _energyLevel;
     return Expanded(
       child: GestureDetector(
@@ -78,21 +88,10 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
             gradient: active
-                ? LinearGradient(
-                    colors: [Colors.purple.shade300, Colors.pink.shade300],
-                  )
+                ? LinearGradient(colors: [cs.secondary, cs.tertiary])
                 : null,
-            color: active ? null : Colors.grey.shade200,
+            color: active ? null : cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: active
-                ? [
-                    BoxShadow(
-                      color: Colors.purple.shade100.withAlpha(120),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : null,
           ),
         ),
       ),
@@ -101,6 +100,9 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('How Are You Feeling?')),
       body: Stack(
@@ -114,186 +116,187 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'How Are You Feeling?',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: cs.primary,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Take a moment to check in with yourself',
-                  style: TextStyle(color: Colors.black54),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 18),
 
-                // Main centered card similar to the mockup
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 980),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.favorite_border,
-                                    color: Colors.purple,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Log Your Mood',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              TextButton(
-                                onPressed: _showHistory,
-                                child: const Text('History'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-
-                          const Text(
-                            'Select your mood',
-                            style: TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 12),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
+                // Main full-width card
+                SizedBox(
+                  width: double.infinity,
+                  child: AppSectionCard(
+                    padding: const EdgeInsets.all(20),
+                    gradient: AppSectionCard.gradientFromScheme(
+                      cs,
+                      a: cs.primaryContainer,
+                      b: cs.secondaryContainer,
+                      aAlpha: 0.40,
+                      bAlpha: 0.26,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
                               children: [
-                                _moodButton(0, '🤩', 'Amazing'),
-                                const SizedBox(width: 12),
-                                _moodButton(1, '🙂', 'Good'),
-                                const SizedBox(width: 12),
-                                _moodButton(2, '😐', 'Okay'),
-                                const SizedBox(width: 12),
-                                _moodButton(3, '😔', 'Struggling'),
-                                const SizedBox(width: 12),
-                                _moodButton(4, '😣', 'Difficult'),
+                                Icon(Icons.favorite_border, color: cs.primary),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Log Your Mood',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
                               ],
                             ),
-                          ),
-
-                          const SizedBox(height: 18),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _energyLevel > 0
-                                    ? 'Energy Level: $_energyLevel/5'
-                                    : 'Energy Level: --/5',
-                                style: const TextStyle(color: Colors.black54),
-                              ),
-                              Text(
-                                '${_selectedActivities.length} activity selected',
-                                style: const TextStyle(color: Colors.black38),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: List.generate(5, (i) {
-                              return Expanded(
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                  ),
-                                  child: _energySegment(i + 1),
-                                ),
-                              );
-                            }),
-                          ),
-
-                          const SizedBox(height: 18),
-                          const Text(
-                            'What did you do today?',
-                            style: TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _activities.map((a) {
-                              final selected = _selectedActivities.contains(a);
-                              return FilterChip(
-                                label: Text(a),
-                                selected: selected,
-                                onSelected: _isSaving
-                                    ? null
-                                    : (v) => setState(
-                                        () => v
-                                            ? _selectedActivities.add(a)
-                                            : _selectedActivities.remove(a),
-                                      ),
-                              );
-                            }).toList(),
-                          ),
-
-                          const SizedBox(height: 18),
-                          const Text(
-                            'Add a note (optional)',
-                            style: TextStyle(color: Colors.black54),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _noteController,
-                            minLines: 3,
-                            maxLines: 6,
-                            enabled: !_isSaving,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              hintText:
-                                  'What\'s on your mind? Any thoughts or reflections...',
+                            TextButton(
+                              onPressed: _showHistory,
+                              child: const Text('History'),
                             ),
-                          ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
 
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                        Text(
+                          'Select your mood',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
                             children: [
-                              ElevatedButton.icon(
-                                onPressed: _isSaving ? null : _saveMood,
-                                icon: const Icon(Icons.save),
-                                label: const Text('Save'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 12,
-                                  ),
-                                  backgroundColor: Colors.purple,
-                                ),
-                              ),
+                              _moodButton(context, 0, '🤩', 'Amazing'),
+                              const SizedBox(width: 12),
+                              _moodButton(context, 1, '🙂', 'Good'),
+                              const SizedBox(width: 12),
+                              _moodButton(context, 2, '😐', 'Okay'),
+                              const SizedBox(width: 12),
+                              _moodButton(context, 3, '😔', 'Struggling'),
+                              const SizedBox(width: 12),
+                              _moodButton(context, 4, '😣', 'Difficult'),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+
+                        const SizedBox(height: 18),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _energyLevel > 0
+                                  ? 'Energy Level: $_energyLevel/5'
+                                  : 'Energy Level: --/5',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              '${_selectedActivities.length} activity selected',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant.withValues(
+                                  alpha: 0.8,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: List.generate(5, (i) {
+                            return Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: _energySegment(context, i + 1),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        const SizedBox(height: 18),
+                        Text(
+                          'What did you do today?',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _activities.map((a) {
+                            final selected = _selectedActivities.contains(a);
+                            return FilterChip(
+                              label: Text(a),
+                              selected: selected,
+                              onSelected: _isSaving
+                                  ? null
+                                  : (v) => setState(
+                                      () => v
+                                          ? _selectedActivities.add(a)
+                                          : _selectedActivities.remove(a),
+                                    ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 18),
+                        Text(
+                          'Add a note (optional)',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _noteController,
+                          minLines: 3,
+                          maxLines: 6,
+                          enabled: !_isSaving,
+                          decoration: InputDecoration(
+                            hintText:
+                                'What\'s on your mind? Any thoughts or reflections...',
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _isSaving ? null : _saveMood,
+                              icon: const Icon(Icons.save),
+                              label: const Text('Save'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 12,
+                                ),
+                                backgroundColor: cs.primary,
+                                foregroundColor: cs.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -623,8 +626,11 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
     final weeklyData = _aggregateMood(logs, days: 7);
     final monthlyData = _aggregateMood(logs, days: 30);
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Material(
-      color: Colors.white,
+      color: cs.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       child: Column(
         children: [
@@ -633,30 +639,34 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: cs.outlineVariant,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Mood Insights',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Text(
               'View your weekly and monthly mood trends based on your check-ins.',
-              style: TextStyle(color: Colors.grey[600]),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
           const SizedBox(height: 12),
           TabBar(
             controller: _tabController,
-            labelColor: Colors.purple,
-            unselectedLabelColor: Colors.grey[600],
-            indicatorColor: Colors.purple,
+            labelColor: cs.primary,
+            unselectedLabelColor: cs.onSurfaceVariant,
+            indicatorColor: cs.primary,
             tabs: const [
               Tab(text: 'Weekly'),
               Tab(text: 'Monthly'),
@@ -682,6 +692,9 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
     final avgEmoji = _labelToEmoji(avgLabel);
     final trendEmoji = _trendEmoji(data.trend);
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: const EdgeInsets.all(16),
@@ -690,14 +703,19 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
         children: [
           Text(
             periodLabel,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
-          Container(
+          AppSectionCard(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
+            gradient: AppSectionCard.gradientFromScheme(
+              cs,
+              a: cs.primaryContainer,
+              b: cs.secondaryContainer,
+              aAlpha: 0.28,
+              bAlpha: 0.18,
             ),
             child: Row(
               children: [
@@ -705,9 +723,12 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Average Mood',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -716,9 +737,8 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
                           const SizedBox(width: 8),
                           Text(
                             avgLabel,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
@@ -729,9 +749,12 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
+                    Text(
                       'Mood Trend',
-                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -740,9 +763,8 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
                         const SizedBox(width: 6),
                         Text(
                           _capitalize(data.trend),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -753,9 +775,11 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Mood Graph',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           _buildMoodBarChart(data.dailyScores),
@@ -792,15 +816,18 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
       );
     }
 
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     final maxBarHeight = 140.0;
 
     return Container(
       height: 180,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -819,16 +846,17 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
                 Container(
                   height: barHeight,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade300, Colors.green.shade300],
-                    ),
+                    gradient: LinearGradient(colors: [cs.primary, cs.tertiary]),
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   DateFormat('E').format(p.date),
-                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),

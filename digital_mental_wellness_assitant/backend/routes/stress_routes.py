@@ -17,6 +17,69 @@ except ImportError:
 stress_bp = Blueprint('stress', __name__)
 
 
+def _category_from_score(score: float) -> str:
+    """Map a 0-100 questionnaire score to DB stress categories."""
+    try:
+        s = float(score)
+    except Exception:
+        return 'MODERATE'
+    if s < 25:
+        return 'LOW'
+    if s < 50:
+        return 'MODERATE'
+    if s < 75:
+        return 'HIGH'
+    return 'CRITICAL'
+
+
+@stress_bp.route('/questionnaire', methods=['POST'])
+def save_questionnaire_stress():
+    """Persist questionnaire-based stress score into stress_logs.
+
+    Expects JSON:
+      {"user_id": 1, "stress_level": 42.5}
+
+    Optionally accepts:
+      - mood_pattern (string)
+      - energy_level (int)
+
+    Notes:
+      - Uses stress_service.save_stress_log which is idempotent per user per day.
+      - Stores primary_emotion as 'Questionnaire'.
+    """
+    data = request.get_json(silent=True) or {}
+    user_id = data.get('user_id')
+    stress_level = data.get('stress_level')
+
+    if user_id is None or stress_level is None:
+        return jsonify({'error': 'user_id and stress_level are required'}), 400
+
+    try:
+        user_id = int(user_id)
+        stress_level = float(stress_level)
+    except Exception:
+        return jsonify({'error': 'invalid user_id or stress_level'}), 400
+
+    if stress_service is None:
+        return jsonify({'error': 'Stress service not available'}), 503
+
+    stress_data = {
+        'stress_level': max(0.0, min(100.0, stress_level)),
+        'stress_category': _category_from_score(stress_level),
+        'primary_emotion': 'Questionnaire',
+        'energy_level': data.get('energy_level'),
+        'mood_pattern': data.get('mood_pattern') or 'questionnaire',
+        'contributing_factors': [],
+        'recommendations': [],
+    }
+
+    ok = stress_service.save_stress_log(user_id, stress_data)
+    if not ok:
+        return jsonify({'error': 'Failed to save stress log'}), 500
+
+    return jsonify({'status': 'success', 'data': stress_data}), 200
+
+
 @stress_bp.route('/calculate', methods=['GET'])
 def calculate_stress():
     """

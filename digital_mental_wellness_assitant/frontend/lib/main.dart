@@ -16,7 +16,7 @@ import 'screens/profile_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/week_view_screen.dart';
 import 'screens/resources_screen.dart';
-import 'screens/meditation_breathing.dart';
+import 'screens/meditate_screen.dart';
 import 'screens/realtime_detection_screen.dart';
 import 'services/profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,9 +32,7 @@ int? _initialStoredUserId;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Ensure auth persistence on web so refresh keeps the session
   try {
     if (kIsWeb) {
@@ -61,14 +59,17 @@ class MentalWellnessApp extends StatelessWidget {
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
         LogicalKeySet(LogicalKeyboardKey.enter): const _GlobalEnterIntent(),
-        LogicalKeySet(LogicalKeyboardKey.numpadEnter): const _GlobalEnterIntent(),
+        LogicalKeySet(LogicalKeyboardKey.numpadEnter):
+            const _GlobalEnterIntent(),
       },
       child: Actions(
         actions: <Type, Action<Intent>>{
-          _GlobalEnterIntent: CallbackAction<_GlobalEnterIntent>(onInvoke: (intent) {
-            EnterBroadcaster.instance.emitEnter();
-            return null;
-          }),
+          _GlobalEnterIntent: CallbackAction<_GlobalEnterIntent>(
+            onInvoke: (intent) {
+              EnterBroadcaster.instance.emitEnter();
+              return null;
+            },
+          ),
         },
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -86,20 +87,24 @@ class MentalWellnessApp extends StatelessWidget {
             '/selfcare': (c) => const SelfCareTipsScreen(),
             '/recommendations': (c) => const RecommendationScreen(),
             // Default to user_id=1 for local testing when no stored user id is available
-            '/stress': (c) => StressAnalyzerScreenNew(userId: _initialStoredUserId ?? 1),
+            '/stress': (c) =>
+                StressAnalyzerScreenNew(userId: _initialStoredUserId ?? 1),
             '/stress-old': (c) => const StressAnalyzerScreen(),
             '/profile': (c) => const ProfileScreen(),
             '/week': (c) => const WeekViewScreen(),
             '/resources': (c) => const ResourcesScreen(),
-            '/meditation': (c) => const MeditationBreathingPage(),
+            '/meditation': (c) => const MeditateScreen(),
             '/detection': (c) => const RealtimeDetectionScreen(),
             '/home': (c) {
               final user = FirebaseAuth.instance.currentUser;
               return HomeScreen(
                 userId: _initialStoredUserId ?? 0,
-                userName: _initialStoredDisplayName ?? user?.displayName ?? (user?.email?.split('@').first ?? 'User'),
+                userName:
+                    _initialStoredDisplayName ??
+                    user?.displayName ??
+                    (user?.email?.split('@').first ?? 'User'),
               );
-            }
+            },
           },
         ),
       ),
@@ -118,13 +123,18 @@ class _RootRouter extends StatelessWidget {
       builder: (context, snapshot) {
         final user = snapshot.data;
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         // If Firebase user is present, treat as signed-in.
         if (user != null) {
           return HomeScreen(
             userId: _initialStoredUserId ?? 0,
-            userName: _initialStoredDisplayName ?? user.displayName ?? (user.email?.split('@').first ?? 'User'),
+            userName:
+                _initialStoredDisplayName ??
+                user.displayName ??
+                (user.email?.split('@').first ?? 'User'),
           );
         }
 
