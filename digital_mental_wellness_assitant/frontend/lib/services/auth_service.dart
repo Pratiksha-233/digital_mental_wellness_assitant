@@ -3,24 +3,21 @@ import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
 
 class AuthService {
-
   Future<Map<String, dynamic>> register(
-      String name, String email, String password) async {
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$apiBaseUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': name,
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode({'name': name, 'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data is Map<String, dynamic>) {
-
           return {
             ...data,
             if (!data.containsKey('status')) 'status': 'success',
@@ -30,14 +27,13 @@ class AuthService {
       } else {
         return {
           'status': 'error',
-          'message': 'Server error: ${response.statusCode}'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {
       return {'status': 'error', 'message': 'Connection failed: $e'};
     }
   }
-
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
@@ -48,11 +44,23 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) return data;
+        return {'status': 'success'};
       } else {
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map<String, dynamic>) {
+            return {
+              'status': data['status'] ?? 'error',
+              'message': data['message'] ?? 'Login failed',
+            };
+          }
+        } catch (_) {}
+
         return {
           'status': 'error',
-          'message': 'Invalid credentials or server error.'
+          'message': 'Server error: ${response.statusCode}',
         };
       }
     } catch (e) {

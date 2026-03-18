@@ -18,17 +18,15 @@ class BackendConfig {
     }
 
     if (kIsWeb) {
-
-
-
-      return normalizeBackendBase(Uri.base.origin);
+      // For Flutter Web during local development, the app is typically served
+      // from a Flutter dev server (e.g. http://localhost:xxxx) while the API
+      // runs separately on :5000. Default to the local backend to avoid 404s
+      // on /api/*.
+      return 'http://127.0.0.1:5000';
     }
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-
-
-
         return 'http://10.0.2.2:5000';
       case TargetPlatform.iOS:
         return 'http://127.0.0.1:5000';
@@ -42,7 +40,6 @@ class BackendConfig {
   static String get apiBaseUrl => '$_backendBaseUrl/api';
 
   static String get detectionBaseUrl => '$apiBaseUrl/detection';
-
 
   static Future<void> init() async {
     if (_envBackendBase.trim().isNotEmpty) {
@@ -65,10 +62,6 @@ class BackendConfig {
     return (v == null || v.trim().isEmpty) ? null : v.trim();
   }
 
-
-
-
-
   static Future<void> setBackendBaseOverride(String? value) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -87,11 +80,9 @@ class BackendConfig {
   static String normalizeBackendBase(String input) {
     var v = input.trim();
 
-
     if (!v.startsWith('http://') && !v.startsWith('https://')) {
       v = 'http://$v';
     }
-
 
     while (v.endsWith('/')) {
       v = v.substring(0, v.length - 1);
