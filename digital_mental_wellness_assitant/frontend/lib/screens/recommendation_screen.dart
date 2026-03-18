@@ -10,7 +10,7 @@ class RecommendationScreen extends StatefulWidget {
 }
 
 class _RecommendationScreenState extends State<RecommendationScreen> {
-  // Recommendation functionality removed per request; screen repurposed as dedicated Stress Analyzer.
+
 
   @override
   Widget build(BuildContext context) {

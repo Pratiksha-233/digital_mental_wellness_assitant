@@ -44,7 +44,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     super.initState();
     _load(showSpinner: true);
 
-    // Keep dashboard in sync with new logs (e.g., realtime face detections).
+
     _autoRefreshTimer = Timer.periodic(const Duration(seconds: 6), (_) {
       if (!mounted) return;
       if (_loadInFlight) return;
@@ -72,11 +72,11 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       });
     }
 
-    // Default to user_id=1 for local testing so dashboard updates even if Profile has no ID yet.
+
     final userId = (await ProfileService.getUserId()) ?? 1;
 
     try {
-      // Fetch in parallel to reduce time-to-first-data.
+
       final results = await Future.wait<dynamic>([
         _api.getMoodAnalytics(userId),
         _api.getStressAnalytics(userId),
@@ -124,7 +124,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       final nextJournalEntries = (progress['journal_entries'] as int?) ?? 0;
       final nextDaysActive = (progress['days_active'] as int?) ?? 0;
 
-      // Only rebuild the UI if something actually changed.
+
       final changed =
           !_listEqualsDynamic(_mood, mood) ||
           !_listEqualsDynamic(_stress, stress) ||
@@ -189,7 +189,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           ),
         ],
       ),
-      // Render immediately (no full-screen loader). Data fills in as it arrives.
+
       body: _userIdMissing
           ? Center(
               child: Padding(
@@ -479,7 +479,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         child: const Center(child: Text('No mood data yet. Keep logging!')),
       );
     }
-    // Simple line-like chart using bars and a polyline impression
+
     final maxScore = 5.0;
     final cs = theme.colorScheme;
     return _buildCard(

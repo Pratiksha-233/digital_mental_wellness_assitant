@@ -21,15 +21,15 @@ class BrandGradients extends ThemeExtension<BrandGradients> {
 }
 
 ThemeData buildAppTheme(Brightness brightness) {
-  const brandTeal = Color(0xFF0F766E); // teal
-  const brandPurple = Color(0xFF6D28D9); // purple
+  const brandTeal = Color(0xFF0F766E);
+  const brandPurple = Color(0xFF6D28D9);
 
   final baseScheme = ColorScheme.fromSeed(
     seedColor: brandTeal,
     brightness: brightness,
   );
 
-  // Tune accent colors to keep a consistent teal + purple identity.
+
   final scheme = baseScheme.copyWith(
     secondary: brandPurple,
     tertiary: const Color(0xFF9333EA),

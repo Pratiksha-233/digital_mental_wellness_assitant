@@ -41,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       duration: const Duration(seconds: 12),
     )..repeat(reverse: true);
 
-    // Load saved overrides
+
     ProfileService.getDisplayName().then((name) {
       if (name != null && name.trim().isNotEmpty && mounted) {
         setState(() => _nameController.text = name);
@@ -57,14 +57,14 @@ class _ProfileScreenState extends State<ProfileScreen>
         } catch (_) {}
       }
     });
-    // load stored user id
+
     ProfileService.getUserId().then((id) {
       if (mounted) {
         setState(() => _userIdController.text = id?.toString() ?? '');
       }
     });
 
-    // load backend base override (useful for running on a real phone via Wi-Fi)
+
     BackendConfig.getBackendBaseOverride().then((v) {
       if (!mounted) return;
       setState(() {

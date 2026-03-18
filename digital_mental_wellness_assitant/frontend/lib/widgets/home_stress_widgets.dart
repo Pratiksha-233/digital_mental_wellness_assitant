@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/stress_model.dart';
 import 'app_section_card.dart';
 
-/// Mini Stress Indicator Widget for Home Screen
-/// Shows a quick summary of current stress level
+
+
 class QuickStressIndicator extends StatefulWidget {
   final int userId;
   final VoidCallback? onTap;
@@ -32,9 +32,9 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
 
   Future<void> _fetchStressData() async {
     try {
-      // Import and use your ApiService
-      // final api = StressApiService();
-      // _stressData = await api.getStressLevel(userId: widget.userId);
+
+
+
 
       setState(() {
         _isLoading = false;
@@ -83,7 +83,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
 
     return Column(
       children: [
-        // Enhanced responsive decorative image at the top
+
         LayoutBuilder(
           builder: (context, constraints) {
             final imageHeight = constraints.maxWidth > 400 ? 120.0 : 100.0;
@@ -112,7 +112,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Subtle overlay for better text readability
+
                     Positioned(
                       bottom: 0,
                       left: 0,
@@ -131,7 +131,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
                         ),
                       ),
                     ),
-                    // Wellness badge overlay
+
                     Positioned(
                       top: 12,
                       right: 12,
@@ -246,7 +246,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
           ],
         ),
         const SizedBox(height: 12),
-        // Mini stress bar
+
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
@@ -257,7 +257,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
           ),
         ),
         const SizedBox(height: 12),
-        // Quick info
+
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -325,7 +325,7 @@ class _QuickStressIndicatorState extends State<QuickStressIndicator> {
   }
 }
 
-/// Stress Alert Widget - Shows when stress is high
+
 class StressAlertBanner extends StatelessWidget {
   final String category;
   final String message;
@@ -434,7 +434,7 @@ class StressAlertBanner extends StatelessWidget {
   }
 }
 
-/// Stress Recommendation Chip
+
 class StressRecommendationChip extends StatelessWidget {
   final String recommendation;
   final VoidCallback? onTap;

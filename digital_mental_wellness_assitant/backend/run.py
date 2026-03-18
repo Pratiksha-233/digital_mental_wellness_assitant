@@ -17,7 +17,7 @@ import argparse
 from typing import Optional
 from pathlib import Path
 
-# Ensure the backend module can be imported
+
 backend_path = Path(__file__).parent
 sys.path.insert(0, str(backend_path))
 
@@ -28,7 +28,7 @@ def _get_lan_ipv4() -> Optional[str]:
     """Best-effort LAN IPv4 for printing a usable phone URL."""
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # No packets are actually sent; this is only to pick an outbound interface.
+
         sock.connect(("8.8.8.8", 80))
         ip = sock.getsockname()[0]
         sock.close()
@@ -67,14 +67,14 @@ if __name__ == '__main__':
     print("   • /api/stress/stats          - Get stress statistics")
     print("\n💡 Press CTRL+C to stop the server")
     print("="*60 + "\n")
-    
-    # Avoid Flask reloader on Windows; it commonly causes noisy shutdown traces.
-    # debug=True keeps helpful tracebacks; use_reloader=False improves stability.
+
+
+
     ssl_context = None
     if args.https:
-        # Werkzeug's `adhoc` TLS needs `cryptography`. Provide a clear message if missing.
+
         try:
-            import cryptography  # noqa: F401
+            import cryptography
 
             ssl_context = "adhoc"
         except Exception as e:

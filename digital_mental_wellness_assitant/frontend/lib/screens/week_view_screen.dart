@@ -12,7 +12,7 @@ class WeekViewScreen extends StatefulWidget {
 }
 
 class _WeekViewScreenState extends State<WeekViewScreen> {
-  late DateTime _displayMonth; // first day of month
+  late DateTime _displayMonth;
 
   late final Future<int> _userIdFuture;
   late final Future<List<dynamic>> _moodLogsFuture;
@@ -184,18 +184,18 @@ class _WeekViewScreenState extends State<WeekViewScreen> {
 
     final today = dateOnly(_todayIST);
     final first = _displayMonth;
-    final firstWeekday = first.weekday % 7; // Sun=0..Sat=6
+    final firstWeekday = first.weekday % 7;
     final daysInMonth = DateTime(first.year, first.month + 1, 0).day;
     final cells = <DateTime?>[];
-    // leading blanks to align to Sunday
+
     for (int i = 0; i < firstWeekday; i++) {
       cells.add(null);
     }
-    // dates
+
     for (int d = 1; d <= daysInMonth; d++) {
       cells.add(DateTime(first.year, first.month, d));
     }
-    // pad to complete rows of 7
+
     while (cells.length % 7 != 0) {
       cells.add(null);
     }
@@ -248,7 +248,7 @@ class _WeekViewScreenState extends State<WeekViewScreen> {
                         final label = (row['mood_label'] ?? '').toString();
                         final day = dateOnly(dt);
 
-                        // Keep the latest label of the day if multiple logs exist.
+
                         final prevTs = latestTsByDay[day];
                         if (prevTs == null || dt.isAfter(prevTs)) {
                           latestTsByDay[day] = dt;

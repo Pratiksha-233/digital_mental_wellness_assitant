@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             : int.tryParse('${data['days_active']}') ?? 0;
       });
     } catch (_) {
-      // ignore — keep defaults
+
     } finally {
       if (mounted) setState(() => _loadingProgress = false);
     }
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           latestEmoji = emoji;
         }
       } catch (_) {
-        // ignore bad rows
+
       }
     }
 
@@ -1222,7 +1222,7 @@ class _MoodWavePainter extends CustomPainter {
     canvas.drawPath(path, glowPaint);
     canvas.drawPath(path, mainPaint);
 
-    // Subtle anchor dots behind tiles.
+
     final dotPaint = Paint()
       ..color = colorScheme.onSurface.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;

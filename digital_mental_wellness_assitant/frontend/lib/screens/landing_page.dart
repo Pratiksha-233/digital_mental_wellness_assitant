@@ -42,7 +42,7 @@ class _LandingPageStateFixed extends State<LandingPage>
     );
   }
 
-  /// show a dialog with more information about the application/team
+
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -99,7 +99,7 @@ class _LandingPageStateFixed extends State<LandingPage>
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // Animated Background
+
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _bgController,
@@ -117,7 +117,7 @@ class _LandingPageStateFixed extends State<LandingPage>
               children: [
                 SizedBox(
                   height: isDesktop ? 80 : 60,
-                ), // Spacing for extendBodyBehindAppBar
+                ),
                 _buildHeroSection(context, isDesktop),
                 _buildFeaturesSection(context, isDesktop),
                 _buildAboutSection(context, isDesktop),
@@ -136,7 +136,7 @@ class _LandingPageStateFixed extends State<LandingPage>
     return AppBar(
       backgroundColor: Colors.white.withValues(
         alpha: 0.9,
-      ), // Glassmorphism effect
+      ),
       elevation: 0,
       scrolledUnderElevation: 4,
       surfaceTintColor: Colors.transparent,
@@ -332,9 +332,9 @@ class _LandingPageStateFixed extends State<LandingPage>
     return math.min(maxWidth, available > 0 ? available : screenWidth);
   }
 
-  // --- Sections ---
 
-  // ignore: unused_element
+
+
   Widget _buildTrustAvatar(String url) {
     return Align(
       widthFactor: 0.8,
@@ -426,14 +426,14 @@ class _LandingPageStateFixed extends State<LandingPage>
                         ),
                       ),
                       const SizedBox(height: 40),
-                      // Buttons removed
+
                       const SizedBox(height: 10),
                     ],
                   ),
                 ),
               ),
               const SizedBox(width: 60),
-              // Hero Image at Right Side
+
               Expanded(
                 flex: 1,
                 child: LayoutBuilder(
@@ -476,7 +476,7 @@ class _LandingPageStateFixed extends State<LandingPage>
                                     height: double.infinity,
                                   ),
                                 ),
-                                // Modern overlay with elegant text content
+
                                 Positioned(
                                   bottom: 0,
                                   left: 0,
@@ -507,7 +507,7 @@ class _LandingPageStateFixed extends State<LandingPage>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        // Main heading with modern typography
+
                                         Text(
                                           'Discover Your\nInner Harmony',
                                           style: TextStyle(
@@ -537,7 +537,7 @@ class _LandingPageStateFixed extends State<LandingPage>
                                         SizedBox(
                                           height: isSmallScreen ? 12 : 16,
                                         ),
-                                        // Subtle description
+
                                         Text(
                                           'Embark on a journey of self-discovery with personalized mindfulness practices and mental wellness tools.',
                                           style: TextStyle(
@@ -570,7 +570,7 @@ class _LandingPageStateFixed extends State<LandingPage>
     );
   }
 
-  // ignore: unused_element
+
   void _showDemoVideo(BuildContext context) {
     showDialog(
       context: context,
@@ -1094,7 +1094,7 @@ class _LandingPageStateFixed extends State<LandingPage>
     return Container(
       key: _contactKey,
       width: double.infinity,
-      // No background color specified, so it remains transparent allowing the global animation to show through.
+
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 80 : 24,
         vertical: 100,
@@ -1219,7 +1219,7 @@ class _LandingPageStateFixed extends State<LandingPage>
   Widget _buildFooter(BuildContext context, bool isDesktop) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF111827), // Darker footer
+      color: const Color(0xFF111827),
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 80 : 24,
         vertical: 80,
@@ -1373,7 +1373,7 @@ class _LandingPageStateFixed extends State<LandingPage>
   }
 }
 
-// --- Animation & UX Widgets ---
+
 
 class HoverableCard extends StatefulWidget {
   final Widget child;
@@ -1399,7 +1399,7 @@ class _HoverableCardState extends State<HoverableCard> {
   }
 }
 
-// Custom Painter for subtle animated background
+
 class AtomicBackgroundPainter extends CustomPainter {
   final double value;
   final Color? backgroundColor;
@@ -1410,7 +1410,7 @@ class AtomicBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-    // Background
+
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
 
     if (backgroundColor != null) {
@@ -1429,8 +1429,8 @@ class AtomicBackgroundPainter extends CustomPainter {
       canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
     }
 
-    // Animated Orbs
-    // Orb 1
+
+
     paint.color = const Color(0xFFB2DFDB).withValues(alpha: 0.15);
     canvas.drawCircle(
       Offset(
@@ -1441,7 +1441,7 @@ class AtomicBackgroundPainter extends CustomPainter {
       paint,
     );
 
-    // Orb 2
+
     paint.color = const Color(0xFFE1BEE7).withValues(alpha: 0.1);
     canvas.drawCircle(
       Offset(

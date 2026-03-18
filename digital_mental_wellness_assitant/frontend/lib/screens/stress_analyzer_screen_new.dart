@@ -23,7 +23,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   bool _isLoading = false;
   bool _loadInFlight = false;
   String? _errorMessage;
-  int _selectedTab = 0; // 0: Current, 1: History, 2: Stats
+  int _selectedTab = 0;
 
   Map<String, dynamic>? _faceDetectionSummary;
   Map<String, dynamic>? _latestFaceDetection;
@@ -55,7 +55,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
       vsync: this,
       duration: const Duration(seconds: 14),
     )..repeat(reverse: true);
-    // Start loading after first paint so navigation feels instant.
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _fetchStressData(showBlockingLoader: false);
@@ -83,7 +83,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
     try {
       final api = ApiService();
 
-      // Fetch what we can in parallel to speed up time-to-content.
+
       final results = await Future.wait<dynamic>([
         api.get('/stress/history?user_id=${widget.userId}&days=30&limit=100'),
         api.get('/stress/stats?user_id=${widget.userId}'),
@@ -132,8 +132,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
         }
       });
 
-      // Kick off a fresh calculation in the background (best-effort) so values update,
-      // but never block the screen from opening.
+
+
       api
           .get('/stress/calculate?user_id=${widget.userId}')
           .timeout(const Duration(seconds: 8))
@@ -179,7 +179,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           ),
         ],
       ),
-      // Render immediately; show placeholders while data loads.
+
       body: _buildMainContent(),
     );
   }
@@ -223,7 +223,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
               ),
             ),
 
-          // Tabs
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -236,9 +236,9 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             ),
           ),
 
-          // Tab content
+
           if (_selectedTab == 0) ...[
-            // Current stress display
+
             if (!hasAnyData && _isLoading)
               Padding(
                 padding: const EdgeInsets.all(24),
@@ -286,11 +286,11 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             const SizedBox(height: 20),
           ],
           if (_selectedTab == 1) ...[
-            // History tab
+
             _buildHistoryTab(),
           ],
           if (_selectedTab == 2) ...[
-            // Stats tab
+
             _buildStatsTab(),
           ],
         ],
@@ -467,7 +467,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
     final stats = _stressStats!;
     return Column(
       children: [
-        // Key metrics grid
+
         Padding(
           padding: const EdgeInsets.all(16),
           child: LayoutBuilder(
@@ -476,11 +476,11 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  // More columns on wide screens so cards don't look oversized.
+
                   maxCrossAxisExtent: 260,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  // Keep the metric boxes compact (avoid tall stretched cards).
+
                   mainAxisExtent: 96,
                 ),
                 children: [
@@ -510,7 +510,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
           ),
         ),
 
-        // Emotion (from stored face detections)
+
         if (_faceDetectionSummary != null)
           AppSectionCard(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -524,7 +524,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             ),
             child: _buildEmotionStats(theme),
           ),
-        // Trend indicator
+
         AppSectionCard(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           padding: const EdgeInsets.all(16),
@@ -559,7 +559,7 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
             ],
           ),
         ),
-        // Category distribution
+
         AppSectionCard(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           padding: const EdgeInsets.all(16),
@@ -770,8 +770,8 @@ class _StressAnalyzerScreenNewState extends State<StressAnalyzerScreenNew>
   Widget _buildSimpleChart(List<StressHistoryRecord> records) {
     if (records.isEmpty) return const SizedBox.shrink();
 
-    // Simple bar chart representation. Use layout constraints (not screen
-    // width) to avoid RenderFlex overflow inside padded cards.
+
+
     final sorted = List<StressHistoryRecord>.from(records)
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final chartRecords = sorted.length > 30

@@ -62,8 +62,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     _loadDisplayName();
     _loadDetectionHistory();
     if (kIsWeb) {
-      // Web browsers often require a user gesture to show the camera permission prompt.
-      // So we wait for the user to tap Retry camera.
+
+
       _initializing = false;
       _errorMessage = 'Tap Retry camera to request browser camera permission.';
     } else {
@@ -80,7 +80,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         _displayName = (cleaned == null || cleaned.isEmpty) ? null : cleaned;
       });
     } catch (_) {
-      // ignore
+
     }
   }
 
@@ -117,14 +117,14 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
           ..addAll(restored);
       });
     } catch (_) {
-      // ignore – history restore is best-effort
+
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // The camera plugin can abort if the app loses focus or is backgrounded.
-    // Make this screen resilient by stopping and re-initializing on resume.
+
+
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
@@ -152,7 +152,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     try {
       await ctrl?.dispose();
     } catch (_) {
-      // ignore
+
     }
 
     if (!mounted) return;
@@ -219,8 +219,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         ...cams.where((c) => c.lensDirection != CameraLensDirection.front),
       ];
 
-      // ResolutionPreset.high can hang/fail on some desktop setups.
-      // Prefer it only on mobile platforms where it’s typically reliable.
+
+
       final presets = (kIsWeb)
           ? const [ResolutionPreset.medium, ResolutionPreset.low]
           : (defaultTargetPlatform == TargetPlatform.android ||
@@ -250,7 +250,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
               _errorMessage = '';
             });
 
-            // Start auto-detection once the camera is ready.
+
             final initializedCtrl = ctrl;
             Future.delayed(const Duration(milliseconds: 800), () {
               if (!mounted) return;
@@ -263,7 +263,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
             try {
               await ctrl?.dispose();
             } catch (_) {
-              // ignore
+
             }
           }
         }
@@ -625,27 +625,27 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     switch (emotion.toLowerCase()) {
       case 'happy':
       case 'joy':
-        return const Color(0xFFF59E0B); // amber
+        return const Color(0xFFF59E0B);
       case 'sad':
       case 'sadness':
-        return const Color(0xFF3B82F6); // calm blue
+        return const Color(0xFF3B82F6);
       case 'angry':
       case 'anger':
-        return const Color(0xFFEF4444); // red
+        return const Color(0xFFEF4444);
       case 'fear':
-        return const Color(0xFF6366F1); // indigo
+        return const Color(0xFF6366F1);
       case 'surprise':
-        return const Color(0xFF8B5CF6); // purple
+        return const Color(0xFF8B5CF6);
       case 'disgust':
-        return const Color(0xFF22C55E); // green
+        return const Color(0xFF22C55E);
       case 'neutral':
-        return const Color(0xFF0F766E); // brand teal
+        return const Color(0xFF0F766E);
       case 'love':
-        return const Color(0xFFEC4899); // pink
+        return const Color(0xFFEC4899);
       case 'no face detected':
-        return const Color(0xFF64748B); // slate
+        return const Color(0xFF64748B);
       default:
-        return const Color(0xFF0F766E); // brand teal
+        return const Color(0xFF0F766E);
     }
   }
 
@@ -953,7 +953,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                     ),
                   ),
 
-                  // OpenCV-style overlays: sentiment/confidence/user + centered face box
+
                   if (!_initializing &&
                       _controller != null &&
                       _controller!.value.isInitialized)
@@ -1188,7 +1188,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                         final canDrawBox =
                             box != null && imgW != null && imgH != null;
 
-                        // BoxFit.cover mapping: scale to cover + center-crop offsets
+
                         double scale = 1.0;
                         double dx = 0.0;
                         double dy = 0.0;
@@ -1398,7 +1398,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
           Container(
             decoration: BoxDecoration(gradient: brandGradients?.background),
           ),
-          // Emotion tint overlay (subtle)
+
           Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(

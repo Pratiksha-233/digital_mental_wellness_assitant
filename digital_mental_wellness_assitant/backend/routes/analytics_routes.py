@@ -94,8 +94,8 @@ def stress_analytics():
         )
         rows = cursor.fetchall()
 
-        # If the user has no historical stress rows yet, compute & persist one
-        # (idempotent per day) so the dashboard isn't permanently empty.
+
+
         if not rows:
             try:
                 from services.stress_service import stress_service
@@ -219,7 +219,7 @@ def face_detections_logs():
         days = 30
 
     rows = db_service.get_face_detection_logs(user_id, limit=limit, days=days)
-    # Normalize datetimes to ISO strings for JSON
+
     out = []
     for r in rows:
         ts = r.get('timestamp')
@@ -259,7 +259,7 @@ def activity_analytics():
         )
         rows = cursor.fetchall()
 
-        # Backfill activity_logs from mood_logs.activities when empty.
+
         if not rows:
             try:
                 inserted = db_service.backfill_activity_logs_from_mood_logs(user_id, days=30)

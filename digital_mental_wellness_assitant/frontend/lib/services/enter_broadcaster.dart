@@ -1,6 +1,6 @@
 import 'dart:async';
 
-/// Simple singleton broadcaster for global Enter key events.
+
 class EnterBroadcaster {
   EnterBroadcaster._();
 

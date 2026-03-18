@@ -11,7 +11,7 @@ try:
 except ImportError:
     import config
 
-# import blueprints, accounting for module path differences
+
 try:
     from .routes.auth_routes import auth_bp
     from .routes.mood_routes import mood_bp
@@ -21,7 +21,7 @@ try:
     from .routes.stress_routes import stress_bp
     from .routes.analytics_routes import analytics_bp
 except ImportError:
-    # fallback when running as script without package context
+
     from routes.auth_routes import auth_bp
     from routes.mood_routes import mood_bp
     from routes.recommend_routes import rec_bp
@@ -53,7 +53,7 @@ def _has_web_build() -> bool:
 
 @app.get("/")
 def index():
-    # If a Flutter Web build exists, serve the full application UI.
+
     if _has_web_build():
         return send_from_directory(_web_build_dir(), "index.html")
 
@@ -72,8 +72,8 @@ def index():
         "health": "/health",
     }
 
-    # If opened in a browser, show a tiny HTML landing page.
-    # If called by code (e.g., curl/clients expecting JSON), return JSON.
+
+
     if request.accept_mimetypes.best == "text/html":
         links = "\n".join(
             f"<li><a href='{v}'>{k}: {v}</a></li>" for k, v in payload["docs"].items()
@@ -118,7 +118,7 @@ def health():
     return jsonify({"status": "ok"})
 
 
-# register blueprints
+
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(mood_bp, url_prefix='/api/mood')
 app.register_blueprint(rec_bp, url_prefix='/api/recommend')

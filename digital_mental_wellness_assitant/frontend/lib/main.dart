@@ -29,7 +29,7 @@ class _GlobalEnterIntent extends Intent {
   const _GlobalEnterIntent();
 }
 
-String? _initialStoredDisplayName; // loaded before runApp
+String? _initialStoredDisplayName;
 int? _initialStoredUserId;
 List<CameraDescription> _initialCameras = const [];
 
@@ -37,13 +37,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await BackendConfig.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Ensure auth persistence on web so refresh keeps the session
+
   try {
     if (kIsWeb) {
       await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
     }
   } catch (_) {}
-  // Preload stored profile name so first frame can use it (especially for web refresh where async delay is noticeable)
+
   try {
     _initialStoredDisplayName = await ProfileService.getDisplayName();
   } catch (_) {}
@@ -51,8 +51,8 @@ Future<void> main() async {
     _initialStoredUserId = await ProfileService.getUserId();
   } catch (_) {}
 
-  // Preload cameras once for desktop/mobile.
-  // On Web, camera access often requires a user gesture, so preloading here can hang.
+
+
   if (!kIsWeb) {
     try {
       _initialCameras = await availableCameras().timeout(
@@ -72,7 +72,7 @@ class MentalWellnessApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Global Enter mapping: emit an Enter event to any interested screens/widgets.
+
 
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
@@ -96,7 +96,7 @@ class MentalWellnessApp extends StatelessWidget {
           darkTheme: buildAppTheme(Brightness.dark),
           themeMode: ThemeMode.system,
           home: const _RootRouter(),
-          // Restore named routes so Navigator.pushNamed works from landing page & other screens
+
           routes: {
             '/login': (c) => const LoginScreen(),
             '/register': (c) => const RegisterScreen(),
@@ -104,7 +104,7 @@ class MentalWellnessApp extends StatelessWidget {
             '/chat': (c) => const ChatScreen(),
             '/selfcare': (c) => const SelfCareTipsScreen(),
             '/recommendations': (c) => const RecommendationScreen(),
-            // Default to user_id=1 for local testing when no stored user id is available
+
             '/stress': (c) =>
                 StressAnalyzerScreenNew(userId: _initialStoredUserId ?? 1),
             '/stress-old': (c) => const StressAnalyzerScreen(),
@@ -131,7 +131,7 @@ class MentalWellnessApp extends StatelessWidget {
   }
 }
 
-// Root router decides which initial screen to show based on auth state.
+
 class _RootRouter extends StatelessWidget {
   const _RootRouter();
 
@@ -146,7 +146,7 @@ class _RootRouter extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        // If Firebase user is present, treat as signed-in.
+
         if (user != null) {
           return HomeScreen(
             userId: _initialStoredUserId ?? 0,
@@ -157,7 +157,7 @@ class _RootRouter extends StatelessWidget {
           );
         }
 
-        // No Firebase user; but if a local `user_id` exists from prior backend login, treat as signed-in.
+
         if (_initialStoredUserId != null) {
           return HomeScreen(
             userId: _initialStoredUserId!,
@@ -165,7 +165,7 @@ class _RootRouter extends StatelessWidget {
           );
         }
 
-        // Otherwise show landing/login.
+
         return const LandingPage();
       },
     );

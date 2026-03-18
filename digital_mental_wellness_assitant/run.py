@@ -11,21 +11,21 @@ This forwards to the backend/app.py application instance.
 import sys
 from pathlib import Path
 
-# Resolve paths relative to this file
+
 ROOT = Path(__file__).resolve().parent
 BACKEND_DIR = ROOT / "backend"
 
-# Ensure the backend package is importable
+
 sys.path.insert(0, str(BACKEND_DIR))
 
 try:
     from backend.app import app
-except Exception as exc:  # pragma: no cover
-    # Fallback: try importing app.py as a plain module
+except Exception as exc:
+
     print("[ERROR] Failed importing backend.app:", exc)
     try:
-        import app as _app_module  # type: ignore
-        app = _app_module.app  # type: ignore[attr-defined]
+        import app as _app_module
+        app = _app_module.app
     except Exception as inner_exc:
         print("[FATAL] Could not locate Flask app instance:", inner_exc)
         raise

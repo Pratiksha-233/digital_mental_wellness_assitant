@@ -24,14 +24,14 @@ class _WelcomeCleanState extends State<WelcomeClean>
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _floatAnim;
 
-  // button animations
+
   late final Animation<Offset> _btn1Offset;
   late final Animation<double> _btn1Fade;
   late final Animation<Offset> _btn2Offset;
   late final Animation<double> _btn2Fade;
   late final Animation<Offset> _btn3Offset;
   late final Animation<double> _btn3Fade;
-  // hovered state and enter subscription
+
   _Hovered _hovered = _Hovered.none;
   late final StreamSubscription<void> _enterSub;
 
@@ -66,7 +66,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
       duration: const Duration(seconds: 12),
     )..repeat(reverse: true);
 
-    // staggered button animations using the same main controller
+
     _btn1Offset = Tween<Offset>(begin: const Offset(0, 0.18), end: Offset.zero)
         .animate(
           CurvedAnimation(
@@ -105,7 +105,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
 
     _mainController.forward();
     _floatController.repeat(reverse: true);
-    // subscribe to global Enter events
+
     _enterSub = EnterBroadcaster.instance.stream.listen((_) {
       if (!mounted) return;
       if (_hovered == _Hovered.btn1) {
@@ -115,7 +115,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
       } else if (_hovered == _Hovered.btn3) {
         _handleExplore(context);
       } else {
-        // default
+
         _handleLogin(context);
       }
     });
@@ -130,7 +130,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
     super.dispose();
   }
 
-  // handlers used by keyboard/actions and buttons
+
   void _handleLogin(BuildContext context) {
     Navigator.push(
       context,
@@ -150,12 +150,12 @@ class _WelcomeCleanState extends State<WelcomeClean>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    // Build the screen normally; Enter events are handled via EnterBroadcaster subscription.
+
     return Scaffold(
       backgroundColor: cs.surface,
       body: Stack(
         children: [
-          // animated gradient background
+
           AnimatedBuilder(
             animation: _bgController,
             builder: (context, child) {
@@ -174,12 +174,12 @@ class _WelcomeCleanState extends State<WelcomeClean>
                     colors: [g1, g2],
                   ),
                 ),
-                // small overlay will be painted by stack children below
+
               );
             },
           ),
 
-          // decorative animated circles (subtle parallax)
+
           AnimatedBuilder(
             animation: _bgController,
             builder: (context, child) {
@@ -229,7 +229,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
                 final width = constraints.maxWidth;
                 final animationSize = (width * 0.5).clamp(120.0, 320.0);
 
-                // Responsive layout: stacked on small screens, two-column on wide screens
+
                 return Center(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -242,7 +242,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
                           ? Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // Left: original hero, title/subtitle and CTAs (keeps your original content)
+
                                 Expanded(
                                   flex: 6,
                                   child: Padding(
@@ -255,7 +255,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
                                           CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        // Hero animation (uses same size calculation as mobile)
+
                                         SlideTransition(
                                           position: _floatAnim,
                                           child: ScaleTransition(
@@ -327,7 +327,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
 
                                         const SizedBox(height: 18),
 
-                                        // Title and subtitle (same text as before)
+
                                         FadeTransition(
                                           opacity: _fadeAnim,
                                           child: Column(
@@ -359,7 +359,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
 
                                         const SizedBox(height: 20),
 
-                                        // Buttons (same labels and behaviors)
+
                                         Padding(
                                           padding: const EdgeInsets.only(
                                             right: 24.0,
@@ -528,7 +528,7 @@ class _WelcomeCleanState extends State<WelcomeClean>
                                   ),
                                 ),
 
-                                // Right: illustrated card
+
                                 Expanded(
                                   flex: 5,
                                   child: Padding(

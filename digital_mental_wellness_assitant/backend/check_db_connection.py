@@ -2,14 +2,14 @@
 
 Usage (from project root):
     python -m backend.check_db_connection
-    
+
 Or from backend folder:
     python check_db_connection.py
 """
 import sys
 from pathlib import Path
 
-# Add parent (backend) directory to path so services can be imported
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from services.db_service import get_connection

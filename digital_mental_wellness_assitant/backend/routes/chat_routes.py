@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import sys
 from pathlib import Path
 
-# Ensure project root (backend) is on sys.path so services can be imported
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
@@ -62,7 +62,7 @@ def _build_response(user_message: str, analysis: dict, is_crisis: bool, intent: 
     emotion = (analysis.get('emotion') or '').lower()
     sentiment = analysis.get('sentiment') or 'neutral'
 
-    # Crisis‑aware response always takes priority
+
     if is_crisis:
         return (
             "I'm really glad you told me. Your safety matters a lot. "
@@ -72,7 +72,7 @@ def _build_response(user_message: str, analysis: dict, is_crisis: bool, intent: 
             "or reach out to a trusted person near you."
         )
 
-    # Intent-specific responses take priority over coarse sentiment.
+
     if intent == 'sleep_issue':
         return (
             "Sleep struggles can feel exhausting—thanks for telling me. "
@@ -90,7 +90,7 @@ def _build_response(user_message: str, analysis: dict, is_crisis: bool, intent: 
             "If you want, tell me what’s triggering the anxiety right now and we can break it into smaller steps."
         )
 
-    # Relaxation & motivational style replies
+
     if sentiment == 'negative':
         if 'sad' in emotion or 'fear' in emotion:
             return (
@@ -117,7 +117,7 @@ def _build_response(user_message: str, analysis: dict, is_crisis: bool, intent: 
             "or sending a kind message to someone you care about."
         )
 
-    # Neutral / mixed sentiment
+
     return (
         "Thanks for opening up. I’m here to listen. If you want, "
         "I can suggest a quick relaxation technique or a small self‑care activity."
@@ -132,7 +132,7 @@ def message():
     if not user_message:
         return jsonify({'error': 'No message'}), 400
 
-    # Core NLP analysis (emotion + sentiment)
+
     if not _ML_AVAILABLE:
         analysis = {'emotion': 'Unknown', 'sentiment': 'neutral', 'confidence': 0.0}
     else:
@@ -141,26 +141,26 @@ def message():
     sentiment = analysis.get('sentiment', 'neutral')
     confidence = float(analysis.get('confidence', 0.0) or 0.0)
 
-    # Crisis word detection
+
     is_crisis, crisis_keywords = _detect_crisis(user_message)
 
-    # Simple intent classification based on keywords
+
     intent = _classify_intent(user_message)
 
-    # Build motivational / relaxation‑oriented response
+
     bot_response = _build_response(user_message, analysis, is_crisis, intent)
 
-    # Store chat as journal entry and structured chat history (if we know the user)
+
     if user_id:
         try:
             insert_journal_entry(user_id, user_message, emotion)
         except Exception:
-            # journal insertion is best‑effort only
+
             pass
         try:
             insert_chat_message(user_id, user_message, bot_response, emotion)
         except Exception:
-            # chat_history persistence is also best‑effort
+
             pass
 
     return jsonify(

@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 import sys
 from pathlib import Path
 
-# Ensure project root (backend) is on sys.path so services can be imported
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from services.ml_service import ml_service
@@ -12,7 +12,7 @@ from io import BytesIO
 import sys
 from pathlib import Path
 
-# Add models directory to path to import realtimedetection
+
 models_path = Path(__file__).resolve().parent.parent / 'models'
 sys.path.insert(0, str(models_path))
 
@@ -54,15 +54,15 @@ def predict_emotion():
     try:
         data = request.get_json()
         text = data.get('text', '').strip()
-        
+
         if not text:
             return jsonify({'status': 'error', 'message': 'Text cannot be empty'}), 400
-        
+
         if not _ML_AVAILABLE:
             return jsonify({'status': 'error', 'message': 'ML service not available'}), 503
-        
+
         emotion = ml_service.predict_emotion(text)
-        
+
         return jsonify({
             'status': 'success',
             'emotion': emotion,
@@ -84,7 +84,7 @@ def predict_image():
             'status': 'error',
             'message': 'Image processing not available. OpenCV or PIL not installed.'
         }), 503
-    
+
     if face_model is None:
         return jsonify({
             'status': 'error',
@@ -96,23 +96,23 @@ def predict_image():
             'status': 'error',
             'message': 'Face detector not available (Haar cascade not loaded).'
         }), 503
-    
+
     try:
         data = request.get_json()
         image_data = data.get('image', '').strip()
-        user_id = data.get('user_id', 1)  # default to user 1 if not provided
-        
+        user_id = data.get('user_id', 1)
+
         if not image_data:
             return jsonify({'status': 'error', 'message': 'Image data cannot be empty'}), 400
-        
-        # Decode base64 image
+
+
         try:
-            # Handle data URL format
+
             if image_data.startswith('data:image'):
                 image_data = image_data.split(',')[1]
-            
+
             image_bytes = base64.b64decode(image_data)
-            # Respect EXIF orientation (common on mobile/webcam captures)
+
             img = Image.open(BytesIO(image_bytes))
             img = ImageOps.exif_transpose(img).convert('RGB')
             if not _NUMPY_AVAILABLE:
@@ -120,12 +120,12 @@ def predict_image():
             img_array = np.array(img)
         except Exception as e:
             return jsonify({'status': 'error', 'message': f'Invalid image format: {str(e)}'}), 400
-        
-        # Convert to grayscale for face detection
+
+
         gray0 = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
         img_h, img_w = gray0.shape[:2]
 
-        # Optional downscale to speed up detection while keeping enough detail
+
         scale = 1.0
         max_dim = max(img_h, img_w)
         if max_dim > 900:
@@ -136,18 +136,18 @@ def predict_image():
         else:
             gray = gray0
 
-        # Improve contrast for more robust Haar detection
+
         try:
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             gray = clahe.apply(gray)
         except Exception:
             gray = cv2.equalizeHist(gray)
 
-        # Dynamic minimum face size (helps reduce false negatives on high-res images)
+
         min_side = min(gray.shape[0], gray.shape[1])
         min_face = max(30, int(min_side * 0.12))
 
-        # Detect faces (tuned for better accuracy than the previous defaults)
+
         faces = face_cascade.detectMultiScale(
             gray,
             scaleFactor=1.15,
@@ -155,7 +155,7 @@ def predict_image():
             minSize=(min_face, min_face),
         )
 
-        # Convert face boxes back to original image coordinates if we downscaled
+
         faces_scaled = []
         for (x, y, w, h) in faces:
             if scale != 1.0:
@@ -165,11 +165,11 @@ def predict_image():
                 h = int(h / scale)
             faces_scaled.append((int(x), int(y), int(w), int(h)))
 
-        # Prefer the largest face (most likely the primary subject)
+
         faces_scaled.sort(key=lambda b: b[2] * b[3], reverse=True)
-        
+
         if len(faces_scaled) == 0:
-            # Still log if no face detected
+
             insert_face_detection_log(user_id, 'No face detected', 0.0, 0, 'image')
             return jsonify({
                 'status': 'success',
@@ -180,27 +180,27 @@ def predict_image():
                 'image_height': int(img_h),
                 'faces': [],
             }), 200
-        
-        # Process first face and get emotion
+
+
         x, y, w, h = faces_scaled[0]
-        # Guard bounds
+
         x0 = max(0, x)
         y0 = max(0, y)
         x1 = min(img_w, x + w)
         y1 = min(img_h, y + h)
         face_roi = gray0[y0:y1, x0:x1]
-        
-        # Use the face emotion detection model
+
+
         emotion, confidence = predict_emotion_from_face(face_roi)
-        
-        # Insert into database
+
+
         insert_face_detection_log(user_id, emotion, confidence, len(faces_scaled), 'image')
 
         faces_payload = [
             {'x': int(fx), 'y': int(fy), 'w': int(fw), 'h': int(fh)}
             for (fx, fy, fw, fh) in faces_scaled
         ]
-        
+
         return jsonify({
             'status': 'success',
             'emotion': emotion,
@@ -210,6 +210,6 @@ def predict_image():
             'image_height': int(img_h),
             'faces': faces_payload,
         }), 200
-    
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500

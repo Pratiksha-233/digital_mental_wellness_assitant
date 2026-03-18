@@ -12,9 +12,9 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
   final _formKey = GlobalKey<FormState>();
   late final AnimationController _bgCtrl;
   late final AnimationController _quoteCtrl;
-  double _dailyScore = 0; // computed from questionnaire
-  final Map<String, int> _answers = {}; // question -> value 0..4
-  final List<_StressRecord> _history = []; // daily/weekly records
+  double _dailyScore = 0;
+  final Map<String, int> _answers = {};
+  final List<_StressRecord> _history = [];
   DateTime _lastSaved = DateTime.now();
   bool _showGraph = true;
   bool _remindersOn = false;
@@ -68,7 +68,7 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
     for (final q in _questions) {
       total += _answers[q.text] ?? 0;
     }
-    // scale to 100
+
     _dailyScore = (total / (_questions.length * 4)) * 100;
   }
 
@@ -103,7 +103,7 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
     for (final q in _questions) {
       buffer.writeln('${q.text}: ${_answers[q.text] ?? 0}');
     }
-    // For now, show in dialog; could integrate share_plus later
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -158,7 +158,7 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header + quote
+
                 AnimatedBuilder(
                   animation: _quoteCtrl,
                   builder: (context, _) {
@@ -213,7 +213,7 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
                 ),
                 const SizedBox(height: 20),
 
-                // Questionnaire
+
                 Form(
                   key: _formKey,
                   child: Column(
@@ -248,7 +248,7 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
                 ),
                 const SizedBox(height: 24),
 
-                // Score display
+
                 if (_dailyScore > 0)
                   AppSectionCard(
                     gradient: AppSectionCard.gradientFromScheme(
@@ -302,7 +302,7 @@ class _StressAnalyzerScreenState extends State<StressAnalyzerScreen>
 
                 const SizedBox(height: 24),
 
-                // Graph
+
                 if (_history.isNotEmpty)
                   AppSectionCard(
                     gradient: AppSectionCard.gradientFromScheme(
@@ -374,7 +374,7 @@ class _Question {
 
 class _QuestionTile extends StatelessWidget {
   final String question;
-  final int value; // 0..4
+  final int value;
   final ValueChanged<int> onChanged;
   const _QuestionTile({
     required this.question,
@@ -498,7 +498,7 @@ class _StressGraphPainter extends CustomPainter {
     canvas.drawPath(pathFill, paintFill);
     canvas.drawPath(path, paintLine);
 
-    // draw points
+
     final pointPaint = Paint()
       ..color = colorScheme.primary
       ..style = PaintingStyle.fill;

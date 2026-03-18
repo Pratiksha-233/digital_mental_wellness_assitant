@@ -84,10 +84,10 @@ def save_questionnaire_stress():
 def calculate_stress():
     """
     Calculate current stress level for a user.
-    
+
     Query Parameters:
         user_id (int, required): User ID
-    
+
     Returns:
         {
             "stress_level": 45.5,           # 0-100 scale
@@ -104,10 +104,10 @@ def calculate_stress():
         }
     """
     user_id = request.args.get('user_id')
-    
+
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
-    
+
     try:
         user_id = int(user_id)
     except ValueError:
@@ -115,19 +115,19 @@ def calculate_stress():
 
     if stress_service is None:
         return jsonify({'error': 'Stress service not available'}), 503
-    
+
     try:
-        # Calculate stress level
+
         stress_data = stress_service.calculate_stress_level(user_id)
-        
-        # Save to database for historical tracking
+
+
         stress_service.save_stress_log(user_id, stress_data)
-        
+
         return jsonify({
             'status': 'success',
             'data': stress_data
         }), 200
-        
+
     except Exception as e:
         print(f"Error calculating stress: {e}")
         return jsonify({
@@ -140,12 +140,12 @@ def calculate_stress():
 def get_stress_history():
     """
     Get historical stress level records for a user.
-    
+
     Query Parameters:
         user_id (int, required): User ID
         days (int, optional): Number of days to retrieve (default: 30)
         limit (int, optional): Max records (default: 100)
-    
+
     Returns:
         [
             {
@@ -164,54 +164,54 @@ def get_stress_history():
     user_id = request.args.get('user_id')
     days = request.args.get('days', 30, type=int)
     limit = request.args.get('limit', 100, type=int)
-    
+
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
-    
+
     try:
         user_id = int(user_id)
     except ValueError:
         return jsonify({'error': 'invalid user_id'}), 400
-    
-    # use absolute import via services package
+
+
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from services.db_service import get_connection
     from mysql.connector import Error
-    
+
     conn = get_connection()
     if not conn:
         return jsonify({'error': 'Database connection failed'}), 500
-    
+
     try:
         cursor = conn.cursor(dictionary=True)
-        
+
         sql = """
-            SELECT 
+            SELECT
                 stress_id, user_id, stress_level, stress_category,
                 primary_emotion, energy_level, mood_pattern, timestamp
             FROM stress_logs
-            WHERE user_id = %s 
+            WHERE user_id = %s
             AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
             ORDER BY timestamp DESC
             LIMIT %s
         """
-        
+
         cursor.execute(sql, (user_id, days, limit))
         records = cursor.fetchall()
-        
-        # Convert datetime objects to ISO format strings
+
+
         for record in records:
             if isinstance(record['timestamp'], object):
                 record['timestamp'] = record['timestamp'].isoformat()
-        
+
         return jsonify({
             'status': 'success',
             'count': len(records),
             'data': records
         }), 200
-        
+
     except Error as e:
         print(f"Database error: {e}")
         return jsonify({'error': 'Failed to retrieve history'}), 500
@@ -224,11 +224,11 @@ def get_stress_history():
 def get_stress_stats():
     """
     Get stress statistics and trends for a user.
-    
+
     Query Parameters:
         user_id (int, required): User ID
         days (int, optional): Number of days to analyze (default: 30)
-    
+
     Returns:
         {
             "average_stress": 45.5,
@@ -244,55 +244,55 @@ def get_stress_stats():
     """
     user_id = request.args.get('user_id')
     days = request.args.get('days', 30, type=int)
-    
+
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
-    
+
     try:
         user_id = int(user_id)
     except ValueError:
         return jsonify({'error': 'invalid user_id'}), 400
-    
-    # use absolute import via services package
+
+
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from services.db_service import get_connection
     from mysql.connector import Error
     import numpy as np
-    
+
     conn = get_connection()
     if not conn:
         return jsonify({'error': 'Database connection failed'}), 500
-    
+
     try:
         cursor = conn.cursor(dictionary=True)
-        
-        # Get all stress records
+
+
         sql = """
             SELECT stress_level, stress_category, timestamp
             FROM stress_logs
-            WHERE user_id = %s 
+            WHERE user_id = %s
             AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
             ORDER BY timestamp ASC
         """
-        
+
         cursor.execute(sql, (user_id, days))
         records = cursor.fetchall()
-        
+
         if not records:
             return jsonify({'error': 'No stress data available'}), 404
-        
+
         stress_levels = [r['stress_level'] for r in records]
         categories = [r['stress_category'] for r in records]
-        
-        # Calculate statistics
+
+
         avg_stress = float(np.mean(stress_levels))
         min_stress = float(np.min(stress_levels))
         max_stress = float(np.max(stress_levels))
-        current_stress = float(stress_levels[-1])  # Last recorded
-        
-        # Calculate trend
+        current_stress = float(stress_levels[-1])
+
+
         if len(stress_levels) > 1:
             first_half = np.mean(stress_levels[:len(stress_levels)//2])
             second_half = np.mean(stress_levels[len(stress_levels)//2:])
@@ -304,15 +304,15 @@ def get_stress_stats():
                 trend = 'stable'
         else:
             trend = 'insufficient_data'
-        
-        # Count categories
+
+
         category_counts = {
             'low_count': categories.count('LOW'),
             'moderate_count': categories.count('MODERATE'),
             'high_count': categories.count('HIGH'),
             'critical_count': categories.count('CRITICAL')
         }
-        
+
         return jsonify({
             'status': 'success',
             'average_stress': round(avg_stress, 2),
@@ -324,7 +324,7 @@ def get_stress_stats():
             'total_records': len(records),
             **category_counts
         }), 200
-        
+
     except Error as e:
         print(f"Database error: {e}")
         return jsonify({'error': 'Failed to retrieve statistics'}), 500
@@ -337,10 +337,10 @@ def get_stress_stats():
 def get_stress_recommendation():
     """
     Get personalized stress management recommendations.
-    
+
     Query Parameters:
         user_id (int, required): User ID
-    
+
     Returns:
         {
             "stress_level": 45.5,
@@ -353,10 +353,10 @@ def get_stress_recommendation():
         }
     """
     user_id = request.args.get('user_id')
-    
+
     if not user_id:
         return jsonify({'error': 'user_id is required'}), 400
-    
+
     try:
         user_id = int(user_id)
     except ValueError:
@@ -364,10 +364,10 @@ def get_stress_recommendation():
 
     if stress_service is None:
         return jsonify({'error': 'Stress service not available'}), 503
-    
+
     try:
         stress_data = stress_service.calculate_stress_level(user_id)
-        
+
         return jsonify({
             'status': 'success',
             'stress_level': stress_data['stress_level'],
@@ -375,7 +375,7 @@ def get_stress_recommendation():
             'primary_emotion': stress_data['primary_emotion'],
             'recommendations': stress_data['recommendations']
         }), 200
-        
+
     except Exception as e:
         print(f"Error getting recommendations: {e}")
         return jsonify({

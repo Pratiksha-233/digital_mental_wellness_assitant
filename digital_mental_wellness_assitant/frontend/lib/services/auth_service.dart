@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../utils/constants.dart';
 
 class AuthService {
-  /// Registers a new user
+
   Future<Map<String, dynamic>> register(
       String name, String email, String password) async {
     try {
@@ -20,7 +20,7 @@ class AuthService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data is Map<String, dynamic>) {
-          // Ensure a success status key exists for downstream checks
+
           return {
             ...data,
             if (!data.containsKey('status')) 'status': 'success',
@@ -38,7 +38,7 @@ class AuthService {
     }
   }
 
-  /// Logs in an existing user
+
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(

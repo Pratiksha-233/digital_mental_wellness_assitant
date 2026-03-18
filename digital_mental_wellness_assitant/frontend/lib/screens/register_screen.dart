@@ -79,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
       );
-      // Navigate to login after short delay to let user read banner
+
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
         messenger.hideCurrentMaterialBanner();

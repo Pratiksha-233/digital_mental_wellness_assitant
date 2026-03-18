@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Stress Level Data Model
+
 class StressData {
   final double stressLevel;
   final String stressCategory;
@@ -40,7 +40,7 @@ class StressData {
     );
   }
 
-  // Get color based on stress category
+
   Color get categoryColor {
     switch (stressCategory) {
       case 'LOW':
@@ -56,7 +56,7 @@ class StressData {
     }
   }
 
-  // Get emoji based on stress category
+
   String get categoryEmoji {
     switch (stressCategory) {
       case 'LOW':
