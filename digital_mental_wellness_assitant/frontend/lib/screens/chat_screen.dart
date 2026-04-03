@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
+import '../services/voice_service.dart';
 import '../widgets/app_section_card.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -21,7 +22,10 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _sending = false;
+  bool _isListening = false;
+  double _soundLevel = 0.0;
   final ApiService _api = ApiService();
+  final VoiceService _voiceService = VoiceService();
 
   String? _buildInsightLine(Map<String, dynamic> result) {
     final emotion = (result['emotion'] ?? '').toString().trim();
@@ -62,9 +66,59 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _initializeVoiceService();
+  }
+
+  void _initializeVoiceService() {
+    _voiceService.onListeningStarted = () {
+      if (mounted) {
+        setState(() {
+          _isListening = true;
+        });
+      }
+    };
+
+    _voiceService.onListeningStopped = () {
+      if (mounted) {
+        setState(() {
+          _isListening = false;
+          _soundLevel = 0.0;
+        });
+      }
+    };
+
+    _voiceService.onTextRecognized = (text) {
+      if (mounted) {
+        setState(() {
+          _controller.text = text;
+        });
+      }
+    };
+
+    _voiceService.onSoundLevelChanged = (level) {
+      if (mounted) {
+        setState(() {
+          _soundLevel = level;
+        });
+      }
+    };
+
+    _voiceService.onError = (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Voice error: $error')),
+        );
+      }
+    };
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _voiceService.dispose();
     super.dispose();
   }
 
@@ -144,6 +198,30 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _sending = false;
         });
+      }
+    }
+  }
+
+  Future<void> _toggleVoiceInput() async {
+    if (_isListening) {
+      await _voiceService.stopListening();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && _controller.text.isNotEmpty) {
+          _send();
+        }
+      });
+    } else {
+      final initialized = await _voiceService.initialize();
+      if (initialized) {
+        await _voiceService.startListening();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Voice recognition is not available on this device'),
+            ),
+          );
+        }
       }
     }
   }
@@ -383,31 +461,75 @@ class _ChatScreenState extends State<ChatScreen> {
                   aAlpha: 0.90,
                   bAlpha: 0.65,
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        minLines: 1,
-                        maxLines: 5,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(),
-                        decoration: const InputDecoration(
-                          hintText: 'Type a message…',
+                    if (_isListening)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Listening...',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: cs.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: _soundLevel,
+                                minHeight: 4,
+                                backgroundColor: cs.surfaceVariant,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  cs.primary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: _sending ? null : _send,
-                      icon: _sending
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send),
-                      label: Text(_sending ? 'Sending…' : 'Send'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            minLines: 1,
+                            maxLines: 5,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _send(),
+                            decoration: const InputDecoration(
+                              hintText: 'Type a message…',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _sending ? null : _toggleVoiceInput,
+                          icon: Icon(
+                            _isListening ? Icons.mic : Icons.mic_none,
+                            color: _isListening ? cs.error : null,
+                          ),
+                          tooltip: _isListening
+                              ? 'Stop listening'
+                              : 'Speak instead of type',
+                        ),
+                        const SizedBox(width: 4),
+                        FilledButton.icon(
+                          onPressed: _sending ? null : _send,
+                          icon: _sending
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.send),
+                          label: Text(_sending ? 'Sending…' : 'Send'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

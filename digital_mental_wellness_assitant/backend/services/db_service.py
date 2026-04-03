@@ -26,7 +26,7 @@ def get_connection():
         conn = mysql.connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'mysqlworld@123'),
+            password=config.DB_CONFIG.get('password', 'Pra@#ti825'),
             database=config.DB_CONFIG.get('database', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')
