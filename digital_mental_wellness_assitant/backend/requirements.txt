@@ -13,6 +13,8 @@ scikit-learn; python_version < "3.14"
 nltk; python_version < "3.14"
 opencv-python; python_version < "3.14"
 pillow; python_version < "3.14"
+SpeechRecognition; python_version < "3.14"
+pydub; python_version < "3.14"
 
 # Production server (not needed for local Windows dev)
 gunicorn; platform_system != "Windows"

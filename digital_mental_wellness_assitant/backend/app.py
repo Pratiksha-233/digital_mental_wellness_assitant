@@ -20,6 +20,7 @@ try:
     from .routes.realtimedetection_routes import detection_bp
     from .routes.stress_routes import stress_bp
     from .routes.analytics_routes import analytics_bp
+    from .routes.voice_routes import voice_bp
 except ImportError:
 
     from routes.auth_routes import auth_bp
@@ -29,6 +30,7 @@ except ImportError:
     from routes.realtimedetection_routes import detection_bp
     from routes.stress_routes import stress_bp
     from routes.analytics_routes import analytics_bp
+    from routes.voice_routes import voice_bp
 
 
 app = Flask(__name__)
@@ -68,6 +70,7 @@ def index():
             "detection": "/api/detection",
             "stress": "/api/stress",
             "analytics": "/api/analytics",
+            "voice": "/api/voice",
         },
         "health": "/health",
     }
@@ -126,6 +129,7 @@ app.register_blueprint(chat_bp, url_prefix='/api/chat')
 app.register_blueprint(detection_bp, url_prefix='/api/detection')
 app.register_blueprint(stress_bp, url_prefix='/api/stress')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+app.register_blueprint(voice_bp, url_prefix='/api/voice')
 
 
 if __name__ == '__main__':
