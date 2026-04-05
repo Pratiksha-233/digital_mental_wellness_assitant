@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             : int.tryParse('${data['days_active']}') ?? 0;
       });
     } catch (_) {
-      // ignore — keep defaults
+
     } finally {
       if (mounted) setState(() => _loadingProgress = false);
     }
@@ -132,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           latestEmoji = emoji;
         }
       } catch (_) {
-        // ignore bad rows
+
       }
     }
 
@@ -965,17 +965,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.tonalIcon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const MoodTrackerScreen(),
+                        Align(
+                          alignment: Alignment.center,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.tonalIcon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const MoodTrackerScreen(),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.emoji_emotions_outlined),
+                                label: const Text("Log Today's Mood"),
                               ),
                             ),
-                            icon: const Icon(Icons.emoji_emotions_outlined),
-                            label: const Text("Log Today's Mood"),
                           ),
                         ),
                       ],
@@ -1216,7 +1222,7 @@ class _MoodWavePainter extends CustomPainter {
     canvas.drawPath(path, glowPaint);
     canvas.drawPath(path, mainPaint);
 
-    // Subtle anchor dots behind tiles.
+
     final dotPaint = Paint()
       ..color = colorScheme.onSurface.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;

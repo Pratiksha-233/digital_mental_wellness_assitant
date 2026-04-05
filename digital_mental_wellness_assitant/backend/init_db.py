@@ -4,10 +4,10 @@ import sys
 import mysql.connector
 from mysql.connector import Error
 
-# Ensure backend directory is on sys.path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# Import config robustly
+
 try:
     import config
 except ImportError:
@@ -27,27 +27,27 @@ def execute_sql_file(conn: mysql.connector.MySQLConnection, sql_text: str):
     """Execute SQL statements from a text string, splitting by ; and --"""
     cursor = conn.cursor()
     try:
-        # Split SQL into individual statements, removing comments and empty lines
+
         statements = []
         current_stmt = []
-        
+
         for line in sql_text.split('\n'):
-            # Remove comments
+
             if '--' in line:
                 line = line[:line.index('--')]
             line = line.strip()
-            
+
             if line:
                 current_stmt.append(line)
-                
-                # Check if statement ends with semicolon
+
+
                 if line.endswith(';'):
                     stmt = ' '.join(current_stmt).replace(';', '')
                     if stmt.strip():
                         statements.append(stmt)
                     current_stmt = []
-        
-        # Execute each statement
+
+
         for stmt in statements:
             if stmt.strip():
                 try:
@@ -56,8 +56,8 @@ def execute_sql_file(conn: mysql.connector.MySQLConnection, sql_text: str):
                         cursor.fetchall()
                 except Error as e:
                     print(f"Warning executing statement: {e}")
-                    # Continue even if individual statements fail
-        
+
+
         conn.commit()
         print(f"✅ Successfully executed {len(statements)} statements")
     except Error as e:

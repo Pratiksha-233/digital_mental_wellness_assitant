@@ -8,4 +8,4 @@ def preprocess_text(text):
     text = text.lower().strip()
     seq = tokenizer.texts_to_sequences([text])
     padded = pad_sequences(seq, maxlen=100, padding='post')
-    return padded  # keep 2D shape (1, 50)
+    return padded

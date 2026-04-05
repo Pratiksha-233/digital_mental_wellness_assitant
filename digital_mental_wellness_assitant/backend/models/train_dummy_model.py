@@ -25,7 +25,7 @@ tokenizer.fit_on_texts(texts)
 X = tokenizer.texts_to_sequences(texts)
 X = pad_sequences(X, maxlen=MAX_LEN, padding="post")
 
-# Build BiLSTM Model
+
 model = Sequential([
     Embedding(input_dim=MAX_WORDS, output_dim=128, input_length=MAX_LEN),
     Bidirectional(LSTM(128, return_sequences=True)),
@@ -41,10 +41,10 @@ model.compile(
     metrics=["accuracy"]
 )
 
-# 5) Train
+
 model.fit(X, y, epochs=5, batch_size=64, validation_split=0.2)
 
-# 6) Save everything
+
 model.save("models/sentiment_model.h5")
 
 with open("models/tokenizer.pkl", "wb") as f:

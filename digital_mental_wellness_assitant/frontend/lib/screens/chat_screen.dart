@@ -51,7 +51,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (emotion.isEmpty && sentiment.isEmpty) return null;
 
     final tone = sentiment.isNotEmpty ? sentiment : 'mixed';
-    // If the model isn't confident, avoid asserting a specific emotion label.
+
     if (confidence > 0 && confidence < 0.55) {
       return 'I’m not fully sure, but I sense a $tone tone in what you shared.';
     }
@@ -206,7 +206,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemBuilder: (context, i) {
                   final m = _messages[i];
                   if (m.isHighlight) {
-                    // Small centered insight / system note
+
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Center(
@@ -239,7 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
 
                   if (m.isUser) {
-                    // User message (right-aligned, solid color bubble)
+
                     return Align(
                       alignment: Alignment.centerRight,
                       child: Container(
@@ -263,7 +263,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   }
 
-                  // Bot message (left-aligned with avatar, like the mockup)
+
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -305,7 +305,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           const Divider(height: 1),
-          // Quick suggestion chips similar to the preset buttons in the mockup
+
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
             child: AppSectionCard(

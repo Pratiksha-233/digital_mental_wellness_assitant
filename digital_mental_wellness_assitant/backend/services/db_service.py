@@ -3,15 +3,15 @@ from pathlib import Path
 import mysql.connector
 from mysql.connector import Error
 
-# Import `config` robustly: prefer absolute import when running as a script,
-# otherwise fall back to package-relative import when running as a package.
+
+
 try:
     import config
 except Exception:
     try:
         from .. import config
     except Exception:
-        # As a last resort, ensure backend package root is on sys.path then import
+
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
         import config
 
@@ -42,7 +42,7 @@ def get_connection():
         return None
 
 
-# helper: insert a journal (text) entry with predicted emotion
+
 def insert_journal_entry(user_id, text_entry, predicted_emotion):
     conn = get_connection()
     if not conn:
@@ -97,7 +97,7 @@ def insert_chat_message(user_id, user_message, bot_response, emotion_detected):
         conn.close()
 
 
-# insert a structured mood log including mood label, energy, activities, and note
+
 def insert_mood_log(user_id, mood_label, energy_level, activities, note):
     conn = get_connection()
     if not conn:
@@ -111,8 +111,8 @@ def insert_mood_log(user_id, mood_label, energy_level, activities, note):
         """
         cursor.execute(sql, (user_id, mood_label, energy_level, activities, note))
 
-        # Also persist activities as individual rows for analytics.
-        # `activities` is stored in mood_logs as a comma-separated string.
+
+
         _insert_activity_logs_from_csv(conn, user_id=user_id, activities_csv=activities)
 
         conn.commit()
@@ -127,7 +127,7 @@ def insert_mood_log(user_id, mood_label, energy_level, activities, note):
         conn.close()
 
 
-    
+
 
 
 def get_mood_logs_by_user(user_id):
@@ -177,7 +177,7 @@ def get_or_create_user_by_email(email, name=None):
         row = cursor.fetchone()
         if row:
             return row['user_id']
-        # create a new user with minimal info
+
         insert_cursor = conn.cursor()
         sql = "INSERT INTO users (name, email) VALUES (%s, %s)"
         insert_cursor.execute(sql, (name or 'User', email))
@@ -195,7 +195,7 @@ def get_or_create_user_by_email(email, name=None):
 
 
 
-# helper: fetch recommendations
+
 def get_recommendation_for(emotion):
     conn = get_connection()
     if not conn:
@@ -204,8 +204,8 @@ def get_recommendation_for(emotion):
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT suggestion_text, resource_link 
-            FROM recommendations 
+            SELECT suggestion_text, resource_link
+            FROM recommendations
             WHERE emotion_type = %s
         """, (emotion,))
         rows = cursor.fetchall()
@@ -233,15 +233,15 @@ def get_user_progress(user_id):
     try:
         cursor = conn.cursor()
 
-        # mood checkins
+
         cursor.execute("SELECT COUNT(*) FROM mood_logs WHERE user_id = %s", (user_id,))
         mood_count = cursor.fetchone()[0] or 0
 
-        # journal entries
+
         cursor.execute("SELECT COUNT(*) FROM journal_entries WHERE user_id = %s", (user_id,))
         journal_count = cursor.fetchone()[0] or 0
 
-        # days active: distinct dates across several tables
+
         sql_days = """
             SELECT COUNT(DISTINCT dt) FROM (
                 SELECT DATE(timestamp) as dt FROM mood_logs WHERE user_id = %s
@@ -278,7 +278,7 @@ def _insert_activity_logs_from_csv(conn, *, user_id: int, activities_csv: str, t
     if not activities_csv:
         return
 
-    # Keep splitting rules very simple (the app sends a comma-separated list).
+
     raw_items = [s.strip() for s in str(activities_csv).split(',')]
     activity_types = [s for s in raw_items if s]
     if not activity_types:
@@ -346,7 +346,7 @@ def backfill_activity_logs_from_mood_logs(user_id: int, days: int = 30) -> int:
                 activities_csv=r.get('activities') or '',
                 timestamp=r.get('timestamp'),
             )
-            # Estimate inserted rows by counting CSV items.
+
             raw_items = [s.strip() for s in str(r.get('activities') or '').split(',')]
             inserted += len([s for s in raw_items if s])
             if inserted != before:
@@ -444,4 +444,48 @@ def get_face_detection_summary(user_id, days=30):
         }
     finally:
         cursor.close()
+        conn.close()
+
+
+def get_face_detection_logs(user_id, limit=50, days=30):
+    """Return latest face detection log rows for the user.
+
+    Output row keys:
+      - detected_emotion
+      - confidence_score
+      - faces_detected
+      - detection_method
+      - timestamp
+    """
+    conn = get_connection()
+    if not conn:
+        print("⚠️ Could not fetch face detection logs — DB connection failed.")
+        return []
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT detected_emotion,
+                   confidence_score,
+                   faces_detected,
+                   detection_method,
+                   timestamp
+            FROM face_detection_logs
+            WHERE user_id = %s
+              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+            ORDER BY timestamp DESC
+            LIMIT %s
+            """,
+            (user_id, days, int(limit)),
+        )
+        return cursor.fetchall() or []
+    except Error as e:
+        print("❌ get_face_detection_logs error:", e)
+        return []
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
         conn.close()

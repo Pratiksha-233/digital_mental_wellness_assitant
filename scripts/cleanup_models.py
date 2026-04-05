@@ -1,6 +1,6 @@
 import os, shutil
 base = os.path.join('backend','models')
-# find zero-byte files
+
 zeros = []
 for root, dirs, files in os.walk(base):
     for f in files:
@@ -21,11 +21,11 @@ if zeros:
 else:
     print('No zero-byte files found.')
 
-# move nested folder if exists
+
 nested = os.path.join(base,'models')
 backup = nested + '.backup'
 if os.path.exists(nested):
-    # remove existing backup if present
+
     if os.path.exists(backup):
         print('Removing existing backup at', backup)
         shutil.rmtree(backup)
@@ -34,7 +34,7 @@ if os.path.exists(nested):
 else:
     print('No nested models folder found at', nested)
 
-# list remaining files
+
 print('\nRemaining files in', base)
 for entry in os.listdir(base):
     p = os.path.join(base, entry)

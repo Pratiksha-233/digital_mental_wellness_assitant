@@ -2,10 +2,17 @@ flask
 flask-cors
 mysql-connector-python
 python-dotenv
-tensorflow
-scikit-learn
-gunicorn
-nltk
-opencv-python
-pillow
+cryptography
 bcrypt
+
+# Optional / ML dependencies.
+# These often do not have wheels for very new Python versions (e.g. 3.14).
+# The backend can still run core features (auth/DB/API) without them.
+tensorflow; python_version < "3.14"
+scikit-learn; python_version < "3.14"
+nltk; python_version < "3.14"
+opencv-python; python_version < "3.14"
+pillow; python_version < "3.14"
+
+# Production server (not needed for local Windows dev)
+gunicorn; platform_system != "Windows"

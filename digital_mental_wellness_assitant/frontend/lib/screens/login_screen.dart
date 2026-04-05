@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ignore: unused_element
+
   Future<void> _signInWithGoogle() async {
     try {
       final googleSignIn =
@@ -381,7 +381,7 @@ class _LoginScreenState extends State<LoginScreen> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  // Forgot password logic
+
                 },
                 child: const Text('Forgot password?'),
               ),
@@ -422,7 +422,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 46,
               child: OutlinedButton.icon(
-                // onPressed: _signInWithGoogle,
+
                 onPressed: _showFakeGoogleDialog,
                 icon: Image.asset('assets/google_logo.png', height: 20),
                 label: const Text('Continue with Google'),

@@ -12,12 +12,12 @@ except ImportError:
 import os
 from pathlib import Path
 
-# Get the project root directory
+
 project_root = Path(__file__).resolve().parent.parent.parent
 model_json_path = project_root / "emotiondetecter1.json"
 model_weights_path = project_root / "emotiondetecter1.h5"
 
-# Load emotion detection model
+
 if KERAS_AVAILABLE:
     try:
         print(f"Loading model from: {model_json_path}")
@@ -33,11 +33,21 @@ else:
     model = None
     print("Keras not available, ML features disabled")
 
-# Load Haar Cascade for face detection
-haar_file = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-face_cascade = cv2.CascadeClassifier(haar_file)
 
-if face_cascade.empty():
+
+haar_candidates = [
+    cv2.data.haarcascades + 'haarcascade_frontalface_alt2.xml',
+    cv2.data.haarcascades + 'haarcascade_frontalface_default.xml',
+]
+
+face_cascade = None
+for haar_file in haar_candidates:
+    cascade = cv2.CascadeClassifier(haar_file)
+    if cascade is not None and not cascade.empty():
+        face_cascade = cascade
+        break
+
+if face_cascade is None:
     print("Error: Could not load Haar Cascade")
 
 def extract_features(image):
@@ -54,20 +64,20 @@ def predict_emotion_from_face(face_image):
         return "NumPy not available", 0.0
     if model is None:
         return "Model not loaded", 0.0
-    
+
     try:
-        # Resize face to 48x48
+
         face_resized = cv2.resize(face_image, (48, 48))
-        # Extract features
+
         img_features = extract_features(face_resized)
-        # Predict
+
         predictions = model.predict(img_features, verbose=0)
         emotion_idx = np.argmax(predictions[0])
         confidence = float(np.max(predictions[0]))
-        
+
         labels = {0: 'angry', 1: 'disgust', 2: 'fear', 3: 'happy', 4: 'neutral', 5: 'sad', 6: 'surprise'}
         emotion = labels.get(emotion_idx, 'unknown')
-        
+
         return emotion, confidence
     except Exception as e:
         print(f"Error in prediction: {e}")
@@ -78,52 +88,52 @@ def run_realtime_detection():
     if model is None:
         print("Model not loaded. Cannot start detection.")
         return
-    
+
     webcam = cv2.VideoCapture(0)
-    
+
     if not webcam.isOpened():
         print("Error: Could not open webcam")
         return
-    
+
     print("Starting real-time emotion detection. Press 'q' to quit.")
     labels = {0: 'angry', 1: 'disgust', 2: 'fear', 3: 'happy', 4: 'neutral', 5: 'sad', 6: 'surprise'}
-    
+
     while True:
         ret, frame = webcam.read()
-        
+
         if not ret:
             print("Error: Failed to capture frame")
             break
-        
-        # Convert to grayscale for face detection
+
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
-        # Detect faces
+
+
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5, minSize=(30, 30))
-        
-        # Process each detected face
+
+
         for (x, y, w, h) in faces:
-            # Extract face region
+
             face_roi = gray[y:y+h, x:x+w]
-            
-            # Predict emotion
+
+
             emotion, confidence = predict_emotion_from_face(face_roi)
-            
-            # Draw rectangle around face
+
+
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            
-            # Display emotion and confidence
+
+
             label = f"{emotion}: {confidence:.2f}"
             cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-        
-        # Display the frame
+
+
         cv2.imshow("Real-time Emotion Detection", frame)
-        
-        # Press 'q' to quit
+
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-    
-    # Cleanup
+
+
     webcam.release()
     cv2.destroyAllWindows()
     print("Real-time detection stopped.")

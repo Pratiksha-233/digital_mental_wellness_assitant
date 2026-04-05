@@ -17,9 +17,9 @@ class MoodTrackerScreen extends StatefulWidget {
 }
 
 class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
-  // moods: Amazing, Good, Okay, Struggling, Difficult
+
   int _selectedMood = -1;
-  int _energyLevel = 0; // 0 = not selected yet, then 1..5
+  int _energyLevel = 0;
   bool _isSaving = false;
   final List<String> _activities = [
     'Exercise',
@@ -132,7 +132,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // Main full-width card
+
                 SizedBox(
                   width: double.infinity,
                   child: AppSectionCard(
@@ -338,7 +338,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     });
 
     try {
-      // Save to local storage first (shared_preferences)
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('lastMood', moodLabel);
       await prefs.setString('lastMoodTime', DateTime.now().toString());
@@ -346,10 +346,10 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       await prefs.setStringList('lastActivities', _selectedActivities.toList());
       await prefs.setString('lastNote', _noteController.text);
 
-      // Ensure we have a numeric `user_id` available — read from prefs or attempt automatic lookup via Firebase.
+
       int? storedId = await ProfileService.getUserId();
       if (storedId == null) {
-        // Try to obtain from Firebase-authenticated user by calling backend lookup endpoint
+
         final fbUser = FirebaseAuth.instance.currentUser;
         if (fbUser != null && fbUser.email != null) {
           final api = ApiService();
@@ -361,12 +361,12 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             storedId = lookedUp;
             await ProfileService.setUserId(storedId);
           } else {
-            // failed to lookup — prompt user to open Profile settings
+
             await _promptOpenProfile();
             return;
           }
         } else {
-          // No stored id and not signed in with Firebase — prompt the user to set it in Profile settings
+
           await _promptOpenProfile();
           return;
         }
@@ -386,7 +386,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Mood saved successfully')),
         );
-        // reset form to a clean state so nothing remains filled
+
         if (mounted) {
           setState(() {
             _selectedMood = -1;
@@ -396,7 +396,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           });
         }
       } else {
-        // show backend response body for debugging
+
         final body = resp.body;
         ScaffoldMessenger.of(
           context,
@@ -481,9 +481,9 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       return;
     }
 
-    // Normalize and sort logs by timestamp (newest last for graphs).
-    // Be lenient in how we parse the timestamp because different backends
-    // may format the datetime slightly differently.
+
+
+
     DateTime? parseTimestamp(dynamic value) {
       if (value == null) return null;
       final tsRaw = value.toString();
@@ -491,14 +491,14 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       try {
         return DateTime.parse(tsRaw);
       } catch (_) {
-        // Try common HTTP/RFC style format like:
-        // "Thu, 12 Mar 2026 21:33:40 GMT"
+
+
         try {
           final httpFmt = DateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
           return httpFmt.parseUtc(tsRaw).toLocal();
         } catch (_) {
-          // Fallback: trim fractional seconds / timezone text if present
-          // and retry ISO8601 parsing.
+
+
           final cleaned = tsRaw
               .replaceAll('T', ' ')
               .split('.')
@@ -537,8 +537,8 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           );
 
     if (logs.isEmpty) {
-      // If we still could not parse any timestamps, fall back to the
-      // simple list history so the user can at least see saved moods.
+
+
       showModalBottomSheet(
         context: context,
         builder: (_) {
@@ -589,8 +589,8 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
   }
 }
 
-/// Bottom sheet widget that shows advanced weekly & monthly mood graphs
-/// and basic mood trend analysis based on the raw mood logs.
+
+
 class _MoodInsightsSheet extends StatefulWidget {
   final List<Map<String, dynamic>> logs;
   final ScrollController scrollController;
@@ -832,7 +832,7 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: points.map((p) {
-          final normalized = (p.avgScore.clamp(1.0, 5.0) - 1.0) / 4.0; // 0..1
+          final normalized = (p.avgScore.clamp(1.0, 5.0) - 1.0) / 4.0;
           final barHeight = 40 + normalized * maxBarHeight;
           return Expanded(
             child: Column(
@@ -881,7 +881,7 @@ class _MoodInsightsSheetState extends State<_MoodInsightsSheet>
       return _MoodAggregate.empty();
     }
 
-    // group by date
+
     final Map<DateTime, List<_MoodEntry>> byDate = {};
     for (final row in filtered) {
       final ts = row['timestamp'] as DateTime;

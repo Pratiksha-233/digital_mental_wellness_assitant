@@ -23,13 +23,13 @@ class MLService:
     def __init__(self):
         if os is None:
             return
-        self.model = None  # Text sentiment model
-        self.face_model = None  # Face emotion detection model
+        self.model = None
+        self.face_model = None
         self.tokenizer = None
         self.label_encoder = None
         self.max_len = 100
-        
-        # Labels for text sentiment
+
+
         self.label_map = {
             0: "Sadness",
             1: "Joy",
@@ -38,8 +38,8 @@ class MLService:
             4: "Fear",
             5: "Surprise"
         }
-        
-        # Labels for face emotion detection
+
+
         self.face_emotion_map = {
             0: 'angry',
             1: 'disgust',
@@ -57,8 +57,8 @@ class MLService:
         svc_dir = Path(__file__).resolve().parent
         project_backend = svc_dir.parent
         project_root = project_backend.parent
-        
-        # Load text sentiment model
+
+
         candidates = [
             project_backend / 'models' / 'sentiment_model.h5',
             project_backend / 'models' / 'models' / 'sentiment_model.h5',
@@ -73,7 +73,7 @@ class MLService:
             print("[WARNING] TensorFlow/Keras not available. ML features will be disabled.")
             return
 
-        # Load text sentiment model
+
         print(f"[INFO] Looking for sentiment model in {len(candidates)} candidate locations...")
         found = False
         last_exc = None
@@ -105,11 +105,11 @@ class MLService:
                 print(f"[FAILED] Failed loading from {p}: {e}")
                 last_exc = e
 
-        # Load face emotion detection model
+
         try:
             face_json_path = project_root / 'emotiondetecter1.json'
             face_weights_path = project_root / 'emotiondetecter1.h5'
-            
+
             if face_json_path.exists() and face_weights_path.exists():
                 print(f"[ATTEMPT] Loading face emotion model from: {face_json_path}")
                 with open(face_json_path, 'r') as json_file:
@@ -122,12 +122,12 @@ class MLService:
         except Exception as e:
             print(f"[FAILED] Error loading face emotion model: {e}")
 
-        # load tokenizer and encoder if sentiment model loaded
+
         if found:
             try:
-                # prefer tokenizer/encoder next to the loaded model
+
                 model_dir = p.parent if p is not None else project_backend / 'models'
-                # check model parent folder first
+
                 candidates_tok = [model_dir / 'tokenizer.pkl', project_backend / 'models' / 'tokenizer.pkl']
                 candidates_enc = [p.parent / 'label_encoder.pkl', project_backend / 'models' / 'label_encoder.pkl']
 
@@ -188,9 +188,9 @@ class MLService:
             emotion = self.label_map.get(label_index, "Unknown")
             confidence = float(np.max(preds))
 
-            # Map fine‑grained emotion to coarse sentiment
+
             negative_emotions = {"Sadness", "Anger", "Fear"}
-            # NOTE: 'Surprise' is not reliably positive for wellness contexts.
+
             positive_emotions = {"Joy", "Love"}
 
             if emotion in positive_emotions:
@@ -200,8 +200,8 @@ class MLService:
             else:
                 sentiment = 'neutral'
 
-            # Lightweight keyword-based overrides to improve reliability
-            # for common wellness topics where the model can be noisy.
+
+
             sleep_keywords = [
                 "insomnia",
                 "can't sleep",
@@ -249,8 +249,8 @@ class MLService:
             has_sad = any(k in lowered for k in sad_keywords)
             has_anger = any(k in lowered for k in anger_keywords)
 
-            # Only override emotion when the model is low-confidence or
-            # the predicted emotion contradicts clear negative keywords.
+
+
             if has_sleep and (emotion in {"Joy", "Love", "Surprise"} or sentiment != 'negative'):
                 if confidence < 0.75 or emotion == "Surprise":
                     emotion = "Fear"
@@ -285,7 +285,7 @@ class MLService:
         """Backward‑compatible wrapper: return only the emotion label."""
         info = self.analyze_text(text)
         return info.get('emotion', 'Unknown')
-    
+
     def predict_face_emotion(self, face_image):
         """Predict emotion from face image"""
         if np is None:
@@ -293,14 +293,14 @@ class MLService:
         if self.face_model is None:
             print("[WARNING] Face emotion model not loaded")
             return 'Unknown', 0.0
-        
+
         try:
             import cv2
-            # Resize to 48x48
+
             face_resized = cv2.resize(face_image, (48, 48))
-            # Normalize
+
             face_array = np.array(face_resized).reshape(1, 48, 48, 1) / 255.0
-            # Predict
+
             predictions = self.face_model.predict(face_array, verbose=0)
             emotion_idx = np.argmax(predictions[0])
             confidence = float(np.max(predictions[0]))

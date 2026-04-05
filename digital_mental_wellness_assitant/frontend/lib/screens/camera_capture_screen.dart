@@ -77,7 +77,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Reference _cameras length to avoid unused-field lint (no UI impact)
+
     final _ = _cameras.length;
     return Scaffold(
       appBar: AppBar(title: const Text('Capture Photo')),

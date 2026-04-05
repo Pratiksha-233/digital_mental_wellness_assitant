@@ -11,7 +11,7 @@ class MeditationBreathingPage extends StatefulWidget {
       _MeditationBreathingPageState();
 }
 
-// Simple soft blobs background painter. 't' ranges 0..1 for animation phase.
+
 class _BackgroundPainter extends CustomPainter {
   final double t;
   _BackgroundPainter(this.t);
@@ -19,7 +19,7 @@ class _BackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint p = Paint();
-    // blob 1
+
     final double r1 = size.width * 0.45;
     final Offset c1 = Offset(
       size.width * (0.15 + 0.05 * t),
@@ -28,7 +28,7 @@ class _BackgroundPainter extends CustomPainter {
     p.color = Colors.teal.withOpacity(0.06 + 0.02 * (1 - t));
     canvas.drawCircle(c1, r1, p);
 
-    // blob 2
+
     final double r2 = size.width * 0.35;
     final Offset c2 = Offset(
       size.width * (0.85 - 0.05 * t),
@@ -225,7 +225,7 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage>
       backgroundColor: const Color(0xFFEEF7F4),
       body: Stack(
         children: [
-          // animated background blobs
+
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _bgPulse,
@@ -241,7 +241,7 @@ class _MeditationBreathingPageState extends State<MeditationBreathingPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 6),
-                // header animation
+
                 FadeTransition(
                   opacity: CurvedAnimation(
                     parent: _staggerController,
@@ -442,7 +442,7 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
   bool paused = false;
   int cyclesCompleted = 0;
 
-  late AnimationController _phaseController; // drives progress ring
+  late AnimationController _phaseController;
 
   @override
   void initState() {
@@ -452,7 +452,7 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
       vsync: this,
       duration: Duration(seconds: phaseDurations[0]),
     );
-    // Auto start after build to match desired UX (show Pause & End only)
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -473,14 +473,14 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
   }
 
   void _pauseResume() {
-    if (!running) return; // nothing to pause
+    if (!running) return;
     if (!paused) {
-      // pause now
+
       paused = true;
       _timer?.cancel();
       _phaseController.stop();
     } else {
-      // resume
+
       paused = false;
       _phaseController.forward();
       _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
@@ -512,7 +512,7 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
   Widget build(BuildContext context) {
     final phase = phases[phaseIndex];
     final mq = MediaQuery.of(context);
-    // Keep the ring large on big screens, but avoid overflow on smaller ones.
+
     final ringSize = math.min(
       (mq.size.width * 0.78).clamp(220.0, 320.0),
       (mq.size.height * 0.42).clamp(220.0, 320.0),
@@ -545,7 +545,7 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
               AnimatedBuilder(
                 animation: _phaseController,
                 builder: (context, _) {
-                  // remaining fraction
+
                   final remaining = secondsLeft / phaseDurations[phaseIndex];
                   return SizedBox(
                     width: ringSize,
@@ -616,9 +616,9 @@ class _BoxBreathingExerciseState extends State<BoxBreathingExercise>
   }
 }
 
-// New painter drawing a base translucent ring and remaining arc in solid white.
+
 class _RemainingRingPainter extends CustomPainter {
-  final double fraction; // remaining fraction 0..1
+  final double fraction;
   _RemainingRingPainter({required this.fraction});
 
   @override
@@ -721,7 +721,7 @@ Widget _glassButton({
   );
 }
 
-// 4-7-8 Breathing Exercise (Inhale 4s, Hold 7s, Exhale 8s)
+
 class FourSevenEightBreathingExercise extends StatefulWidget {
   const FourSevenEightBreathingExercise({super.key});
 
@@ -730,7 +730,7 @@ class FourSevenEightBreathingExercise extends StatefulWidget {
       _FourSevenEightBreathingExerciseState();
 }
 
-// Calm Breathing Exercise (simple 5s in, 5s out)
+
 class CalmBreathingExercise extends StatefulWidget {
   const CalmBreathingExercise({super.key});
 
@@ -741,7 +741,7 @@ class CalmBreathingExercise extends StatefulWidget {
 class _CalmBreathingExerciseState extends State<CalmBreathingExercise>
     with SingleTickerProviderStateMixin {
   final List<String> phases = ['Breathe In', 'Breathe Out'];
-  final List<int> phaseDurations = [5, 5]; // total 10s per cycle
+  final List<int> phaseDurations = [5, 5];
   int phaseIndex = 0;
   int secondsLeft = 5;
   int cyclesCompleted = 0;
@@ -806,7 +806,7 @@ class _CalmBreathingExerciseState extends State<CalmBreathingExercise>
         secondsLeft = phaseDurations[phaseIndex];
         _ctl.duration = Duration(seconds: secondsLeft);
         _ctl.forward(from: 0);
-        if (phaseIndex == 0) cyclesCompleted += 1; // new cycle
+        if (phaseIndex == 0) cyclesCompleted += 1;
       }
     });
   }
@@ -990,7 +990,7 @@ class _FourSevenEightBreathingExerciseState
         _ctl.duration = Duration(seconds: secondsLeft);
         _ctl.forward(from: 0);
         if (phaseIndex == 0) {
-          cyclesCompleted += 1; // new cycle begins after exhale completes
+          cyclesCompleted += 1;
         }
       }
     });

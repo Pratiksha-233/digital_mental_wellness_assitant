@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
 
 class ApiService {
-  /// Predict the emotion of user's journal or chat input
+
   Future<Map<String, dynamic>> predictEmotion(String text, int userId) async {
     try {
       final response = await http.post(
@@ -27,14 +27,14 @@ class ApiService {
     }
   }
 
-  /// Send a chat message to the backend NLP chatbot.
-  /// Returns a map including:
-  ///   - response: bot reply text
-  ///   - emotion: detected fine-grained emotion
-  ///   - sentiment: 'positive' | 'negative' | 'neutral'
-  ///   - is_crisis: bool flag if crisis keywords were detected
-  ///   - detected_crisis_keywords: list of matched phrases (if any)
-  ///   - intent: simple intent classification label
+
+
+
+
+
+
+
+
   Future<Map<String, dynamic>?> sendChatMessage({
     required String message,
     int? userId,
@@ -66,7 +66,7 @@ class ApiService {
     }
   }
 
-  /// Get recommendations based on detected emotion
+
   Future<List<dynamic>> getRecommendations(String emotion) async {
     final response = await http.get(
       Uri.parse('$apiBaseUrl/recommend/$emotion'),
@@ -74,13 +74,13 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['recommendations']; // ✅ Extract the list only
+      return data['recommendations'];
     } else {
       throw Exception('Failed to load recommendations');
     }
   }
 
-  /// Fetch all mood logs of a user by firebase UID or local user id
+
   Future<List<dynamic>> getMoodLogs({String? firebaseUid, int? userId}) async {
     try {
       Uri uri;
@@ -105,8 +105,8 @@ class ApiService {
     }
   }
 
-  /// Lookup (or create) a local numeric `user_id` by providing an email and optional name.
-  /// Returns the numeric user_id on success, or null on failure.
+
+
   Future<int?> lookupOrCreateUserByEmail({
     required String email,
     String? name,
@@ -133,13 +133,13 @@ class ApiService {
     }
   }
 
-  /// Log out endpoint (optional placeholder)
+
   Future<bool> logout() async {
-    // If you’re using token-based auth, clear token locally here
+
     return true;
   }
 
-  /// Fetch progress counts for a user (mood_checkins, journal_entries, days_active)
+
   Future<Map<String, dynamic>> getProgress({required int userId}) async {
     try {
       final uri = Uri.parse('$apiBaseUrl/recommend/progress?user_id=$userId');
@@ -155,10 +155,10 @@ class ApiService {
     }
   }
 
-  /// Generic GET request method for any endpoint
+
   Future<Map<String, dynamic>?> get(String endpoint) async {
     try {
-      // use the globally defined apiBaseUrl constant
+
       final url = Uri.parse('$apiBaseUrl$endpoint');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -172,7 +172,7 @@ class ApiService {
     }
   }
 
-  /// --- Analytics helpers ---
+
 
   Future<List<dynamic>> getMoodAnalytics(int userId) async {
     final res = await http.get(
@@ -224,7 +224,38 @@ class ApiService {
     return {'total': 0, 'by_emotion': {}, 'avg_confidence': 0.0};
   }
 
-  /// Save a questionnaire-based stress score to the backend (stored in MySQL).
+  Future<List<Map<String, dynamic>>> getFaceDetectionLogs(
+    int userId, {
+    int limit = 50,
+    int days = 30,
+  }) async {
+    try {
+      final res = await http
+          .get(
+            Uri.parse(
+              '$apiBaseUrl/analytics/face-detections/logs?user_id=$userId&limit=$limit&days=$days',
+            ),
+          )
+          .timeout(const Duration(seconds: 12));
+      if (res.statusCode != 200) return const [];
+      final decoded = jsonDecode(res.body);
+      final rows = (decoded is Map && decoded['data'] is List)
+          ? (decoded['data'] as List)
+          : const [];
+      final out = <Map<String, dynamic>>[];
+      for (final r in rows) {
+        if (r is Map) {
+          out.add(r.map((k, v) => MapEntry(k.toString(), v)));
+        }
+      }
+      return out;
+    } catch (e) {
+      debugPrint('getFaceDetectionLogs error: $e');
+      return const [];
+    }
+  }
+
+
   Future<bool> saveQuestionnaireStress({
     required int userId,
     required double stressLevel,

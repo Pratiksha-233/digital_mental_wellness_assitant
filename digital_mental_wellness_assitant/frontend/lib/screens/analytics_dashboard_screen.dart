@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
 
@@ -14,7 +15,10 @@ class AnalyticsDashboardScreen extends StatefulWidget {
 class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   final ApiService _api = ApiService();
   bool _loading = true;
+  bool _hasLoadedOnce = false;
+  bool _loadInFlight = false;
   bool _userIdMissing = false;
+  Timer? _autoRefreshTimer;
 
   List<dynamic> _mood = const [];
   List<dynamic> _stress = const [];
@@ -38,37 +42,66 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(showSpinner: true);
+
+
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (!mounted) return;
+      if (_loadInFlight) return;
+      _load(showSpinner: false);
+    });
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _userIdMissing = false;
-    });
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
 
-    final userId = await ProfileService.getUserId();
-    if (userId == null) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _userIdMissing = true;
-        });
-      }
-      return;
+  Future<void> _load({required bool showSpinner}) async {
+    if (_loadInFlight) return;
+    _loadInFlight = true;
+
+    final shouldShowSpinner = showSpinner || !_hasLoadedOnce;
+    if (mounted) {
+      setState(() {
+        _userIdMissing = false;
+        if (shouldShowSpinner) {
+          _loading = true;
+        }
+      });
     }
 
+
+    final userId = (await ProfileService.getUserId()) ?? 1;
+
     try {
-      final mood = await _api.getMoodAnalytics(userId);
-      final stress = await _api.getStressAnalytics(userId);
-      final stressHistoryJson = await _api.get(
-        '/stress/history?user_id=$userId&days=30&limit=50',
-      );
-      final sentiment = await _api.getChatSentiment(userId);
-      final faceDetection = await _api.getFaceDetectionAnalytics(userId);
-      final activity = await _api.getActivityAnalytics(userId);
-      final progress = await _api.getProgress(userId: userId);
-      final rawLogs = await _api.getMoodLogs(userId: userId);
+
+      final results = await Future.wait<dynamic>([
+        _api.getMoodAnalytics(userId),
+        _api.getStressAnalytics(userId),
+        _api.get('/stress/history?user_id=$userId&days=30&limit=50'),
+        _api.getChatSentiment(userId),
+        _api.getFaceDetectionAnalytics(userId),
+        _api.getActivityAnalytics(userId),
+        _api.getProgress(userId: userId),
+        _api.getMoodLogs(userId: userId),
+      ]);
+
+      final mood = (results[0] as List<dynamic>?) ?? const [];
+      final stress = (results[1] as List<dynamic>?) ?? const [];
+      final stressHistoryJson = results[2] as Map<String, dynamic>?;
+      final sentiment =
+          (results[3] as Map<String, dynamic>?) ??
+          const {'positive': 0.0, 'neutral': 0.0, 'negative': 0.0};
+      final faceDetection =
+          (results[4] as Map<String, dynamic>?) ??
+          const {'total': 0, 'by_emotion': {}, 'avg_confidence': 0.0};
+      final activity = (results[5] as List<dynamic>?) ?? const [];
+      final progress =
+          (results[6] as Map<String, dynamic>?) ??
+          const {'mood_checkins': 0, 'journal_entries': 0, 'days_active': 0};
+      final rawLogs = (results[7] as List<dynamic>?) ?? const [];
       if (!mounted) return;
 
       final stressHistoryRows = (stressHistoryJson?['data'] is List)
@@ -86,35 +119,58 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         return bt.compareTo(at);
       });
 
-      setState(() {
-        _mood = mood;
-        _stress = stress;
-        _stressHistory = parsedStressHistory;
-        _sentiment = sentiment;
-        _faceDetection = faceDetection;
-        _activity = activity;
-        _moodCheckins = (progress['mood_checkins'] as int?) ?? 0;
-        _journalEntries = (progress['journal_entries'] as int?) ?? 0;
-        _daysActive = (progress['days_active'] as int?) ?? 0;
-        _recentMoodEntries = _parseRecentMoodEntries(rawLogs, days: 7);
-      });
+      final nextRecentMood = _parseRecentMoodEntries(rawLogs, days: 7);
+      final nextMoodCheckins = (progress['mood_checkins'] as int?) ?? 0;
+      final nextJournalEntries = (progress['journal_entries'] as int?) ?? 0;
+      final nextDaysActive = (progress['days_active'] as int?) ?? 0;
+
+
+      final changed =
+          !_listEqualsDynamic(_mood, mood) ||
+          !_listEqualsDynamic(_stress, stress) ||
+          !_listEqualsMap(_stressHistory, parsedStressHistory) ||
+          !_mapEqualsDynamic(_sentiment, sentiment) ||
+          !_mapEqualsDynamic(_faceDetection, faceDetection) ||
+          !_listEqualsDynamic(_activity, activity) ||
+          _moodCheckins != nextMoodCheckins ||
+          _journalEntries != nextJournalEntries ||
+          _daysActive != nextDaysActive ||
+          !_recentMoodEquals(_recentMoodEntries, nextRecentMood);
+
+      if (changed && mounted) {
+        setState(() {
+          _mood = mood;
+          _stress = stress;
+          _stressHistory = parsedStressHistory;
+          _sentiment = sentiment;
+          _faceDetection = faceDetection;
+          _activity = activity;
+          _moodCheckins = nextMoodCheckins;
+          _journalEntries = nextJournalEntries;
+          _daysActive = nextDaysActive;
+          _recentMoodEntries = nextRecentMood;
+        });
+      }
     } finally {
+      _hasLoadedOnce = true;
+      _loadInFlight = false;
       if (mounted) {
-        setState(() => _loading = false);
+        setState(() {
+          _loading = false;
+        });
       }
     }
   }
 
   Future<void> _calculateStressNow() async {
-    final userId = await ProfileService.getUserId();
-    if (userId == null) return;
+    final userId = (await ProfileService.getUserId()) ?? 1;
     setState(() {
       _loading = true;
     });
     try {
       await _api.get('/stress/calculate?user_id=$userId');
     } finally {
-      await _load();
+      await _load(showSpinner: false);
     }
   }
 
@@ -126,83 +182,145 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         title: const Text('Wellness Dashboard'),
         actions: [
           IconButton(
-            onPressed: _loading ? null : _load,
+            onPressed: (_loading || _loadInFlight)
+                ? null
+                : () => _load(showSpinner: false),
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : (_userIdMissing
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.person_off,
-                            size: 64,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No user selected',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Set a numeric user ID in Profile settings or sign in to see your personal analytics.',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () =>
-                                Navigator.pushNamed(context, '/profile'),
-                            child: const Text('Open Profile'),
-                          ),
-                        ],
+
+      body: _userIdMissing
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.person_off, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No user selected',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isWide = constraints.maxWidth > 900;
-                        final grid = SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: isWide ? 3 : 1,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: isWide ? 1.3 : 1.1,
-                        );
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSummaryRow(theme, isWide: isWide),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: GridView(
-                                gridDelegate: grid,
-                                children: [
-                                  _buildMoodCard(theme),
-                                  _buildRecentMoodCard(theme),
-                                  _buildStressCard(theme),
-                                  _buildSentimentCard(theme),
-                                  _buildFaceDetectionCard(theme),
-                                  _buildActivityCard(theme),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Set a numeric user ID in Profile settings or sign in to see your personal analytics.',
+                      textAlign: TextAlign.center,
                     ),
-                  )),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushNamed(context, '/profile'),
+                      child: const Text('Open Profile'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 900;
+                  final grid = SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isWide ? 3 : 1,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: isWide ? 1.3 : 1.1,
+                  );
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSummaryRow(theme, isWide: isWide),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: GridView(
+                          gridDelegate: grid,
+                          children: [
+                            _buildMoodCard(theme),
+                            _buildRecentMoodCard(theme),
+                            _buildStressCard(theme),
+                            _buildSentimentCard(theme),
+                            _buildFaceDetectionCard(theme),
+                            _buildActivityCard(theme),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
     );
+  }
+
+  bool _mapEqualsDynamic(Map<String, dynamic> a, Map<String, dynamic> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (final k in a.keys) {
+      if (!b.containsKey(k)) return false;
+      final av = a[k];
+      final bv = b[k];
+      if (av is Map && bv is Map) {
+        final am = av.map((k, v) => MapEntry(k.toString(), v));
+        final bm = bv.map((k, v) => MapEntry(k.toString(), v));
+        if (!_mapEqualsDynamic(am, bm)) return false;
+      } else if (av is List && bv is List) {
+        if (!_listEqualsDynamic(av, bv)) return false;
+      } else {
+        if (av != bv) return false;
+      }
+    }
+    return true;
+  }
+
+  bool _listEqualsDynamic(List a, List b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final av = a[i];
+      final bv = b[i];
+      if (av is Map && bv is Map) {
+        final am = av.map((k, v) => MapEntry(k.toString(), v));
+        final bm = bv.map((k, v) => MapEntry(k.toString(), v));
+        if (!_mapEqualsDynamic(am, bm)) return false;
+      } else if (av is List && bv is List) {
+        if (!_listEqualsDynamic(av, bv)) return false;
+      } else {
+        if (av != bv) return false;
+      }
+    }
+    return true;
+  }
+
+  bool _listEqualsMap(
+    List<Map<String, dynamic>> a,
+    List<Map<String, dynamic>> b,
+  ) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_mapEqualsDynamic(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  bool _recentMoodEquals(List<_MoodEntry> a, List<_MoodEntry> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      final ae = a[i];
+      final be = b[i];
+      if (ae.moodLabel != be.moodLabel) return false;
+      if (ae.energyLevel != be.energyLevel) return false;
+      if (ae.timestamp != be.timestamp) return false;
+      if (ae.note != be.note) return false;
+      if (ae.activities != be.activities) return false;
+    }
+    return true;
   }
 
   Widget _buildSummaryRow(ThemeData theme, {required bool isWide}) {
@@ -361,7 +479,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         child: const Center(child: Text('No mood data yet. Keep logging!')),
       );
     }
-    // Simple line-like chart using bars and a polyline impression
+
     final maxScore = 5.0;
     final cs = theme.colorScheme;
     return _buildCard(

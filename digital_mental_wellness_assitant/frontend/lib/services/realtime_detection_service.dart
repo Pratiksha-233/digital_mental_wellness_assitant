@@ -5,7 +5,7 @@ import '../utils/constants.dart';
 class RealtimeDetectionService {
   static String get _baseUrl => detectionBaseUrl;
 
-  /// Predict emotion from text
+
   static Future<Map<String, dynamic>> predictEmotion(String text) async {
     try {
       final response = await http
@@ -27,7 +27,7 @@ class RealtimeDetectionService {
     }
   }
 
-  /// Predict emotion from base64 image
+
   static Future<Map<String, dynamic>> predictImageEmotion(
     String base64Image, {
     int? userId,

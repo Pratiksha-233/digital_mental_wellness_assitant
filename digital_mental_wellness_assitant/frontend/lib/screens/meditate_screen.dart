@@ -293,7 +293,7 @@ class _MeditateScreenState extends State<MeditateScreen>
                       const spacing = 24.0;
                       final double w = box.maxWidth;
 
-                      // Equal-width cards across all screen sizes.
+
                       final int columns = w >= 1000
                           ? 3
                           : w >= 680

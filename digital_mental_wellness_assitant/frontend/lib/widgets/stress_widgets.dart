@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/stress_model.dart';
 import 'app_section_card.dart';
 
-/// Main Stress Level Display Widget - Big circular gauge
+
 class StressLevelGauge extends StatefulWidget {
   final double stressLevel;
   final String stressCategory;
@@ -93,7 +93,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge>
               return Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Background circle
+
                   Container(
                     width: 220,
                     height: 220,
@@ -110,7 +110,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge>
                       border: Border.all(color: cs.outlineVariant),
                     ),
                   ),
-                  // Animated progress ring
+
                   CustomPaint(
                     size: const Size(220, 220),
                     painter: StressGaugePainter(
@@ -119,7 +119,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge>
                       trackColor: cs.outlineVariant,
                     ),
                   ),
-                  // Center content
+
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -149,7 +149,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge>
             },
           ),
           const SizedBox(height: 20),
-          // Category badge
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
@@ -171,7 +171,7 @@ class _StressLevelGaugeState extends State<StressLevelGauge>
   }
 }
 
-/// Custom painter for stress gauge ring
+
 class StressGaugePainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -188,7 +188,7 @@ class StressGaugePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 20;
 
-    // Background arc
+
     final bgPaint = Paint()
       ..color = trackColor
       ..strokeWidth = 12
@@ -197,7 +197,7 @@ class StressGaugePainter extends CustomPainter {
 
     canvas.drawCircle(center, radius, bgPaint);
 
-    // Progress arc
+
     final progressPaint = Paint()
       ..color = color
       ..strokeWidth = 12
@@ -220,7 +220,7 @@ class StressGaugePainter extends CustomPainter {
   }
 }
 
-/// Stress Category Banner
+
 class StressCategoryBanner extends StatelessWidget {
   final String category;
   final String emotion;
@@ -390,7 +390,7 @@ class StressCategoryBanner extends StatelessWidget {
   }
 }
 
-/// Contributing Factors Widget
+
 class ContributingFactorsCard extends StatelessWidget {
   final List<ContributingFactor> factors;
 
@@ -492,7 +492,7 @@ class _FactorBar extends StatelessWidget {
   }
 }
 
-/// Recommendations Widget
+
 class RecommendationsCard extends StatelessWidget {
   final List<String> recommendations;
 

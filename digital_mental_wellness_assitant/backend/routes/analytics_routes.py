@@ -94,8 +94,8 @@ def stress_analytics():
         )
         rows = cursor.fetchall()
 
-        # If the user has no historical stress rows yet, compute & persist one
-        # (idempotent per day) so the dashboard isn't permanently empty.
+
+
         if not rows:
             try:
                 from services.stress_service import stress_service
@@ -196,6 +196,40 @@ def face_detections_analytics():
     return jsonify(stats), 200
 
 
+@analytics_bp.route('/face-detections/logs', methods=['GET'])
+def face_detections_logs():
+    """Return recent face detection log rows for the user.
+
+    Query params:
+      - user_id (required)
+      - limit (optional, default 50)
+      - days (optional, default 30)
+    """
+    user_id = _parse_user_id()
+    if not user_id:
+        return jsonify({'error': 'user_id required'}), 400
+
+    try:
+        limit = int(request.args.get('limit', 50))
+    except ValueError:
+        limit = 50
+    try:
+        days = int(request.args.get('days', 30))
+    except ValueError:
+        days = 30
+
+    rows = db_service.get_face_detection_logs(user_id, limit=limit, days=days)
+
+    out = []
+    for r in rows:
+        ts = r.get('timestamp')
+        if isinstance(ts, datetime):
+            r = dict(r)
+            r['timestamp'] = ts.isoformat()
+        out.append(r)
+    return jsonify({'data': out}), 200
+
+
 @analytics_bp.route('/activity', methods=['GET'])
 def activity_analytics():
     """Return activity counts over last 30 days.
@@ -225,7 +259,7 @@ def activity_analytics():
         )
         rows = cursor.fetchall()
 
-        # Backfill activity_logs from mood_logs.activities when empty.
+
         if not rows:
             try:
                 inserted = db_service.backfill_activity_logs_from_mood_logs(user_id, days=30)

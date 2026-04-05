@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Dedicated Self-care Tips screen (moved out from landing page)
+
 class SelfCareTipsScreen extends StatelessWidget {
   const SelfCareTipsScreen({super.key});
 

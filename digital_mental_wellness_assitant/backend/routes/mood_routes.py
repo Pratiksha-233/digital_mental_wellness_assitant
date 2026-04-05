@@ -28,7 +28,7 @@ def predict():
         return jsonify({'error': 'ML service not available'}), 503
 
     emotion = ml_service.predict_emotion(text)
-    # store as a journal entry (text + predicted emotion)
+
     if user_id:
         try:
             ok, err = insert_journal_entry(user_id, text, emotion)
@@ -36,10 +36,10 @@ def predict():
             ok, err = False, 'insert_failed'
     else:
         ok, err = False, 'missing_user_id'
-# fetch recommendation
+
     recs = get_recommendation_for(emotion)
     return jsonify({
-    'emotion': str(emotion),      # Convert to string
+    'emotion': str(emotion),
     'recommendations': recs
     }), 200
 
@@ -51,7 +51,7 @@ def log_mood():
     """Save a full mood log. Expects JSON with keys: user_id (optional), mood_label, energy_level, activities (array), note (optional)"""
     data = request.json or {}
     print("➡️ /api/mood/log payload:", data)
-    # Operate solely on user_id; firebase_uid removed
+
     user_id = data.get('user_id')
     mood_label = data.get('mood_label')
     energy_level = data.get('energy_level')
@@ -61,10 +61,10 @@ def log_mood():
     if not mood_label:
         return jsonify({'error': 'mood_label is required'}), 400
 
-    # serialize activities as comma-separated string for simplicity
+
     activities_serialized = ','.join(activities) if isinstance(activities, list) else str(activities)
 
-    # Require a valid user_id to associate the mood with a user
+
     if not user_id:
         return jsonify({'error': 'user_id is required to associate the mood with a user'}), 400
 

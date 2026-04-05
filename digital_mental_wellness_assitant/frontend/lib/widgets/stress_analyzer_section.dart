@@ -3,13 +3,13 @@ import '../services/api_service.dart';
 import '../services/profile_service.dart';
 import 'app_section_card.dart';
 
-/// Embeddable Stress Analyzer section with:
-/// 1) Questionnaire (10 items)
-/// 2) Stress score calculation
-/// 3) Weekly trend graph
-/// 4) Reminders toggle (UI only)
-/// 5) Export report (dialog preview)
-/// 6) Rotating calming quotes
+
+
+
+
+
+
+
 class StressAnalyzerSection extends StatefulWidget {
   const StressAnalyzerSection({super.key});
 
@@ -258,7 +258,7 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero header with gradient and rotating quote
+
           AnimatedBuilder(
             animation: _quoteCtrl,
             builder: (context, _) => DecoratedBox(
@@ -324,7 +324,7 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
             ),
           ),
           const SizedBox(height: 16),
-          // Quick presets to fill answers fast
+
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -396,7 +396,7 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Circular gauge
+
                 SizedBox(
                   width: 120,
                   height: 120,
@@ -533,7 +533,7 @@ class _StressAnalyzerSectionState extends State<StressAnalyzerSection>
     );
   }
 
-  // Quick preset chip builder
+
   Widget _presetChip(String label, int level) {
     return ActionChip(
       label: Text(label),
@@ -557,7 +557,7 @@ class _SAQuestion {
 
 class _SAQuestionTile extends StatelessWidget {
   final String question;
-  final int value; // 0..4
+  final int value;
   final ValueChanged<int> onChanged;
   const _SAQuestionTile({
     required this.question,
@@ -695,9 +695,9 @@ class _SAStressGraphPainter extends CustomPainter {
       oldDelegate.records != records;
 }
 
-// Circular gauge painter for unique visualization
+
 class _SAGaugePainter extends CustomPainter {
-  final double score; // 0..100
+  final double score;
   final ColorScheme colorScheme;
 
   _SAGaugePainter(this.score, this.colorScheme);
@@ -706,7 +706,7 @@ class _SAGaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.shortestSide / 2) - 6;
-    // background circle
+
     final bg = Paint()
       ..color = colorScheme.outlineVariant
       ..style = PaintingStyle.stroke
@@ -720,7 +720,7 @@ class _SAGaugePainter extends CustomPainter {
       bg,
     );
 
-    // progress arc
+
     final grad = SweepGradient(
       colors: [colorScheme.primary, colorScheme.secondary],
       startAngle: 0,

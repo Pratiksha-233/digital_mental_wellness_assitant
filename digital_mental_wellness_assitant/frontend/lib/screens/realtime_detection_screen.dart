@@ -4,13 +4,16 @@ import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'dart:async';
 import 'dart:convert';
+import '../services/api_service.dart';
 import '../services/realtime_detection_service.dart';
 import '../services/profile_service.dart';
 import '../theme/brand_theme.dart';
 import '../widgets/app_section_card.dart';
 
 class RealtimeDetectionScreen extends StatefulWidget {
-  const RealtimeDetectionScreen({super.key});
+  const RealtimeDetectionScreen({super.key, this.initialCameras});
+
+  final List<CameraDescription>? initialCameras;
 
   @override
   State<RealtimeDetectionScreen> createState() =>
@@ -31,12 +34,17 @@ class _DetectionRecord {
 
 class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     with WidgetsBindingObserver {
+  final ApiService _api = ApiService();
   CameraController? _controller;
   bool _initializing = true;
   Uint8List? _capturedImage;
   String _detectedEmotion = '';
   double _confidence = 0.0;
   int _facesDetected = 0;
+  Rect? _primaryFaceBoxPx;
+  int? _captureImageWidth;
+  int? _captureImageHeight;
+  String? _displayName;
   bool _isLoading = false;
   String _errorMessage = '';
   final List<_DetectionRecord> _detectionHistory = [];
@@ -51,13 +59,72 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initCamera();
+    _loadDisplayName();
+    _loadDetectionHistory();
+    if (kIsWeb) {
+
+
+      _initializing = false;
+      _errorMessage = 'Tap Retry camera to request browser camera permission.';
+    } else {
+      _initCamera();
+    }
+  }
+
+  Future<void> _loadDisplayName() async {
+    try {
+      final name = await ProfileService.getDisplayName();
+      final cleaned = name?.trim();
+      if (!mounted) return;
+      setState(() {
+        _displayName = (cleaned == null || cleaned.isEmpty) ? null : cleaned;
+      });
+    } catch (_) {
+
+    }
+  }
+
+  Future<void> _loadDetectionHistory() async {
+    try {
+      final userId = (await ProfileService.getUserId()) ?? 1;
+      final rows = await _api.getFaceDetectionLogs(userId, limit: 10, days: 30);
+      if (!mounted) return;
+
+      final restored = <_DetectionRecord>[];
+      for (final r in rows) {
+        final rawEmotion = (r['detected_emotion'] ?? r['emotion'])?.toString();
+        final emotion = (rawEmotion ?? '').trim();
+        if (emotion.isEmpty) continue;
+
+        final rawConfidence = r['confidence_score'] ?? r['confidence'];
+        final confidence = (rawConfidence is num)
+            ? rawConfidence.toDouble()
+            : (double.tryParse(rawConfidence?.toString() ?? '') ?? 0.0);
+
+        final ts = r['timestamp'];
+        final at = (ts is String)
+            ? (DateTime.tryParse(ts) ?? DateTime.now())
+            : DateTime.now();
+
+        restored.add(
+          _DetectionRecord(emotion: emotion, confidence: confidence, at: at),
+        );
+      }
+
+      setState(() {
+        _detectionHistory
+          ..clear()
+          ..addAll(restored);
+      });
+    } catch (_) {
+
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // The camera plugin can abort if the app loses focus or is backgrounded.
-    // Make this screen resilient by stopping and re-initializing on resume.
+
+
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
@@ -85,7 +152,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     try {
       await ctrl?.dispose();
     } catch (_) {
-      // ignore
+
     }
 
     if (!mounted) return;
@@ -114,6 +181,10 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
       return 'Camera error ($code). Tap Retry camera.';
     }
 
+    if (error is TimeoutException) {
+      return 'Camera timed out while initializing. On Windows: Settings > Privacy & security > Camera, enable camera access and "Let desktop apps access your camera". Close Teams/Zoom/Meet, then tap Retry camera.';
+    }
+
     if (error == null) {
       return 'Camera error. Tap Retry camera.';
     }
@@ -129,12 +200,16 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     }
 
     try {
-      final cams = await availableCameras();
+      final cams =
+          (widget.initialCameras != null && widget.initialCameras!.isNotEmpty)
+          ? widget.initialCameras!
+          : await availableCameras().timeout(const Duration(seconds: 30));
       if (cams.isEmpty) {
         if (!mounted) return;
         setState(() {
           _initializing = false;
-          _errorMessage = 'No camera available.';
+          _errorMessage =
+              'No camera available. On Windows: check Settings > Privacy & security > Camera and close apps using the camera.';
         });
         return;
       }
@@ -144,16 +219,26 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         ...cams.where((c) => c.lensDirection != CameraLensDirection.front),
       ];
 
+
+
+      final presets = (kIsWeb)
+          ? const [ResolutionPreset.medium, ResolutionPreset.low]
+          : (defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS)
+          ? const [
+              ResolutionPreset.high,
+              ResolutionPreset.medium,
+              ResolutionPreset.low,
+            ]
+          : const [ResolutionPreset.medium, ResolutionPreset.low];
+
       Object? lastError;
       for (final cam in preferred) {
-        for (final preset in const [
-          ResolutionPreset.medium,
-          ResolutionPreset.low,
-        ]) {
+        for (final preset in presets) {
           CameraController? ctrl;
           try {
             ctrl = CameraController(cam, preset, enableAudio: false);
-            await ctrl.initialize();
+            await ctrl.initialize().timeout(const Duration(seconds: 25));
             if (!mounted) {
               await ctrl.dispose();
               return;
@@ -165,7 +250,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
               _errorMessage = '';
             });
 
-            // Start auto-detection once the camera is ready.
+
             final initializedCtrl = ctrl;
             Future.delayed(const Duration(milliseconds: 800), () {
               if (!mounted) return;
@@ -178,7 +263,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
             try {
               await ctrl?.dispose();
             } catch (_) {
-              // ignore
+
             }
           }
         }
@@ -225,7 +310,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
       setState(() => _capturedImage = bytes);
 
       final base64Image = base64Encode(bytes);
-      final userId = await ProfileService.getUserId();
+      final userId = (await ProfileService.getUserId()) ?? 1;
       final result = await RealtimeDetectionService.predictImageEmotion(
         base64Image,
         userId: userId,
@@ -239,10 +324,36 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
           ? (result['faces_detected'] as num).toInt()
           : (emotion.toLowerCase() == 'no face detected' ? 0 : 1);
 
+      Rect? primaryFace;
+      int? imgW;
+      int? imgH;
+      final faces = result['faces'];
+      if (result['image_width'] is num) {
+        imgW = (result['image_width'] as num).toInt();
+      }
+      if (result['image_height'] is num) {
+        imgH = (result['image_height'] as num).toInt();
+      }
+      if (faces is List && faces.isNotEmpty) {
+        final f0 = faces.first;
+        if (f0 is Map) {
+          final x = (f0['x'] is num) ? (f0['x'] as num).toDouble() : null;
+          final y = (f0['y'] is num) ? (f0['y'] as num).toDouble() : null;
+          final w = (f0['w'] is num) ? (f0['w'] as num).toDouble() : null;
+          final h = (f0['h'] is num) ? (f0['h'] as num).toDouble() : null;
+          if (x != null && y != null && w != null && h != null) {
+            primaryFace = Rect.fromLTWH(x, y, w, h);
+          }
+        }
+      }
+
       setState(() {
         _detectedEmotion = emotion;
         _confidence = conf;
         _facesDetected = facesDetected;
+        _primaryFaceBoxPx = primaryFace;
+        _captureImageWidth = imgW;
+        _captureImageHeight = imgH;
         _isLoading = false;
         _detectionHistory.insert(
           0,
@@ -387,6 +498,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
       _detectedEmotion = '';
       _confidence = 0.0;
       _facesDetected = 0;
+      _primaryFaceBoxPx = null;
+      _captureImageWidth = null;
+      _captureImageHeight = null;
       _errorMessage = '';
       _capturedImage = null;
     });
@@ -511,27 +625,27 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     switch (emotion.toLowerCase()) {
       case 'happy':
       case 'joy':
-        return const Color(0xFFF59E0B); // amber
+        return const Color(0xFFF59E0B);
       case 'sad':
       case 'sadness':
-        return const Color(0xFF3B82F6); // calm blue
+        return const Color(0xFF3B82F6);
       case 'angry':
       case 'anger':
-        return const Color(0xFFEF4444); // red
+        return const Color(0xFFEF4444);
       case 'fear':
-        return const Color(0xFF6366F1); // indigo
+        return const Color(0xFF6366F1);
       case 'surprise':
-        return const Color(0xFF8B5CF6); // purple
+        return const Color(0xFF8B5CF6);
       case 'disgust':
-        return const Color(0xFF22C55E); // green
+        return const Color(0xFF22C55E);
       case 'neutral':
-        return const Color(0xFF0F766E); // brand teal
+        return const Color(0xFF0F766E);
       case 'love':
-        return const Color(0xFFEC4899); // pink
+        return const Color(0xFFEC4899);
       case 'no face detected':
-        return const Color(0xFF64748B); // slate
+        return const Color(0xFF64748B);
       default:
-        return const Color(0xFF0F766E); // brand teal
+        return const Color(0xFF0F766E);
     }
   }
 
@@ -548,6 +662,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     final cs = Theme.of(context).colorScheme;
     final emotionColor = _getEmotionColor(_detectedEmotion);
     final brandGradients = Theme.of(context).extension<BrandGradients>();
+    final userLabel = _displayName;
 
     final statusText = _initializing
         ? 'Starting camera…'
@@ -668,6 +783,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
             runSpacing: 10,
             alignment: WrapAlignment.center,
             children: [
+              if (userLabel != null)
+                Chip(
+                  avatar: Icon(Icons.person, size: 18, color: cs.primary),
+                  label: Text(userLabel),
+                ),
               Chip(
                 avatar: Icon(
                   _autoDetectEnabled
@@ -833,6 +953,96 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                     ),
                   ),
 
+
+                  if (!_initializing &&
+                      _controller != null &&
+                      _controller!.value.isInitialized)
+                    Positioned(
+                      top: 10,
+                      left: 12,
+                      child: Text(
+                        'Sentiment: ${_detectedEmotion.isEmpty ? '—' : _detectedEmotion}',
+                        style: TextStyle(
+                          color: cs.error,
+                          fontWeight: FontWeight.w900,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (!_initializing &&
+                      _controller != null &&
+                      _controller!.value.isInitialized)
+                    Positioned(
+                      top: 10,
+                      right: 12,
+                      child: Text(
+                        'Confidence: ${_detectedEmotion.isEmpty ? '—' : '${(_confidence * 100).toStringAsFixed(1)}%'}',
+                        style: TextStyle(
+                          color: cs.error,
+                          fontWeight: FontWeight.w900,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (userLabel != null &&
+                      !_initializing &&
+                      _controller != null &&
+                      _controller!.value.isInitialized)
+                    Positioned(
+                      top: 36,
+                      left: 12,
+                      child: Text(
+                        'User: $userLabel',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (_facesDetected == 1 &&
+                      !_initializing &&
+                      _controller != null &&
+                      _controller!.value.isInitialized)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: FractionallySizedBox(
+                            widthFactor: 0.42,
+                            heightFactor: 0.56,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: emotionColor,
+                                  width: 3,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
                   if (_isLoading)
                     Positioned.fill(
                       child: Container(
@@ -966,11 +1176,59 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.memory(
-                    _capturedImage!,
+                  child: SizedBox(
                     height: 160,
                     width: double.infinity,
-                    fit: BoxFit.cover,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final box = _primaryFaceBoxPx;
+                        final imgW = _captureImageWidth;
+                        final imgH = _captureImageHeight;
+
+                        final canDrawBox =
+                            box != null && imgW != null && imgH != null;
+
+
+                        double scale = 1.0;
+                        double dx = 0.0;
+                        double dy = 0.0;
+                        if (canDrawBox) {
+                          final cw = constraints.maxWidth;
+                          final ch = constraints.maxHeight;
+                          final sw = cw / imgW;
+                          final sh = ch / imgH;
+                          scale = sw > sh ? sw : sh;
+                          final renderedW = imgW * scale;
+                          final renderedH = imgH * scale;
+                          dx = (cw - renderedW) / 2.0;
+                          dy = (ch - renderedH) / 2.0;
+                        }
+
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.memory(_capturedImage!, fit: BoxFit.cover),
+                            if (canDrawBox)
+                              Positioned(
+                                left: box.left * scale + dx,
+                                top: box.top * scale + dy,
+                                width: box.width * scale,
+                                height: box.height * scale,
+                                child: IgnorePointer(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: emotionColor,
+                                        width: 3,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -1140,7 +1398,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
           Container(
             decoration: BoxDecoration(gradient: brandGradients?.background),
           ),
-          // Emotion tint overlay (subtle)
+
           Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(

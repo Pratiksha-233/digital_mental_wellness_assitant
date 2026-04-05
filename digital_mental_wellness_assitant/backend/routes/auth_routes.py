@@ -26,28 +26,28 @@ def register():
 
     cursor = conn.cursor(dictionary=True)
 
-    # Check if user already exists
+
     cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
     if cursor.fetchone():
         cursor.close()
         conn.close()
         return jsonify({'status': 'error', 'message': 'User already exists'}), 400
 
-    # Hash password
+
     hashed_pw = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    # Insert new user
+
     cursor.execute(
         "INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s)",
         (name, email, hashed_pw)
     )
     conn.commit()
 
-    # ✅ Fetch the newly inserted user's ID
+
     cursor.execute("SELECT user_id, name, email FROM users WHERE email = %s", (email,))
     new_user = cursor.fetchone()
 
-    # retrieve the id of inserted user
+
     user_id = cursor.lastrowid
     cursor.close()
     conn.close()
@@ -83,16 +83,16 @@ def login():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
 
-    # Validate password
+
     if not bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
         return jsonify({'status': 'error', 'message': 'Invalid password'}), 401
 
-    # ✅ Return user details (including id and name)
+
     return jsonify({
         'status': 'success',
         'message': 'Login successful',
         'user_id': user['user_id'],
-        'name': user.get('name')  # send back stored display name
+        'name': user.get('name')
     }), 200
 
 

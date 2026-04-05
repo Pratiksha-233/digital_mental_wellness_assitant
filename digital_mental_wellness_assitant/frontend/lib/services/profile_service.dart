@@ -46,7 +46,7 @@ class ProfileService {
     await prefs.setString(_kLastSaved, DateTime.now().toIso8601String());
   }
 
-  // user_id helpers (integer stored locally to associate with backend user_id)
+
   static const _kUserId = 'profile.userId';
 
   static Future<int?> getUserId() async {
