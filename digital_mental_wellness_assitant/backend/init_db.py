@@ -15,8 +15,14 @@ Make sure `backend/.env` contains correct DB credentials.
 import os
 from pathlib import Path
 import sys
-import mysql.connector
-from mysql.connector import Error
+try:
+    import mysql.connector as mysql_connector  # type: ignore
+    from mysql.connector import Error  # type: ignore
+except Exception:  # pragma: no cover
+    mysql_connector = None
+    Error = Exception
+
+from services.sqlite_db import connect_sqlite
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -91,11 +97,25 @@ def main():
         print("Missing SQL files:", missing)
         return 1
 
+    engine = getattr(config, 'DB_ENGINE', 'mysql')
+    if str(engine).lower() == 'sqlite':
+        try:
+            conn = connect_sqlite(getattr(config, 'SQLITE_PATH', 'mental_wellness.sqlite3'))
+            conn.close()
+            print("✅ SQLite database initialized:", getattr(config, 'SQLITE_PATH', 'mental_wellness.sqlite3'))
+            return 0
+        except Exception as e:
+            print('Failed to initialize SQLite:', e)
+            return 2
+
     try:
-        conn = mysql.connector.connect(
+        if mysql_connector is None:
+            raise ImportError('mysql-connector-python is not installed')
+
+        conn = mysql_connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'Pra@#ti825'),
+            password=config.DB_CONFIG.get('password', ''),
             database=os.getenv('DB_NAME', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')

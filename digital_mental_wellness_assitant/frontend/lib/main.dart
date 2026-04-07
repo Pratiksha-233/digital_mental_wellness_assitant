@@ -18,6 +18,7 @@ import 'screens/week_view_screen.dart';
 import 'screens/resources_screen.dart';
 import 'screens/meditate_screen.dart';
 import 'screens/realtime_detection_screen.dart';
+import 'screens/help_support_screen.dart';
 import 'services/profile_service.dart';
 import 'services/backend_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -51,8 +52,6 @@ Future<void> main() async {
     _initialStoredUserId = await ProfileService.getUserId();
   } catch (_) {}
 
-
-
   if (!kIsWeb) {
     try {
       _initialCameras = await availableCameras().timeout(
@@ -72,8 +71,6 @@ class MentalWellnessApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-
     return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
         LogicalKeySet(LogicalKeyboardKey.enter): const _GlobalEnterIntent(),
@@ -114,6 +111,7 @@ class MentalWellnessApp extends StatelessWidget {
             '/meditation': (c) => const MeditateScreen(),
             '/detection': (c) =>
                 RealtimeDetectionScreen(initialCameras: _initialCameras),
+            '/help': (c) => const HelpSupportScreen(),
             '/home': (c) {
               final user = FirebaseAuth.instance.currentUser;
               return HomeScreen(
@@ -130,7 +128,6 @@ class MentalWellnessApp extends StatelessWidget {
     );
   }
 }
-
 
 class _RootRouter extends StatelessWidget {
   const _RootRouter();
@@ -157,14 +154,12 @@ class _RootRouter extends StatelessWidget {
           );
         }
 
-
         if (_initialStoredUserId != null) {
           return HomeScreen(
             userId: _initialStoredUserId!,
             userName: _initialStoredDisplayName ?? 'User',
           );
         }
-
 
         return const LandingPage();
       },

@@ -1,7 +1,17 @@
 import sys
 from pathlib import Path
-import mysql.connector
-from mysql.connector import Error
+from datetime import datetime, timedelta
+
+try:
+    import mysql.connector as mysql_connector  # type: ignore
+    from mysql.connector import Error as MySQLError  # type: ignore
+except Exception:  # pragma: no cover
+    mysql_connector = None
+    MySQLError = Exception
+
+Error = MySQLError
+
+from .sqlite_db import connect_sqlite
 
 
 
@@ -22,11 +32,18 @@ def get_connection():
 
     Returns a mysql.connector connection or None on failure.
     """
+    engine = getattr(config, 'DB_ENGINE', 'mysql')
+    if str(engine).lower() == 'sqlite':
+        return connect_sqlite(getattr(config, 'SQLITE_PATH', 'mental_wellness.sqlite3'))
+
     try:
-        conn = mysql.connector.connect(
+        if mysql_connector is None:
+            raise ImportError('mysql-connector-python is not installed')
+
+        conn = mysql_connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'Pra@#ti825'),
+            password=config.DB_CONFIG.get('password', ''),
             database=config.DB_CONFIG.get('database', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')
@@ -37,8 +54,14 @@ def get_connection():
         else:
             print("❌ Database connection failed.")
             return None
-    except Error as e:
+    except Exception as e:
         print("❌ DB connection error:", e)
+        if getattr(config, 'SQLITE_FALLBACK', True):
+            print("ℹ️ Falling back to local SQLite DB. Set DB_ENGINE=mysql and correct DB_* env vars to use MySQL.")
+            try:
+                return connect_sqlite(getattr(config, 'SQLITE_PATH', 'mental_wellness.sqlite3'))
+            except Exception as e2:
+                print("❌ SQLite fallback failed:", e2)
         return None
 
 
@@ -94,6 +117,115 @@ def insert_chat_message(user_id, user_message, bot_response, emotion_detected):
         return False, err
     finally:
         cursor.close()
+        conn.close()
+
+
+def get_chat_history_by_user(user_id: int, limit: int = 100):
+    """Fetch recent chat_history rows for a user.
+
+    Returns a list of dicts ordered oldest -> newest, with keys:
+      - chat_id
+      - user_id
+      - user_message
+      - bot_response
+      - emotion_detected
+      - timestamp
+
+    Notes:
+    - The underlying schema stores user + bot as a single row (pair).
+    - We keep this shape for backwards compatibility and expand it in the API.
+    """
+    conn = get_connection()
+    if not conn:
+        print("⚠️ DB connection failed when fetching chat history.")
+        return []
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT chat_id, user_id, user_message, bot_response, emotion_detected, timestamp
+            FROM chat_history
+            WHERE user_id = %s
+            ORDER BY timestamp DESC
+            LIMIT %s
+            """,
+            (int(user_id), int(limit)),
+        )
+        rows = cursor.fetchall() or []
+
+        # Convert to chronological order so clients can render top->bottom.
+        rows.reverse()
+        return rows
+    except Error as e:
+        print("❌ get_chat_history_by_user error:", e)
+        return []
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        conn.close()
+
+
+def get_chat_session_summaries_by_user(user_id: int, days: int = 30):
+    """Return per-day chat session summary counts for the user.
+
+    We treat a 'session' as a calendar date (real-world enough for simple apps).
+    Output rows:
+      - session_date (YYYY-MM-DD)
+      - message_pairs (count of rows in chat_history for that day)
+      - last_message_ts
+    """
+    conn = get_connection()
+    if not conn:
+        print("⚠️ DB connection failed when fetching chat session summaries.")
+        return []
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT
+              DATE(timestamp) AS session_date,
+              COUNT(*) AS message_pairs,
+              MAX(timestamp) AS last_message_ts
+            FROM chat_history
+            WHERE user_id = %s
+              AND timestamp >= DATE('now', '-' || %s || ' day')
+            GROUP BY DATE(timestamp)
+            ORDER BY DATE(timestamp) DESC
+            """,
+            (int(user_id), int(days)),
+        )
+        return cursor.fetchall() or []
+    except Exception:
+        # MySQL doesn't support SQLite's DATE('now', ...) form.
+        # Fall back to a portable query that works in both engines.
+        try:
+            cursor.execute(
+                """
+                SELECT
+                  DATE(timestamp) AS session_date,
+                  COUNT(*) AS message_pairs,
+                  MAX(timestamp) AS last_message_ts
+                FROM chat_history
+                WHERE user_id = %s
+                GROUP BY DATE(timestamp)
+                ORDER BY DATE(timestamp) DESC
+                """,
+                (int(user_id),),
+            )
+            rows = cursor.fetchall() or []
+            return rows[: max(1, int(days))]
+        except Error as e:
+            print("❌ get_chat_session_summaries_by_user error:", e)
+            return []
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
         conn.close()
 
 
@@ -327,15 +459,16 @@ def backfill_activity_logs_from_mood_logs(user_id: int, days: int = 30) -> int:
         if int(row.get('c') or 0) > 0:
             return 0
 
+        cutoff = datetime.utcnow() - timedelta(days=int(days))
         cursor.execute(
             """
             SELECT activities, timestamp
             FROM mood_logs
             WHERE user_id = %s
-              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+              AND timestamp > %s
             ORDER BY timestamp ASC
             """,
-            (user_id, days),
+            (user_id, cutoff),
         )
         mood_rows = cursor.fetchall() or []
         for r in mood_rows:
@@ -407,6 +540,7 @@ def get_face_detection_summary(user_id, days=30):
 
     try:
         cursor = conn.cursor(dictionary=True)
+        cutoff = datetime.utcnow() - timedelta(days=int(days))
         cursor.execute(
             """
             SELECT
@@ -415,11 +549,11 @@ def get_face_detection_summary(user_id, days=30):
                 AVG(confidence_score) AS avg_confidence
             FROM face_detection_logs
             WHERE user_id = %s
-              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+              AND timestamp > %s
             GROUP BY emotion
             ORDER BY count DESC
             """,
-            (user_id, days),
+            (user_id, cutoff),
         )
         rows = cursor.fetchall()
 
@@ -464,6 +598,7 @@ def get_face_detection_logs(user_id, limit=50, days=30):
 
     try:
         cursor = conn.cursor(dictionary=True)
+        cutoff = datetime.utcnow() - timedelta(days=int(days))
         cursor.execute(
             """
             SELECT detected_emotion,
@@ -473,11 +608,11 @@ def get_face_detection_logs(user_id, limit=50, days=30):
                    timestamp
             FROM face_detection_logs
             WHERE user_id = %s
-              AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+              AND timestamp > %s
             ORDER BY timestamp DESC
             LIMIT %s
             """,
-            (user_id, days, int(limit)),
+            (user_id, cutoff, int(limit)),
         )
         return cursor.fetchall() or []
     except Error as e:

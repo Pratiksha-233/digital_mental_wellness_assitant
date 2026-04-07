@@ -20,9 +20,15 @@ def main():
     if conn:
         try:
             cur = conn.cursor()
-            cur.execute('SELECT VERSION()')
-            version = cur.fetchone()
-            print('Connected to MySQL server. Version:', version)
+            engine = getattr(conn, 'engine', None) or getattr(conn, 'db_engine', None)
+            if str(engine).lower() == 'sqlite':
+                cur.execute('SELECT sqlite_version()')
+                version = cur.fetchone()
+                print('Connected to SQLite. Version:', version)
+            else:
+                cur.execute('SELECT VERSION()')
+                version = cur.fetchone()
+                print('Connected to MySQL server. Version:', version)
             cur.close()
             conn.close()
             return 0
