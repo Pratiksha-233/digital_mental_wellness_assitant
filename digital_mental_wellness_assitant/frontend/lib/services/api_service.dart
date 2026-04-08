@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
 
 class ApiService {
-
   Future<Map<String, dynamic>> predictEmotion(String text, int userId) async {
     try {
       final response = await http.post(
@@ -26,14 +25,6 @@ class ApiService {
       return {'status': 'error', 'message': 'Connection error: $e'};
     }
   }
-
-
-
-
-
-
-
-
 
   Future<Map<String, dynamic>?> sendChatMessage({
     required String message,
@@ -66,6 +57,126 @@ class ApiService {
     }
   }
 
+  // -----------------------------
+  // Therapy chat: history + review
+  // -----------------------------
+
+  /// Fetches recent chat history for a user so the chat UI can be restored.
+  ///
+  /// Backend returns a flat list of messages with a role (`user`/`assistant`).
+  Future<List<Map<String, dynamic>>> getChatHistory({
+    required int userId,
+    int limit = 120,
+  }) async {
+    try {
+      final safeLimit = limit.clamp(1, 500);
+      final uri = Uri.parse(
+        '$apiBaseUrl/chat/history?user_id=$userId&limit=$safeLimit',
+      );
+      final resp = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) {
+        debugPrint('getChatHistory error: statusCode=${resp.statusCode}');
+        return [];
+      }
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final raw = data['messages'];
+      if (raw is List) {
+        return raw
+            .whereType<Map>()
+            .map((m) => m.map((k, v) => MapEntry(k.toString(), v)))
+            .toList();
+      }
+      return [];
+    } on TimeoutException {
+      debugPrint('getChatHistory timeout');
+      return [];
+    } catch (e) {
+      debugPrint('getChatHistory exception: $e');
+      return [];
+    }
+  }
+
+  // -----------------------------
+  // Journaling prompts + saving
+  // -----------------------------
+
+  /// Returns a safe journaling prompt the UI can show.
+  Future<String?> getJournalPrompt() async {
+    try {
+      final uri = Uri.parse('$apiBaseUrl/chat/journal/prompt');
+      final resp = await http.get(uri).timeout(const Duration(seconds: 8));
+      if (resp.statusCode != 200) return null;
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final prompt = data['prompt'];
+      return prompt is String ? prompt : null;
+    } catch (e) {
+      debugPrint('getJournalPrompt error: $e');
+      return null;
+    }
+  }
+
+  /// Saves a journal entry for the user.
+  Future<Map<String, dynamic>?> saveJournalEntry({
+    required int userId,
+    required String textEntry,
+  }) async {
+    try {
+      final uri = Uri.parse('$apiBaseUrl/chat/journal');
+      final resp = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'user_id': userId, 'text_entry': textEntry}),
+          )
+          .timeout(const Duration(seconds: 12));
+      if (resp.statusCode != 200) {
+        debugPrint('saveJournalEntry error: statusCode=${resp.statusCode}');
+        return null;
+      }
+      return jsonDecode(resp.body) as Map<String, dynamic>;
+    } on TimeoutException {
+      debugPrint('saveJournalEntry timeout');
+      return null;
+    } catch (e) {
+      debugPrint('saveJournalEntry exception: $e');
+      return null;
+    }
+  }
+
+  // -----------------------------
+  // Mood logging (daily check-in)
+  // -----------------------------
+
+  /// Saves a simple mood log (daily check-in).
+  Future<bool> logMood({
+    required int userId,
+    required String moodLabel,
+    int? energyLevel,
+    List<String>? activities,
+    String? note,
+  }) async {
+    try {
+      final uri = Uri.parse('$apiBaseUrl/mood/log');
+      final body = {
+        'user_id': userId,
+        'mood_label': moodLabel,
+        'energy_level': energyLevel,
+        'activities': activities ?? const <String>[],
+        'note': note ?? '',
+      };
+      final resp = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
+      return resp.statusCode == 200;
+    } catch (e) {
+      debugPrint('logMood error: $e');
+      return false;
+    }
+  }
 
   Future<List<dynamic>> getRecommendations(String emotion) async {
     final response = await http.get(
@@ -79,7 +190,6 @@ class ApiService {
       throw Exception('Failed to load recommendations');
     }
   }
-
 
   Future<List<dynamic>> getMoodLogs({String? firebaseUid, int? userId}) async {
     try {
@@ -104,8 +214,6 @@ class ApiService {
       return [];
     }
   }
-
-
 
   Future<int?> lookupOrCreateUserByEmail({
     required String email,
@@ -133,12 +241,9 @@ class ApiService {
     }
   }
 
-
   Future<bool> logout() async {
-
     return true;
   }
-
 
   Future<Map<String, dynamic>> getProgress({required int userId}) async {
     try {
@@ -155,10 +260,8 @@ class ApiService {
     }
   }
 
-
   Future<Map<String, dynamic>?> get(String endpoint) async {
     try {
-
       final url = Uri.parse('$apiBaseUrl$endpoint');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -171,8 +274,6 @@ class ApiService {
       return null;
     }
   }
-
-
 
   Future<List<dynamic>> getMoodAnalytics(int userId) async {
     final res = await http.get(
@@ -254,7 +355,6 @@ class ApiService {
       return const [];
     }
   }
-
 
   Future<bool> saveQuestionnaireStress({
     required int userId,

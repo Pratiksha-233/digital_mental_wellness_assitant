@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/api_service.dart';
 import '../services/profile_service.dart';
 import '../services/voice_service.dart';
@@ -18,10 +19,19 @@ class _ChatScreenState extends State<ChatScreen> {
           "Hi, I'm your wellness companion. Tell me what's on your mind today.",
       isUser: false,
     ),
+    // Safety note: real-world mental health apps should be explicit about limits.
+    const _Message(
+      text:
+          'This chat is supportive, not a replacement for professional care. If you feel unsafe or in immediate danger, contact local emergency services or a trusted person right away.',
+      isUser: false,
+      isHighlight: true,
+    ),
   ];
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _sending = false;
+  bool _loadingHistory = false;
+  bool _awaitingJournalEntry = false;
   bool _isListening = false;
   double _soundLevel = 0.0;
   final ApiService _api = ApiService();
@@ -69,6 +79,52 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _initializeVoiceService();
+
+    // Load saved chat history so users can review past sessions.
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    if (_loadingHistory) return;
+    setState(() {
+      _loadingHistory = true;
+    });
+
+    try {
+      final userId = await _getUserId();
+      if (userId == null) return;
+
+      final history = await _api.getChatHistory(userId: userId, limit: 160);
+      if (history.isEmpty) return;
+
+      // Convert backend history into local messages.
+      final restored = <_Message>[];
+      for (final m in history) {
+        final role = (m['role'] ?? '').toString();
+        final text = (m['text'] ?? '').toString();
+        if (text.trim().isEmpty) continue;
+        restored.add(_Message(text: text, isUser: role == 'user'));
+      }
+
+      if (!mounted) return;
+      setState(() {
+        // Keep the first greeting + safety highlight, then append restored history.
+        final intro = _messages.take(2).toList();
+        _messages
+          ..clear()
+          ..addAll(intro)
+          ..addAll(restored);
+      });
+      _scrollToEnd();
+    } catch (_) {
+      // If history fails, the chat still works in "live" mode.
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingHistory = false;
+        });
+      }
+    }
   }
 
   void _initializeVoiceService() {
@@ -107,9 +163,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _voiceService.onError = (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Voice error: $error')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Voice error: $error')));
       }
     };
   }
@@ -135,7 +191,24 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<int?> _getUserId() async {
     try {
-      return await ProfileService.getUserId();
+      // 1) Use stored user id if available.
+      final storedId = await ProfileService.getUserId();
+      if (storedId != null) return storedId;
+
+      // 2) Real-world fallback: if the user is authenticated, resolve backend user id.
+      final fbUser = FirebaseAuth.instance.currentUser;
+      final email = fbUser?.email;
+      if (email == null || email.trim().isEmpty) return null;
+
+      final lookedUp = await _api.lookupOrCreateUserByEmail(
+        email: email,
+        name: fbUser?.displayName,
+      );
+      if (lookedUp != null) {
+        await ProfileService.setUserId(lookedUp);
+        return lookedUp;
+      }
+      return null;
     } catch (_) {
       return null;
     }
@@ -157,6 +230,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final userId = await _getUserId();
+
+      // If the user is responding to a journaling prompt, save to journal_entries.
+      if (_awaitingJournalEntry && userId != null) {
+        await _api.saveJournalEntry(userId: userId, textEntry: text);
+        _awaitingJournalEntry = false;
+      }
+
       final result = await _api.sendChatMessage(message: text, userId: userId);
 
       String reply;
@@ -202,6 +282,194 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _insertJournalingPrompt() async {
+    if (_sending) return;
+    final userId = await _getUserId();
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in / set a profile first.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    final prompt = await _api.getJournalPrompt();
+    if (prompt == null || prompt.trim().isEmpty) return;
+
+    if (!mounted) return;
+    setState(() {
+      _messages.add(
+        _Message(
+          text:
+              'Journaling prompt: $prompt\n\nWrite a few sentences, then press Send. I will save it to your journal.',
+          isUser: false,
+          isHighlight: true,
+        ),
+      );
+      _awaitingJournalEntry = true;
+    });
+    _scrollToEnd();
+  }
+
+  Future<void> _startDailyCheckIn() async {
+    if (_sending) return;
+    final userId = await _getUserId();
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please sign in / set a profile first.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    const moodOptions = <String>[
+      'Happy',
+      'Calm',
+      'Neutral',
+      'Anxious',
+      'Sad',
+      'Angry',
+      'Stressed',
+      'Overwhelmed',
+    ];
+
+    String selectedMood = moodOptions.first;
+    double energy = 5;
+    final noteController = TextEditingController();
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 16 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: StatefulBuilder(
+              builder: (ctx, setSheetState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily check-in',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pick your mood and energy. This is saved to your mood history.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedMood,
+                      items: [
+                        for (final m in moodOptions)
+                          DropdownMenuItem(value: m, child: Text(m)),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setSheetState(() {
+                          selectedMood = v;
+                        });
+                      },
+                      decoration: const InputDecoration(labelText: 'Mood'),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Energy: ${energy.round()} / 10',
+                      style: theme.textTheme.labelLarge,
+                    ),
+                    Slider(
+                      value: energy,
+                      min: 0,
+                      max: 10,
+                      divisions: 10,
+                      onChanged: (v) => setSheetState(() => energy = v),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: noteController,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Optional note',
+                        hintText: 'What’s contributing to this mood today?',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () async {
+                              final ok = await _api.logMood(
+                                userId: userId,
+                                moodLabel: selectedMood,
+                                energyLevel: energy.round(),
+                                note: noteController.text,
+                              );
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx, ok);
+                              }
+                            },
+                            child: const Text('Save'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    noteController.dispose();
+
+    if (!mounted) return;
+
+    if (saved == true) {
+      setState(() {
+        _messages.add(
+          const _Message(
+            text:
+                'Saved your daily check-in. Want to talk about what led to it?',
+            isUser: false,
+            isHighlight: true,
+          ),
+        );
+      });
+      _scrollToEnd();
+    }
+  }
+
   Future<void> _toggleVoiceInput() async {
     if (_isListening) {
       await _voiceService.stopListening();
@@ -218,7 +486,9 @@ class _ChatScreenState extends State<ChatScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Voice recognition is not available on this device'),
+              content: Text(
+                'Voice recognition is not available on this device',
+              ),
             ),
           );
         }
@@ -284,7 +554,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemBuilder: (context, i) {
                   final m = _messages[i];
                   if (m.isHighlight) {
-
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Center(
@@ -317,7 +586,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   }
 
                   if (m.isUser) {
-
                     return Align(
                       alignment: Alignment.centerRight,
                       child: Container(
@@ -340,7 +608,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     );
                   }
-
 
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,6 +667,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 spacing: 8,
                 runSpacing: 6,
                 children: [
+                  // Common "therapy app" quick actions.
+                  _QuickChip(
+                    label: 'Daily check-in',
+                    onTap: _sending ? null : _startDailyCheckIn,
+                  ),
+                  _QuickChip(
+                    label: 'Journaling prompt',
+                    onTap: _sending ? null : _insertJournalingPrompt,
+                  ),
                   _QuickChip(
                     label: 'I feel anxious',
                     onTap: _sending

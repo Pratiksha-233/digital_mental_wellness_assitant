@@ -15,8 +15,12 @@ except ImportError:
     NUMPY_AVAILABLE = False
     np = None
 from datetime import datetime, timedelta
-from mysql.connector import Error
 from . import db_service
+
+try:
+    from mysql.connector import Error  # type: ignore
+except Exception:  # pragma: no cover
+    Error = Exception
 
 
 class StressCalculationService:
@@ -148,11 +152,15 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            cursor.execute(
+                """
                 SELECT predicted_emotion FROM journal_entries
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
+                WHERE user_id = %s AND timestamp > %s
                 ORDER BY timestamp DESC LIMIT 30
-            """, (user_id,))
+                """,
+                (user_id, cutoff),
+            )
 
             emotions = cursor.fetchall()
 
@@ -167,11 +175,14 @@ class StressCalculationService:
                 stress_scores.append(weight)
 
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT emotion_detected FROM chat_history
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
+                WHERE user_id = %s AND timestamp > %s
                 ORDER BY timestamp DESC LIMIT 20
-            """, (user_id,))
+                """,
+                (user_id, cutoff),
+            )
 
             face_emotions = cursor.fetchall()
             for row in face_emotions:
@@ -186,7 +197,7 @@ class StressCalculationService:
                 avg_emotion_stress = sum(stress_scores) / len(stress_scores) if stress_scores else 50.0
             return float(avg_emotion_stress)
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting emotion stress score: {e}")
             return 50.0
         finally:
@@ -203,11 +214,15 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            cursor.execute(
+                """
                 SELECT mood_label, energy_level FROM mood_logs
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
+                WHERE user_id = %s AND timestamp > %s
                 ORDER BY timestamp DESC LIMIT 30
-            """, (user_id,))
+                """,
+                (user_id, cutoff),
+            )
 
             moods = cursor.fetchall()
 
@@ -227,7 +242,7 @@ class StressCalculationService:
                 avg_mood_stress = sum(mood_stress_scores) / len(mood_stress_scores) if mood_stress_scores else 50.0
             return float(avg_mood_stress)
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting mood stress score: {e}")
             return 50.0
         finally:
@@ -244,10 +259,14 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            cursor.execute(
+                """
                 SELECT AVG(energy_level) as avg_energy FROM mood_logs
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
-            """, (user_id,))
+                WHERE user_id = %s AND timestamp > %s
+                """,
+                (user_id, cutoff),
+            )
 
             result = cursor.fetchone()
             avg_energy = result['avg_energy'] if result and result['avg_energy'] else 5
@@ -259,7 +278,7 @@ class StressCalculationService:
 
             return float(energy_stress)
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting energy stress score: {e}")
             return 50.0
         finally:
@@ -276,10 +295,14 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            cursor.execute(
+                """
                 SELECT COUNT(*) as activity_count FROM activity_logs
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
-            """, (user_id,))
+                WHERE user_id = %s AND timestamp > %s
+                """,
+                (user_id, cutoff),
+            )
 
             result = cursor.fetchone()
             activity_count = result['activity_count'] if result else 0
@@ -296,7 +319,7 @@ class StressCalculationService:
 
             return float(activity_stress)
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting activity stress score: {e}")
             return 50.0
         finally:
@@ -313,28 +336,42 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
-                SELECT
-                    CASE WHEN
-                        (SELECT AVG(energy_level) FROM mood_logs
-                         WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)) <
-                        (SELECT AVG(energy_level) FROM mood_logs
-                         WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 14 DAY)
-                         AND timestamp <= DATE_SUB(NOW(), INTERVAL 7 DAY))
-                    THEN 'worsening'
-                    WHEN
-                        (SELECT AVG(energy_level) FROM mood_logs
-                         WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)) >
-                        (SELECT AVG(energy_level) FROM mood_logs
-                         WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 14 DAY)
-                         AND timestamp <= DATE_SUB(NOW(), INTERVAL 7 DAY))
-                    THEN 'improving'
-                    ELSE 'stable'
-                    END as trend
-            """, (user_id, user_id, user_id, user_id))
+            cutoff_7 = datetime.utcnow() - timedelta(days=7)
+            cutoff_14 = datetime.utcnow() - timedelta(days=14)
 
-            result = cursor.fetchone()
-            trend = result['trend'] if result else 'stable'
+            cursor.execute(
+                """
+                SELECT AVG(energy_level) as avg_energy
+                FROM mood_logs
+                WHERE user_id = %s AND timestamp > %s
+                """,
+                (user_id, cutoff_7),
+            )
+            r1 = cursor.fetchone() or {}
+            this_week = r1.get('avg_energy')
+
+            cursor.execute(
+                """
+                SELECT AVG(energy_level) as avg_energy
+                FROM mood_logs
+                WHERE user_id = %s
+                  AND timestamp > %s
+                  AND timestamp <= %s
+                """,
+                (user_id, cutoff_14, cutoff_7),
+            )
+            r2 = cursor.fetchone() or {}
+            last_week = r2.get('avg_energy')
+
+            trend = 'stable'
+            if this_week is not None and last_week is not None:
+                try:
+                    if float(this_week) < float(last_week) - 0.1:
+                        trend = 'worsening'
+                    elif float(this_week) > float(last_week) + 0.1:
+                        trend = 'improving'
+                except Exception:
+                    trend = 'stable'
 
 
             trend_map = {'worsening': 70, 'stable': 50, 'improving': 30}
@@ -342,7 +379,7 @@ class StressCalculationService:
 
             return float(trend_stress)
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting trend stress score: {e}")
             return 50.0
         finally:
@@ -370,18 +407,22 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            cursor.execute(
+                """
                 SELECT predicted_emotion, COUNT(*) as count FROM journal_entries
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
+                WHERE user_id = %s AND timestamp > %s
                 GROUP BY predicted_emotion
                 ORDER BY count DESC
                 LIMIT 1
-            """, (user_id,))
+                """,
+                (user_id, cutoff),
+            )
 
             result = cursor.fetchone()
             return result['predicted_emotion'].strip() if result else 'Neutral'
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting primary emotion: {e}")
             return 'Unknown'
         finally:
@@ -397,16 +438,20 @@ class StressCalculationService:
         try:
             cursor = conn.cursor(dictionary=True)
 
-            cursor.execute("""
+            cutoff = datetime.utcnow() - timedelta(days=7)
+            cursor.execute(
+                """
                 SELECT AVG(energy_level) as avg_energy FROM mood_logs
-                WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)
-            """, (user_id,))
+                WHERE user_id = %s AND timestamp > %s
+                """,
+                (user_id, cutoff),
+            )
 
             result = cursor.fetchone()
             avg_energy = int(result['avg_energy']) if result and result['avg_energy'] else 5
             return max(0, min(10, avg_energy))
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting average energy: {e}")
             return 5
         finally:
@@ -423,26 +468,46 @@ class StressCalculationService:
             cursor = conn.cursor(dictionary=True)
 
 
-            cursor.execute("""
-                SELECT
-                    (SELECT AVG(energy_level) FROM mood_logs
-                     WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 7 DAY)) as this_week,
-                    (SELECT AVG(energy_level) FROM mood_logs
-                     WHERE user_id = %s AND timestamp > DATE_SUB(NOW(), INTERVAL 14 DAY)
-                     AND timestamp <= DATE_SUB(NOW(), INTERVAL 7 DAY)) as last_week
-            """, (user_id, user_id))
+            cutoff_7 = datetime.utcnow() - timedelta(days=7)
+            cutoff_14 = datetime.utcnow() - timedelta(days=14)
 
-            result = cursor.fetchone()
-            if result and result['this_week'] and result['last_week']:
-                diff = result['this_week'] - result['last_week']
-                if diff > 1:
-                    return 'improving'
-                elif diff < -1:
-                    return 'declining'
+            cursor.execute(
+                """
+                SELECT AVG(energy_level) as avg_energy
+                FROM mood_logs
+                WHERE user_id = %s AND timestamp > %s
+                """,
+                (user_id, cutoff_7),
+            )
+            r1 = cursor.fetchone() or {}
+            this_week = r1.get('avg_energy')
+
+            cursor.execute(
+                """
+                SELECT AVG(energy_level) as avg_energy
+                FROM mood_logs
+                WHERE user_id = %s
+                  AND timestamp > %s
+                  AND timestamp <= %s
+                """,
+                (user_id, cutoff_14, cutoff_7),
+            )
+            r2 = cursor.fetchone() or {}
+            last_week = r2.get('avg_energy')
+
+            if this_week is not None and last_week is not None:
+                try:
+                    diff = float(this_week) - float(last_week)
+                    if diff > 1:
+                        return 'improving'
+                    if diff < -1:
+                        return 'declining'
+                except Exception:
+                    pass
 
             return 'stable'
 
-        except Error as e:
+        except Exception as e:
             print(f"Error getting mood trend: {e}")
             return 'stable'
         finally:

@@ -1,0 +1,15 @@
+# Python
+**/__pycache__/
+*.py[cod]
+
+# Local environment files
+.env
+**/.env
+
+# Local databases
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.db
+*.db-journal

@@ -6,6 +6,7 @@ Endpoints for calculating and retrieving customer stress levels.
 from flask import Blueprint, request, jsonify
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -178,7 +179,6 @@ def get_stress_history():
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from services.db_service import get_connection
-    from mysql.connector import Error
 
     conn = get_connection()
     if not conn:
@@ -187,18 +187,20 @@ def get_stress_history():
     try:
         cursor = conn.cursor(dictionary=True)
 
+        cutoff = datetime.utcnow() - timedelta(days=int(days))
+
         sql = """
             SELECT
                 stress_id, user_id, stress_level, stress_category,
                 primary_emotion, energy_level, mood_pattern, timestamp
             FROM stress_logs
             WHERE user_id = %s
-            AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+              AND timestamp > %s
             ORDER BY timestamp DESC
             LIMIT %s
         """
 
-        cursor.execute(sql, (user_id, days, limit))
+        cursor.execute(sql, (user_id, cutoff, limit))
         records = cursor.fetchall()
 
 
@@ -212,7 +214,7 @@ def get_stress_history():
             'data': records
         }), 200
 
-    except Error as e:
+    except Exception as e:
         print(f"Database error: {e}")
         return jsonify({'error': 'Failed to retrieve history'}), 500
     finally:
@@ -258,7 +260,6 @@ def get_stress_stats():
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from services.db_service import get_connection
-    from mysql.connector import Error
     import numpy as np
 
     conn = get_connection()
@@ -268,16 +269,17 @@ def get_stress_stats():
     try:
         cursor = conn.cursor(dictionary=True)
 
+        cutoff = datetime.utcnow() - timedelta(days=int(days))
 
         sql = """
             SELECT stress_level, stress_category, timestamp
             FROM stress_logs
             WHERE user_id = %s
-            AND timestamp > DATE_SUB(NOW(), INTERVAL %s DAY)
+              AND timestamp > %s
             ORDER BY timestamp ASC
         """
 
-        cursor.execute(sql, (user_id, days))
+        cursor.execute(sql, (user_id, cutoff))
         records = cursor.fetchall()
 
         if not records:
@@ -325,7 +327,7 @@ def get_stress_stats():
             **category_counts
         }), 200
 
-    except Error as e:
+    except Exception as e:
         print(f"Database error: {e}")
         return jsonify({'error': 'Failed to retrieve statistics'}), 500
     finally:

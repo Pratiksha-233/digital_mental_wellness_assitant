@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from datetime import datetime
 import sys
 from pathlib import Path
 
@@ -13,7 +14,25 @@ except ImportError:
     ml_service = None
 from services.db_service import insert_journal_entry, insert_chat_message
 
+# New: history + session summaries for review.
+from services.db_service import (
+    get_chat_history_by_user,
+    get_chat_session_summaries_by_user,
+)
+
 chat_bp = Blueprint('chat', __name__)
+
+
+# Simple, safe journaling prompts.
+# These are intentionally non-clinical and avoid giving medical advice.
+JOURNALING_PROMPTS = [
+    "What’s one thing that felt heavy today, and what did you need in that moment?",
+    "Name 3 emotions you felt today. What might each one be trying to tell you?",
+    "What’s one small win from today—even if it felt tiny?",
+    "If a close friend had your day, what would you say to them?",
+    "What’s one worry you’re carrying? What’s one step you *can* take (however small)?",
+    "What helped you cope in the past that you could try again this week?",
+]
 
 
 CRISIS_KEYWORDS = [
@@ -153,11 +172,6 @@ def message():
 
     if user_id:
         try:
-            insert_journal_entry(user_id, user_message, emotion)
-        except Exception:
-
-            pass
-        try:
             insert_chat_message(user_id, user_message, bot_response, emotion)
         except Exception:
 
@@ -174,3 +188,137 @@ def message():
             'intent': intent,
         }
     )
+
+
+@chat_bp.route('/history', methods=['GET'])
+def history():
+    """Return recent chat history for a user.
+
+    Query params:
+      - user_id (required)
+      - limit (optional, default 100, max 500)
+
+    Response:
+      - messages: a flat list of message objects {role, text, timestamp, chat_id}
+        built from the stored (user_message, bot_response) pairs.
+
+    This supports real-world UX where users can reopen the chat and continue.
+    """
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+
+    try:
+        user_id_int = int(user_id)
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+
+    limit_raw = request.args.get('limit')
+    try:
+        limit = int(limit_raw) if limit_raw else 100
+    except Exception:
+        limit = 100
+    limit = max(1, min(limit, 500))
+
+    rows = get_chat_history_by_user(user_id_int, limit=limit)
+
+    messages = []
+    for r in rows:
+        ts = r.get('timestamp')
+        chat_id = r.get('chat_id')
+        user_text = (r.get('user_message') or '').strip()
+        bot_text = (r.get('bot_response') or '').strip()
+        if user_text:
+            messages.append(
+                {
+                    'role': 'user',
+                    'text': user_text,
+                    'timestamp': ts,
+                    'chat_id': chat_id,
+                }
+            )
+        if bot_text:
+            messages.append(
+                {
+                    'role': 'assistant',
+                    'text': bot_text,
+                    'timestamp': ts,
+                    'chat_id': chat_id,
+                }
+            )
+
+    return jsonify({'messages': messages}), 200
+
+
+@chat_bp.route('/sessions', methods=['GET'])
+def sessions():
+    """Return a light 'past sessions' list for review.
+
+    For simplicity we treat each calendar day as a session.
+    Query params:
+      - user_id (required)
+      - days (optional, default 30)
+    """
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+
+    try:
+        user_id_int = int(user_id)
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+
+    days_raw = request.args.get('days')
+    try:
+        days = int(days_raw) if days_raw else 30
+    except Exception:
+        days = 30
+    days = max(1, min(days, 365))
+
+    rows = get_chat_session_summaries_by_user(user_id_int, days=days)
+    return jsonify({'sessions': rows}), 200
+
+
+@chat_bp.route('/journal/prompt', methods=['GET'])
+def journal_prompt():
+    """Return a journaling prompt (no persistence)."""
+    # Deterministic 'prompt of the day'.
+    idx = (datetime.utcnow().toordinal()) % len(JOURNALING_PROMPTS)
+    return jsonify({'prompt': JOURNALING_PROMPTS[idx]}), 200
+
+
+@chat_bp.route('/journal', methods=['POST'])
+def journal_save():
+    """Save a journal entry.
+
+    Body:
+      - user_id (required)
+      - text_entry (required)
+
+    We store this in journal_entries and (optionally) run ML emotion tagging.
+    """
+    data = request.json or {}
+    user_id = data.get('user_id')
+    text_entry = (data.get('text_entry') or '').strip()
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+    if not text_entry:
+        return jsonify({'error': 'text_entry is required'}), 400
+
+    try:
+        user_id_int = int(user_id)
+    except Exception:
+        return jsonify({'error': 'invalid user_id'}), 400
+
+    predicted_emotion = 'Unknown'
+    if _ML_AVAILABLE:
+        try:
+            analysis = ml_service.analyze_text(text_entry)
+            predicted_emotion = analysis.get('emotion') or 'Unknown'
+        except Exception:
+            predicted_emotion = 'Unknown'
+
+    ok, err = insert_journal_entry(user_id_int, text_entry, predicted_emotion)
+    if not ok:
+        return jsonify({'error': 'Failed to save journal entry', 'detail': err}), 500
+    return jsonify({'status': 'saved', 'predicted_emotion': predicted_emotion}), 200

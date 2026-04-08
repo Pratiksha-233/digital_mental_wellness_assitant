@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../theme/brand_theme.dart';
 import '../widgets/app_section_card.dart';
 
 /// Emergency helpline numbers and crisis resources
@@ -33,10 +34,12 @@ class EmergencySupportData {
     EmergencyContact(
       name: 'International Association for Suicide Prevention',
       number: 'Find local helpline',
-      description: 'Visit iasp.info/resources/Crisis_Centres/ for global resources',
+      description:
+          'Visit iasp.info/resources/Crisis_Centres/ for global resources',
       region: 'International',
       icon: Icons.language,
       type: 'web',
+      url: 'https://www.iasp.info/resources/Crisis_Centres/',
     ),
     EmergencyContact(
       name: 'Befrienders',
@@ -104,6 +107,7 @@ class EmergencyContact {
   final String region;
   final IconData icon;
   final String type; // 'phone', 'text', 'web', 'emergency'
+  final String? url;
 
   const EmergencyContact({
     required this.name,
@@ -112,6 +116,7 @@ class EmergencyContact {
     required this.region,
     required this.icon,
     required this.type,
+    this.url,
   });
 
   Future<void> launch() async {
@@ -125,6 +130,9 @@ class EmergencyContact {
         break;
       case 'emergency':
         uri = 'tel:911';
+        break;
+      case 'web':
+        uri = url ?? 'https://www.iasp.info/resources/Crisis_Centres/';
         break;
       default:
         return;
@@ -149,47 +157,53 @@ class EmergencySupportScreen extends StatefulWidget {
 
 class _EmergencySupportScreenState extends State<EmergencySupportScreen> {
   int _copingIndex = 0;
-  int _reminderIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _copingIndex = DateTime.now().hour % EmergencySupportData.copingStrategies.length;
-    _reminderIndex = DateTime.now().day % EmergencySupportData.reminders.length;
+    _copingIndex =
+        DateTime.now().hour % EmergencySupportData.copingStrategies.length;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final bgGradient =
+        theme.extension<BrandGradients>()?.background ??
+        AppSectionCard.gradientFromScheme(cs);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Need Help Now?'),
+        centerTitle: true,
         elevation: 0,
-        backgroundColor: cs.errorContainer,
-        foregroundColor: cs.onErrorContainer,
+        backgroundColor: cs.surface.withValues(alpha: 0.95),
+        foregroundColor: cs.onSurface,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Crisis Alert Banner
-            AppSectionCard(
-              gradient: LinearGradient(
-                colors: [
-                  cs.error.withValues(alpha: 0.85),
-                  cs.errorContainer.withValues(alpha: 0.70),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+      body: SafeArea(
+        child: DecoratedBox(
+          decoration: BoxDecoration(gradient: bgGradient),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Crisis Alert Banner
+                AppSectionCard(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cs.error.withValues(alpha: 0.85),
+                      cs.errorContainer.withValues(alpha: 0.70),
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        Icons.warning,
+                        Icons.warning_amber_rounded,
                         color: cs.onError,
                         size: 28,
                       ),
@@ -199,17 +213,18 @@ class _EmergencySupportScreenState extends State<EmergencySupportScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'You Are Not Alone',
+                              'You are not alone',
                               style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w800,
                                 color: cs.onError,
                               ),
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Crisis support is available 24/7. Reach out right now.',
+                              'Crisis support is available 24/7. If you feel unsafe, reach out right now.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: cs.onError,
+                                height: 1.35,
                               ),
                             ),
                           ],
@@ -217,341 +232,482 @@ class _EmergencySupportScreenState extends State<EmergencySupportScreen> {
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            const SizedBox(height: 20),
+                const SizedBox(height: 18),
 
-            // Emergency Contacts
-            Text(
-              '🆘 Emergency Helplines',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
+                // Emergency Contacts
+                _buildEmergencyHelplinesSection(context),
 
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: EmergencySupportData.emergencyContacts.length,
-              itemBuilder: (context, index) {
-                final contact = EmergencySupportData.emergencyContacts[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildContactCard(
-                    context,
-                    contact,
-                    cs,
-                    theme,
+                const SizedBox(height: 22),
+
+                // Coping Strategies
+                _buildSectionHeader(
+                  context,
+                  icon: Icons.favorite_rounded,
+                  title: 'Quick coping strategies',
+                  subtitle: 'Small steps to get through this moment.',
+                ),
+                const SizedBox(height: 12),
+                AppSectionCard(
+                  margin: EdgeInsets.zero,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cs.tertiaryContainer.withValues(alpha: 0.60),
+                      cs.secondaryContainer.withValues(alpha: 0.40),
+                    ],
                   ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Coping Strategies
-            Text(
-              '💪 Quick Coping Strategies',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            AppSectionCard(
-              margin: EdgeInsets.zero,
-              gradient: LinearGradient(
-                colors: [
-                  cs.tertiaryContainer.withValues(alpha: 0.60),
-                  cs.secondaryContainer.withValues(alpha: 0.40),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    EmergencySupportData.copingStrategies[_copingIndex],
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _copingIndex =
-                                  (_copingIndex - 1 +
-                                      EmergencySupportData.copingStrategies.length) %
-                                      EmergencySupportData.copingStrategies.length;
-                            });
-                          },
-                          icon: const Icon(Icons.arrow_back),
-                          label: const Text('Previous'),
+                      Text(
+                        EmergencySupportData.copingStrategies[_copingIndex],
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.6,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _copingIndex =
-                                  (_copingIndex + 1) %
-                                      EmergencySupportData.copingStrategies.length;
-                            });
-                          },
-                          icon: const Icon(Icons.arrow_forward),
-                          label: const Text('Next'),
-                        ),
+                      const SizedBox(height: 16),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 520;
+                          const compactMaxWidth = 320.0;
+                          final buttonWidth = ((constraints.maxWidth - 12) / 2)
+                              .clamp(160.0, 260.0);
+                          final prevButton = OutlinedButton(
+                            onPressed: () {
+                              setState(() {
+                                _copingIndex =
+                                    (_copingIndex -
+                                        1 +
+                                        EmergencySupportData
+                                            .copingStrategies
+                                            .length) %
+                                    EmergencySupportData
+                                        .copingStrategies
+                                        .length;
+                              });
+                            },
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                              alignment: Alignment.center,
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.arrow_back),
+                                SizedBox(width: 10),
+                                Text('Previous'),
+                              ],
+                            ),
+                          );
+
+                          final nextButton = FilledButton(
+                            onPressed: () {
+                              setState(() {
+                                _copingIndex =
+                                    (_copingIndex + 1) %
+                                    EmergencySupportData
+                                        .copingStrategies
+                                        .length;
+                              });
+                            },
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(48),
+                              alignment: Alignment.center,
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Next'),
+                                SizedBox(width: 10),
+                                Icon(Icons.arrow_forward),
+                              ],
+                            ),
+                          );
+
+                          if (isNarrow) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: compactMaxWidth,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: prevButton,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: compactMaxWidth,
+                                  ),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: nextButton,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(width: buttonWidth, child: prevButton),
+                              const SizedBox(width: 12),
+                              SizedBox(width: buttonWidth, child: nextButton),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Inspirational Reminder
-            Text(
-              '✨ Remember',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            AppSectionCard(
-              margin: EdgeInsets.zero,
-              gradient: LinearGradient(
-                colors: [
-                  cs.primaryContainer.withValues(alpha: 0.50),
-                  cs.tertiaryContainer.withValues(alpha: 0.40),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  EmergencySupportData.reminders[_reminderIndex],
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontStyle: FontStyle.italic,
-                    height: 1.8,
-                  ),
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 22),
 
-            // Additional Resources
-            Text(
-              '📚 Additional Resources',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            AppSectionCard(
-              margin: EdgeInsets.zero,
-              padding: const EdgeInsets.all(16),
-              gradient: LinearGradient(
-                colors: [
-                  cs.surfaceContainerHighest.withValues(alpha: 0.60),
-                  cs.surface.withValues(alpha: 0.40),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildResourceItem(
-                    context,
-                    '🧠 Mental Health Information',
-                    'Learn more about mental health conditions and treatments',
-                    theme,
-                    cs,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildResourceItem(
-                    context,
-                    '👥 Support Groups',
-                    'Connect with others in similar situations',
-                    theme,
-                    cs,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildResourceItem(
-                    context,
-                    '💻 Online Resources',
-                    'Access mental health websites and apps',
-                    theme,
-                    cs,
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Safety Plan Info
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: cs.outlineVariant,
-                  width: 1.5,
+                // Additional Resources
+                _buildSectionHeader(
+                  context,
+                  icon: Icons.menu_book_rounded,
+                  title: 'Additional resources',
+                  subtitle: 'Learn, connect, and explore support options.',
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                const SizedBox(height: 12),
+                AppSectionCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      cs.surfaceContainerHighest.withValues(alpha: 0.60),
+                      cs.surface.withValues(alpha: 0.40),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info, color: cs.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Create a Safety Plan',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                      _buildResourceItem(
+                        context,
+                        'Mental health information',
+                        'Learn about conditions, treatments, and coping tools',
+                        theme,
+                        cs,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildResourceItem(
+                        context,
+                        'Support groups',
+                        'Connect with others in similar situations',
+                        theme,
+                        cs,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildResourceItem(
+                        context,
+                        'Online resources',
+                        'Explore reputable mental health websites and apps',
+                        theme,
+                        cs,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                // Safety Plan Info
+                AppSectionCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.all(16),
+                  gradient: AppSectionCard.gradientFromScheme(
+                    cs,
+                    a: cs.surfaceContainerHighest,
+                    b: cs.surface,
+                    aAlpha: 0.72,
+                    bAlpha: 0.52,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info_rounded, color: cs.primary),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Create a safety plan',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'A safety plan is a list of people, places, and steps that help you when you\'re in crisis. '
+                        'Consider writing down:\n'
+                        '• Warning signs that a crisis might be coming\n'
+                        '• Internal coping strategies\n'
+                        '• Support persons and social settings\n'
+                        '• Professional contacts to reach out to\n'
+                        '• Ways to make your environment safer',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.45,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'A safety plan is a list of people, places, and things that help you when you\'re in crisis. '
-                    'Consider writing down:\n'
-                    '• Warning signs that a crisis might be coming\n'
-                    '• Internal coping strategies\n'
-                    '• Support persons and social settings\n'
-                    '• Professional contacts to reach out to\n'
-                    '• Ways to make your environment safer',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildContactCard(
-    BuildContext context,
-    EmergencyContact contact,
-    ColorScheme cs,
-    ThemeData theme,
-  ) {
-    Color cardColor;
-    switch (contact.type) {
-      case 'emergency':
-        cardColor = cs.error.withValues(alpha: 0.15);
-        break;
-      case 'phone':
-        cardColor = cs.primary.withValues(alpha: 0.15);
-        break;
-      case 'text':
-        cardColor = cs.tertiary.withValues(alpha: 0.15);
-        break;
-      default:
-        cardColor = cs.secondary.withValues(alpha: 0.15);
-    }
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
-    return AppSectionCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(0),
-      gradient: LinearGradient(
-        colors: [cardColor, cardColor.withValues(alpha: 0.5)],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: contact.type == 'web' ? null : () => contact.launch(),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: cs.surface.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.7)),
+          ),
+          child: Icon(icon, color: cs.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmergencyHelplinesSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final primaryCall = EmergencySupportData.emergencyContacts.firstWhere(
+      (c) => c.number.trim() == '988',
+      orElse: () => EmergencySupportData.emergencyContacts.first,
+    );
+    final primaryText = EmergencySupportData.emergencyContacts.firstWhere(
+      (c) => c.type == 'text',
+      orElse: () => EmergencySupportData.emergencyContacts.first,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          context,
+          icon: Icons.sos_rounded,
+          title: 'Emergency helplines',
+          subtitle: 'Use quick actions or choose a resource below.',
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            FilledButton.icon(
+              onPressed: () => primaryCall.launch(),
+              icon: const Icon(Icons.call_rounded),
+              label: const Text('Call 988'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () => primaryText.launch(),
+              icon: const Icon(Icons.message_rounded),
+              label: const Text('Text HOME'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        AppSectionCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.all(10),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              cs.surface.withValues(alpha: 0.75),
+              cs.surfaceContainerHighest.withValues(alpha: 0.55),
+            ],
+          ),
+          child: Column(
+            children: [
+              for (
+                int i = 0;
+                i < EmergencySupportData.emergencyContacts.length;
+                i++
+              ) ...[
+                _buildContactListItem(
+                  context,
+                  EmergencySupportData.emergencyContacts[i],
+                ),
+                if (i != EmergencySupportData.emergencyContacts.length - 1)
+                  Divider(
+                    height: 16,
+                    color: cs.outlineVariant.withValues(alpha: 0.6),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactListItem(BuildContext context, EmergencyContact contact) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final (IconData actionIcon, String actionLabel) = switch (contact.type) {
+      'web' => (Icons.open_in_new_rounded, 'Open'),
+      'text' => (Icons.message_rounded, 'Text'),
+      'emergency' => (Icons.call_rounded, 'Call'),
+      _ => (Icons.call_rounded, 'Call'),
+    };
+
+    final Color tint = switch (contact.type) {
+      'emergency' => cs.error,
+      'text' => cs.tertiary,
+      'web' => cs.secondary,
+      _ => cs.primary,
+    };
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => contact.launch(),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: cs.outlineVariant.withValues(alpha: 0.55),
+                  ),
+                ),
+                child: Icon(contact.icon, color: tint),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(
+                      contact.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      contact.number,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: tint,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      contact.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: cs.surface.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(10),
+                        color: cs.surface.withValues(alpha: 0.75),
+                        borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.5),
+                          color: cs.outlineVariant.withValues(alpha: 0.6),
                         ),
                       ),
-                      child: Icon(
-                        contact.icon,
-                        color: cs.primary,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            contact.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            contact.number,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: cs.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            contact.description,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Chip(
-                            label: Text(
-                              contact.region,
-                              style: theme.textTheme.labelSmall,
-                            ),
-                            backgroundColor: cs.secondary.withValues(alpha: 0.3),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (contact.type != 'web')
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: Icon(
-                          Icons.arrow_forward,
-                          color: cs.primary,
+                      child: Text(
+                        contact.region,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: cs.onSurfaceVariant,
                         ),
                       ),
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: () => contact.launch(),
+                    icon: Icon(actionIcon),
+                    tooltip: actionLabel,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    actionLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

@@ -42,7 +42,6 @@ class _LandingPageStateFixed extends State<LandingPage>
     );
   }
 
-
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -99,7 +98,6 @@ class _LandingPageStateFixed extends State<LandingPage>
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _bgController,
@@ -115,9 +113,7 @@ class _LandingPageStateFixed extends State<LandingPage>
             controller: _scrollController,
             child: Column(
               children: [
-                SizedBox(
-                  height: isDesktop ? 80 : 60,
-                ),
+                SizedBox(height: isDesktop ? 80 : 60),
                 _buildHeroSection(context, isDesktop),
                 _buildFeaturesSection(context, isDesktop),
                 _buildAboutSection(context, isDesktop),
@@ -134,9 +130,7 @@ class _LandingPageStateFixed extends State<LandingPage>
 
   PreferredSizeWidget _buildNavBar(BuildContext context, bool isDesktop) {
     return AppBar(
-      backgroundColor: Colors.white.withValues(
-        alpha: 0.9,
-      ),
+      backgroundColor: Colors.white.withValues(alpha: 0.9),
       elevation: 0,
       scrolledUnderElevation: 4,
       surfaceTintColor: Colors.transparent,
@@ -332,9 +326,7 @@ class _LandingPageStateFixed extends State<LandingPage>
     return math.min(maxWidth, available > 0 ? available : screenWidth);
   }
 
-
-
-
+  // ignore: unused_element
   Widget _buildTrustAvatar(String url) {
     return Align(
       widthFactor: 0.8,
@@ -507,7 +499,6 @@ class _LandingPageStateFixed extends State<LandingPage>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-
                                         Text(
                                           'Discover Your\nInner Harmony',
                                           style: TextStyle(
@@ -570,7 +561,7 @@ class _LandingPageStateFixed extends State<LandingPage>
     );
   }
 
-
+  // ignore: unused_element
   void _showDemoVideo(BuildContext context) {
     showDialog(
       context: context,
@@ -1373,8 +1364,6 @@ class _LandingPageStateFixed extends State<LandingPage>
   }
 }
 
-
-
 class HoverableCard extends StatefulWidget {
   final Widget child;
   const HoverableCard({super.key, required this.child});
@@ -1399,7 +1388,6 @@ class _HoverableCardState extends State<HoverableCard> {
   }
 }
 
-
 class AtomicBackgroundPainter extends CustomPainter {
   final double value;
   final Color? backgroundColor;
@@ -1409,7 +1397,6 @@ class AtomicBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-
 
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
 
@@ -1429,8 +1416,6 @@ class AtomicBackgroundPainter extends CustomPainter {
       canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
     }
 
-
-
     paint.color = const Color(0xFFB2DFDB).withValues(alpha: 0.15);
     canvas.drawCircle(
       Offset(
@@ -1440,7 +1425,6 @@ class AtomicBackgroundPainter extends CustomPainter {
       200,
       paint,
     );
-
 
     paint.color = const Color(0xFFE1BEE7).withValues(alpha: 0.1);
     canvas.drawCircle(

@@ -87,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             : int.tryParse('${data['days_active']}') ?? 0;
       });
     } catch (_) {
-
     } finally {
       if (mounted) setState(() => _loadingProgress = false);
     }
@@ -132,9 +131,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           latestTs = dt;
           latestEmoji = emoji;
         }
-      } catch (_) {
-
-      }
+      } catch (_) {}
     }
 
     return latestEmoji ?? fallback;
@@ -438,12 +435,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
+                    ListTile(
+                      leading: const Icon(Icons.help_outline),
+                      title: const Text('Help & Support'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/help');
+                      },
+                    ),
                     const Divider(height: 1),
                     ListTile(
-                      leading: Icon(
-                        Icons.emergency,
-                        color: cs.error,
-                      ),
+                      leading: Icon(Icons.emergency, color: cs.error),
                       title: Text(
                         'Need Help Now?',
                         style: TextStyle(
@@ -456,8 +458,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                const EmergencySupportScreen(),
+                            builder: (_) => const EmergencySupportScreen(),
                           ),
                         );
                       },
@@ -634,77 +635,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Emergency Support Button
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const EmergencySupportScreen(),
-                        ),
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              cs.error.withValues(alpha: 0.85),
-                              cs.errorContainer.withValues(alpha: 0.70),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: cs.error.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.emergency,
-                              color: cs.onError,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Need Help Now?',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: cs.onError,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Crisis support & helplines',
-                                    style: theme.textTheme.labelMedium
-                                        ?.copyWith(
-                                          color: cs.onError,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward,
-                              color: cs.onError,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 12),
                   _homeSectionCard(
                     context: context,
@@ -1319,7 +1249,6 @@ class _MoodWavePainter extends CustomPainter {
 
     canvas.drawPath(path, glowPaint);
     canvas.drawPath(path, mainPaint);
-
 
     final dotPaint = Paint()
       ..color = colorScheme.onSurface.withValues(alpha: 0.08)
