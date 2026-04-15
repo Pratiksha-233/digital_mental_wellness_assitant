@@ -1,32 +1,22 @@
 import os
 from pathlib import Path
 try:
-	from dotenv import load_dotenv
-	load_dotenv()
+    from dotenv import load_dotenv  # type: ignore[import-not-found]
+    load_dotenv()
 except Exception:
-	pass
+    pass
 
 DB_CONFIG = {
- 'host': os.getenv('DB_HOST', 'localhost'),
- 'user': os.getenv('DB_USER', 'root'),
- 'password': os.getenv('DB_PASS', 'nayan@337'),
- 'database': os.getenv('DB_NAME', 'mental_wellness'),
-
- 'port': int(os.getenv('DB_PORT', 3306)),
- 'autocommit': False,
- 'use_unicode': True,
- 'charset': 'utf8mb4',
- 'collation': 'utf8mb4_unicode_ci',
- 'raise_on_warnings': False,
- 'password': os.getenv('DB_PASS', 'nayan@337'),
- 'database': os.getenv('DB_NAME', 'mental_wellness'),
-
- 'port': int(os.getenv('DB_PORT', 3306)),
- 'autocommit': False,
- 'use_unicode': True,
- 'charset': 'utf8mb4',
- 'collation': 'utf8mb4_unicode_ci',
- 'raise_on_warnings': False
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'user': os.getenv('DB_USER', 'root'),
+    'password': os.getenv('DB_PASS', 'mysqlworld@123'),
+    'database': os.getenv('DB_NAME', 'mental_wellness'),
+    'port': int(os.getenv('DB_PORT', 3306)),
+    'autocommit': False,
+    'use_unicode': True,
+    'charset': 'utf8mb4',
+    'collation': 'utf8mb4_unicode_ci',
+    'raise_on_warnings': False,
 }
 
 # Database engine for local development.

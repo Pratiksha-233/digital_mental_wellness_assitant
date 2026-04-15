@@ -29,43 +29,82 @@ def read_sql_file(p: Path) -> str:
         return f.read()
 
 
-def execute_sql_file(conn: mysql_connector.MySQLConnection, sql_text: str):
-    """Execute SQL statements from a text string, splitting by ; and --"""
+def execute_sql_file(conn, sql_text: str):
+    """Execute SQL statements from a SQL script.
+
+    Supports MySQL `DELIMITER` blocks (needed for stored procedures).
+    """
     cursor = conn.cursor()
     try:
+        statements: list[str] = []
+        current: list[str] = []
+        delimiter = ";"
 
-        statements = []
-        current_stmt = []
+        for raw_line in sql_text.splitlines():
+            line = raw_line.rstrip("\n")
+            stripped = line.strip()
 
-        for line in sql_text.split('\n'):
+            if not stripped:
+                continue
 
-            if '--' in line:
-                line = line[:line.index('--')]
-            line = line.strip()
+            # Skip full-line comments.
+            if stripped.startswith("--"):
+                continue
 
-            if line:
-                current_stmt.append(line)
+            # Handle MySQL delimiter changes (used for procedures/triggers).
+            if stripped.upper().startswith("DELIMITER "):
+                parts = stripped.split(None, 1)
+                if len(parts) == 2 and parts[1].strip():
+                    delimiter = parts[1].strip()
+                continue
 
+            # Strip inline comments (basic).
+            if "--" in line:
+                idx = line.find("--")
+                before = line[:idx]
+                if before.strip():
+                    line = before.rstrip()
+                    stripped = line.strip()
+                else:
+                    continue
 
-                if line.endswith(';'):
-                    stmt = ' '.join(current_stmt).replace(';', '')
-                    if stmt.strip():
-                        statements.append(stmt)
-                    current_stmt = []
+            current.append(line)
 
+            is_end = False
+            if delimiter == ";":
+                is_end = stripped.endswith(";")
+            else:
+                is_end = stripped.endswith(delimiter)
 
+            if is_end:
+                stmt = "\n".join(current).rstrip()
+                if delimiter != ";" and stmt.endswith(delimiter):
+                    stmt = stmt[: -len(delimiter)]
+                elif delimiter == ";" and stmt.endswith(";"):
+                    stmt = stmt[:-1]
+
+                stmt = stmt.strip()
+                if stmt:
+                    statements.append(stmt)
+                current = []
+
+        # Flush remaining buffered SQL if any.
+        tail = "\n".join(current).strip()
+        if tail:
+            statements.append(tail)
+
+        executed = 0
         for stmt in statements:
-            if stmt.strip():
-                try:
-                    cursor.execute(stmt)
-                    if cursor.with_rows:
-                        cursor.fetchall()
-                except Error as e:
-                    print(f"Warning executing statement: {e}")
-
+            try:
+                cursor.execute(stmt)
+                if getattr(cursor, "with_rows", False):
+                    cursor.fetchall()
+                executed += 1
+            except Error as e:
+                print(f"Warning executing statement: {e}")
 
         conn.commit()
-        print(f"✅ Successfully executed {len(statements)} statements")
+        print(f"✅ Executed {executed}/{len(statements)} statements")
     except Error as e:
         print(f"❌ Database error: {e}")
         conn.rollback()
@@ -101,7 +140,7 @@ def main():
         conn = mysql_connector.connect(
             host=config.DB_CONFIG.get('host', 'localhost'),
             user=config.DB_CONFIG.get('user', 'root'),
-            password=config.DB_CONFIG.get('password', 'nayan@337'),     
+            password=config.DB_CONFIG.get('password', 'mysqlworld@123'),     
             database=os.getenv('DB_NAME', 'mental_wellness'),
             port=config.DB_CONFIG.get('port', 3306),
             charset=config.DB_CONFIG.get('charset', 'utf8mb4')

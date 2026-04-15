@@ -25,9 +25,22 @@ class AuthService {
         }
         return {'status': 'success'};
       } else {
+        String? message;
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map<String, dynamic>) {
+            final m = data['message'];
+            if (m != null) message = m.toString();
+          }
+        } catch (_) {
+          // Ignore non-JSON bodies.
+        }
+
+        message ??= 'Server error: ${response.statusCode}';
         return {
           'status': 'error',
-          'message': 'Server error: ${response.statusCode}',
+          'message': message,
+          'statusCode': response.statusCode,
         };
       }
     } catch (e) {
